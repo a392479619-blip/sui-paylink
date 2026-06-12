@@ -23,6 +23,7 @@ import { nanoid } from "nanoid";
 import type {
   BuildSponsoredTransactionInput,
   Paylink,
+  SponsoredTransactionAction,
   SponsoredTransactionRecord,
   SubmitSponsoredTransactionInput,
 } from "@suipaylink/shared";
@@ -41,6 +42,16 @@ import { applySponsoredTransactionResult, getPaylink } from "./store.js";
 
 const records = new Map<string, SponsoredTransactionRecord>();
 loadSponsoredTransactions();
+
+const buildBlockingStatuses = new Set<SponsoredTransactionRecord["status"]>([
+  "built",
+  "submitted",
+  "executed",
+]);
+const submitBlockingStatuses = new Set<SponsoredTransactionRecord["status"]>([
+  "submitted",
+  "executed",
+]);
 
 type SponsoredTransactionStoreFile = {
   version: 1;
@@ -77,6 +88,7 @@ export async function buildSponsoredTransaction(
   const sender = normalizeAddressInput(input.senderAddress, "senderAddress");
   const coinType = normalizeStructTag(mockUsdcCoinType);
   const paylink = requireBoundPaylink(input);
+  assertNoActiveSponsoredAction(paylink, input.action);
   const transaction = new Transaction();
   const gasBudget = parseGasBudget(input.gasBudgetMist);
 
@@ -242,6 +254,20 @@ export async function submitSponsoredTransaction(
   }
   if (record.status !== "built") {
     throw new SponsorError(409, "sponsored_transaction_not_submittable", `Cannot submit transaction in status ${record.status}`);
+  }
+
+  try {
+    assertNoSubmittedSponsoredConflict(record);
+    assertRecordPaylinkStillCurrent(record);
+    await assertDryRunSuccess(record.transactionBytes);
+  } catch (cause) {
+    const failed: SponsoredTransactionRecord = {
+      ...record,
+      status: "failed",
+      error: cause instanceof Error ? cause.message : String(cause),
+    };
+    setSponsoredTransactionRecord(failed);
+    throw cause;
   }
 
   const sponsorSignature = await getSponsorSigner().signTransaction(
@@ -421,6 +447,96 @@ function assertPaylinkActionAllowed(input: {
     }
     assertOptionalPaylinkAddress(input.paylink.buyerAddress, input.sender, "senderAddress does not match the Paylink buyer");
   }
+}
+
+function assertNoActiveSponsoredAction(paylink: Paylink | undefined, action: SponsoredTransactionAction) {
+  if (!paylink) {
+    return;
+  }
+  const conflicting = findBlockingSponsoredAction(paylink.id, action, buildBlockingStatuses);
+  if (!conflicting) {
+    return;
+  }
+  throw new SponsorError(
+    409,
+    "duplicate_sponsored_action",
+    `Paylink ${paylink.id} already has ${conflicting.status} ${conflicting.action} sponsored transaction ${conflicting.id}`,
+  );
+}
+
+function assertNoSubmittedSponsoredConflict(record: SponsoredTransactionRecord) {
+  if (!record.paylinkId) {
+    return;
+  }
+  const conflicting = findBlockingSponsoredAction(
+    record.paylinkId,
+    record.action,
+    submitBlockingStatuses,
+    record.id,
+  );
+  if (!conflicting) {
+    return;
+  }
+  throw new SponsorError(
+    409,
+    "conflicting_sponsored_action_in_flight",
+    `Paylink ${record.paylinkId} already has ${conflicting.status} ${conflicting.action} sponsored transaction ${conflicting.id}`,
+  );
+}
+
+function assertRecordPaylinkStillCurrent(record: SponsoredTransactionRecord) {
+  if (!record.paylinkId) {
+    return;
+  }
+  const paylink = requireBoundPaylink({
+    action: record.action,
+    senderAddress: record.sender,
+    paylinkId: record.paylinkId,
+  });
+  assertPaylinkActionAllowed({
+    action: record.action,
+    sender: record.sender,
+    paylink,
+    sellerAddress: record.sellerAddress,
+    escrowObjectId: record.escrowObjectId,
+  });
+}
+
+function findBlockingSponsoredAction(
+  paylinkId: string,
+  action: SponsoredTransactionAction,
+  blockingStatuses: Set<SponsoredTransactionRecord["status"]>,
+  excludeId?: string,
+): SponsoredTransactionRecord | undefined {
+  for (const record of records.values()) {
+    if (record.id === excludeId || record.paylinkId !== paylinkId) {
+      continue;
+    }
+    const status = refreshedRecordStatus(record);
+    if (!blockingStatuses.has(status)) {
+      continue;
+    }
+    if (record.action === action || (isSettlementAction(record.action) && isSettlementAction(action))) {
+      return { ...record, status };
+    }
+  }
+  return undefined;
+}
+
+function refreshedRecordStatus(record: SponsoredTransactionRecord): SponsoredTransactionRecord["status"] {
+  if (record.status !== "built" || !isExpired(record)) {
+    return record.status;
+  }
+  const expired: SponsoredTransactionRecord = {
+    ...record,
+    status: "expired",
+  };
+  setSponsoredTransactionRecord(expired);
+  return expired.status;
+}
+
+function isSettlementAction(action: SponsoredTransactionAction): boolean {
+  return action === "release" || action === "refund";
 }
 
 function assertOptionalPaylinkAddress(value: string | undefined, expected: string, message: string) {

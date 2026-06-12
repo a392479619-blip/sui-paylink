@@ -84,11 +84,12 @@ Current verified status:
 - `deployments/testnet-sponsored-mock-usdc-smoke.json` proves buyer and seller can execute the escrow flow with `0` SUI.
 - Sponsored transaction requests are persisted to `.data/sponsored-transactions.json`.
 - When a sponsored transaction has `paylinkId`, successful execution can update the Paylink with digest, escrow object, status, and actual gas cost.
+- The API rejects duplicate active sponsored requests for the same Paylink/action and re-dry-runs built bytes before sponsor signing.
 
 Still not verified:
 
 - Browser wallet compatibility for the sponsored UI panel.
-- Paylink-specific idempotency rejection for duplicate sponsor actions.
+- Fresh Testnet evidence for the expanded Paylink idempotency smoke path.
 - Event-indexed receipt state sourced from chain events.
 
 Therefore the product can claim a verified Testnet sponsored `mUSDC` escrow

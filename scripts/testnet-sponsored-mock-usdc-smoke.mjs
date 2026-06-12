@@ -76,6 +76,36 @@ try {
     throw new Error("API sponsor config does not match the smoke sponsor");
   }
 
+  const paylink = await apiPost("/api/paylinks", {
+    mode: "escrow",
+    sellerName: "Sponsored Smoke Seller",
+    sellerAddress,
+    buyerName: "Sponsored Smoke Buyer",
+    buyerAddress,
+    amount: "100",
+    token: "mUSDC",
+    memo: "SuiPayLink sponsored idempotency smoke",
+    feeBps,
+  });
+  const paylinkFundBuild = {
+    action: "fund-mock-usdc",
+    senderAddress: buyerAddress,
+    sellerAddress,
+    paymentCoinId,
+    expectedAmountUnits: paymentUnits,
+    feeBps,
+    feeReceiverAddress: feeReceiver,
+    gasBudgetMist: sponsorCreateGasBudgetMist,
+    paylinkId: paylink.id,
+  };
+  const stalePaylinkFundRecord = await apiPost("/api/sponsored-transactions/build", paylinkFundBuild);
+  const duplicatePaylinkFund = await apiPostExpectError(
+    "/api/sponsored-transactions/build",
+    paylinkFundBuild,
+    409,
+    "duplicate_sponsored_action",
+  );
+
   const fundRecord = await buildSignSubmit({
     signer: buyer,
     build: {
@@ -114,6 +144,18 @@ try {
     },
   });
   const releaseTx = await waitTx(releaseRecord.digest);
+  const stalePaylinkFundSignature = await buyer.signTransaction(
+    Buffer.from(stalePaylinkFundRecord.transactionBytes, "base64"),
+  );
+  const stalePaylinkFundSubmit = await apiPostExpectError(
+    `/api/sponsored-transactions/${stalePaylinkFundRecord.id}/submit`,
+    {
+      userSignature: stalePaylinkFundSignature.signature,
+    },
+    400,
+    "sponsored_transaction_dry_run_failed",
+  );
+  const stalePaylinkFundAfterSubmit = await apiGet(`/api/sponsored-transactions/${stalePaylinkFundRecord.id}`);
   const finalObject = await readEscrowObject(escrowObjectId);
   const finalBalances = {
     buyerSui: await balance(buyerAddress, suiType),
@@ -171,6 +213,13 @@ try {
       createFundedEscrow: pickRecord(fundRecord),
       markDelivered: pickRecord(deliverRecord),
       release: pickRecord(releaseRecord),
+    },
+    paylinkIdempotency: {
+      paylinkId: paylink.id,
+      staleBuild: pickRecord(stalePaylinkFundRecord),
+      duplicateBuild: duplicatePaylinkFund,
+      staleSubmit: stalePaylinkFundSubmit,
+      staleBuildAfterRejectedSubmit: pickRecord(stalePaylinkFundAfterSubmit),
     },
     releaseEvent,
     finalObject,
@@ -332,6 +381,27 @@ async function apiPost(path, body) {
     body: JSON.stringify(body),
   });
   return readApiResponse(response);
+}
+
+async function apiPostExpectError(path, body, expectedStatus, expectedCode) {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const json = await response.json();
+  if (response.status !== expectedStatus || json.code !== expectedCode) {
+    throw new Error(
+      `Expected API ${expectedStatus} ${expectedCode}, got ${response.status}: ${JSON.stringify(json)}`,
+    );
+  }
+  return {
+    status: response.status,
+    code: json.code,
+    error: json.error,
+  };
 }
 
 async function readApiResponse(response) {

@@ -130,7 +130,9 @@ Sponsored API endpoints:
 
 Allowed sponsored actions are `fund-mock-usdc`, `mark-delivered`, `release`,
 and `refund`. Without `SPONSOR_PRIVATE_KEY`, the API returns `503` and
-`sponsorEnabled: false`.
+`sponsorEnabled: false`. For Paylink-bound requests, the API rejects duplicate
+active sponsor builds for the same action, blocks conflicting release/refund
+settlement requests, and re-dry-runs transaction bytes before sponsor signing.
 
 The public buyer page at `/pay/<id>` is wired to the same sponsored transaction
 path. It shows wallet connection, required signer roles, payment coin object
