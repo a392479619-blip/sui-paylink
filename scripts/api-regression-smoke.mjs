@@ -92,7 +92,7 @@ try {
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   if (server) {
-    server.kill("SIGINT");
+    await stopChild(server);
   }
   if (temporaryDir) {
     await rm(temporaryDir, { force: true, recursive: true });
@@ -102,6 +102,7 @@ try {
 async function startApiServer(storeDir) {
   const child = spawn("npx", ["tsx", "apps/api/src/server.ts"], {
     cwd: rootDir,
+    detached: process.platform !== "win32",
     env: {
       ...process.env,
       PORT: String(apiPort),
@@ -221,4 +222,40 @@ function assertIncludes(value, expected, label) {
 
 function delay(ms) {
   return new Promise((resolveDelay) => setTimeout(resolveDelay, ms));
+}
+
+async function stopChild(child) {
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return;
+  }
+
+  const closed = new Promise((resolveClose) => {
+    child.once("close", resolveClose);
+  });
+
+  signalChild(child, "SIGTERM");
+  let timeoutId;
+  const timeout = new Promise((resolveTimeout) => {
+    timeoutId = setTimeout(() => {
+      signalChild(child, "SIGKILL");
+      resolveTimeout();
+    }, 5_000);
+  });
+
+  await Promise.race([closed, timeout]);
+  clearTimeout(timeoutId);
+}
+
+function signalChild(child, signal) {
+  try {
+    if (process.platform !== "win32" && child.pid) {
+      process.kill(-child.pid, signal);
+      return;
+    }
+    child.kill(signal);
+  } catch (error) {
+    if (error?.code !== "ESRCH") {
+      throw error;
+    }
+  }
 }

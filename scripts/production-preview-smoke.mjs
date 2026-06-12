@@ -14,6 +14,7 @@ let server;
 try {
   server = spawn("npm", ["start"], {
     cwd: rootDir,
+    detached: process.platform !== "win32",
     env: {
       ...process.env,
       HOST: "127.0.0.1",
@@ -88,7 +89,7 @@ try {
   process.exitCode = 1;
 } finally {
   if (server && !server.killed) {
-    server.kill("SIGTERM");
+    await stopChild(server);
   }
   await rm(tmpStoreDir, { force: true, recursive: true });
 }
@@ -152,5 +153,41 @@ async function getOpenPort() {
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
+  }
+}
+
+async function stopChild(child) {
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return;
+  }
+
+  const closed = new Promise((resolveClose) => {
+    child.once("close", resolveClose);
+  });
+
+  signalChild(child, "SIGTERM");
+  let timeoutId;
+  const timeout = new Promise((resolveTimeout) => {
+    timeoutId = setTimeout(() => {
+      signalChild(child, "SIGKILL");
+      resolveTimeout();
+    }, 5_000);
+  });
+
+  await Promise.race([closed, timeout]);
+  clearTimeout(timeoutId);
+}
+
+function signalChild(child, signal) {
+  try {
+    if (process.platform !== "win32" && child.pid) {
+      process.kill(-child.pid, signal);
+      return;
+    }
+    child.kill(signal);
+  } catch (error) {
+    if (error?.code !== "ESRCH") {
+      throw error;
+    }
   }
 }
