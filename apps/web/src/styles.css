@@ -357,6 +357,22 @@ button:disabled {
   white-space: nowrap;
 }
 
+.facts.compact {
+  grid-template-columns: 1fr;
+  margin-top: 14px;
+}
+
+.signer-list {
+  display: grid;
+  gap: 4px;
+}
+
+.signer-list span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .status-pill {
   display: inline-flex;
   width: fit-content;
@@ -385,6 +401,90 @@ button:disabled {
   min-width: 220px;
   gap: 8px;
   align-content: start;
+}
+
+.sponsored-actions {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 260px;
+}
+
+.sponsored-actions-heading {
+  display: grid;
+  gap: 12px;
+}
+
+.sponsored-actions-heading h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.coin-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.coin-picker label {
+  margin-bottom: 0;
+}
+
+.sponsored-latest {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #d4dcc4;
+  border-radius: 8px;
+  background: #fbfcf7;
+}
+
+.sponsored-latest span {
+  color: #687789;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sponsored-latest strong,
+.sponsored-latest a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sponsored-history {
+  margin-top: 20px;
+}
+
+.history-list {
+  display: grid;
+  gap: 8px;
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e0e8ef;
+  border-radius: 8px;
+  background: #f9fbfd;
+}
+
+.history-row span,
+.history-row strong,
+.history-row em,
+.history-row a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-row em {
+  color: #687789;
+  font-style: normal;
 }
 
 .receipt {
@@ -475,6 +575,7 @@ button:disabled {
   .grid,
   .public-paylink,
   .facts,
+  .history-row,
   .chain-facts,
   .chain-digests,
   .chain-actions,

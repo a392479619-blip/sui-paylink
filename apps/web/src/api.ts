@@ -56,6 +56,11 @@ export async function getSponsoredTransaction(id: string): Promise<SponsoredTran
   return request(`/api/sponsored-transactions/${id}`);
 }
 
+export async function listSponsoredTransactions(paylinkId?: string): Promise<SponsoredTransactionRecord[]> {
+  const query = paylinkId ? `?paylinkId=${encodeURIComponent(paylinkId)}` : "";
+  return request(`/api/sponsored-transactions${query}`);
+}
+
 export async function submitSponsoredTransaction(
   id: string,
   userSignature: string,

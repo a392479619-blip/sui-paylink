@@ -132,6 +132,12 @@ Allowed sponsored actions are `fund-mock-usdc`, `mark-delivered`, `release`,
 and `refund`. Without `SPONSOR_PRIVATE_KEY`, the API returns `503` and
 `sponsorEnabled: false`.
 
+The public buyer page at `/pay/<id>` is wired to the same sponsored transaction
+path. It shows wallet connection, required signer roles, payment coin object
+input, action buttons, and sponsored request history. In a local mock sponsor
+environment the real sponsor buttons are disabled instead of falling back to the
+old mock state mutation flow.
+
 The web app includes a wallet-signed on-chain verification panel and defaults to
 the verified Testnet deployment. Override it with:
 

@@ -1,6 +1,25 @@
+import { ConnectButton, useCurrentAccount, useSignTransaction, useSuiClient } from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
 import { useEffect, useMemo, useState } from "react";
-import type { AppConfig, CreatePaylinkInput, Paylink, ReceiptSummary } from "@suipaylink/shared";
-import { createPaylink, getConfig, getPaylink, getReceipt, listPaylinks, mutatePaylink } from "./api";
+import type {
+  AppConfig,
+  CreatePaylinkInput,
+  Paylink,
+  ReceiptSummary,
+  SponsoredTransactionAction,
+  SponsoredTransactionRecord,
+} from "@suipaylink/shared";
+import {
+  buildSponsoredTransaction,
+  createPaylink,
+  getConfig,
+  getPaylink,
+  getReceipt,
+  listPaylinks,
+  listSponsoredTransactions,
+  mutatePaylink,
+  submitSponsoredTransaction,
+} from "./api";
 import { ChainDemo } from "./ChainDemo";
 import { SponsoredDemo } from "./SponsoredDemo";
 
@@ -9,9 +28,9 @@ type PaylinkAction = "fund" | "deliver" | "release" | "refund";
 const initialForm: CreatePaylinkInput = {
   mode: "escrow",
   sellerName: "Alice AI Automation Studio",
-  sellerAddress: "0xseller_demo_address",
+  sellerAddress: "0x648badce46f20a771d805670901239e868f5d0c7e297a3616b579075a800f9f5",
   buyerName: "Bob from Sui Project",
-  buyerAddress: "0xbuyer_demo_address",
+  buyerAddress: "0x3bb115974618e32b56dd6fb259b1c8cbfce72177fe7a36ab618e245ef19ca3f1",
   amount: "100",
   token: "mUSDC",
   memo: "AI support workflow setup - 48 hour delivery",
@@ -233,37 +252,25 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [paylink, setPaylink] = useState<Paylink | null>(null);
   const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
-  const [pendingAction, setPendingAction] = useState<PaylinkAction | null>(null);
+  const [sponsoredRecords, setSponsoredRecords] = useState<SponsoredTransactionRecord[]>([]);
   const [error, setError] = useState<string>("");
 
   async function refresh() {
-    const [nextConfig, nextPaylink, nextReceipt] = await Promise.all([
+    const [nextConfig, nextPaylink, nextReceipt, nextSponsoredRecords] = await Promise.all([
       getConfig(),
       getPaylink(paylinkId),
       getReceipt(paylinkId),
+      listSponsoredTransactions(paylinkId),
     ]);
     setConfig(nextConfig);
     setPaylink(nextPaylink);
     setReceipt(nextReceipt);
+    setSponsoredRecords(nextSponsoredRecords);
   }
 
   useEffect(() => {
     refresh().catch((err) => setError(errorText(err)));
   }, [paylinkId]);
-
-  async function handleAction(action: PaylinkAction) {
-    if (!paylink) return;
-    setError("");
-    setPendingAction(action);
-    try {
-      await runPaylinkAction(paylink.id, action);
-      await refresh();
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      setPendingAction(null);
-    }
-  }
 
   return (
     <main className="shell">
@@ -294,12 +301,255 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
             <p>{paylink.memo}</p>
             <PaylinkFacts paylink={paylink} />
           </div>
-          <PaylinkActions paylink={paylink} onAction={handleAction} pendingAction={pendingAction} />
+          <SponsoredPaylinkActions
+            config={config}
+            paylink={paylink}
+            onError={setError}
+            onRefresh={refresh}
+          />
         </section>
       )}
 
       {receipt && <ReceiptPanel receipt={receipt} />}
+      {sponsoredRecords.length > 0 && (
+        <SponsoredHistory records={sponsoredRecords} network={config?.network ?? "testnet"} />
+      )}
     </main>
+  );
+}
+
+function SponsoredPaylinkActions({
+  config,
+  paylink,
+  onError,
+  onRefresh,
+}: {
+  config: AppConfig | null;
+  paylink: Paylink;
+  onError: (message: string) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const account = useCurrentAccount();
+  const client = useSuiClient();
+  const { mutateAsync: signTransaction } = useSignTransaction();
+  const token = config?.supportedTokens.find((item) => item.symbol === paylink.token) ?? config?.supportedTokens[0];
+  const expectedAmountUnits = token ? amountToBaseUnits(paylink.amount, token.decimals) : "";
+  const [paymentCoinId, setPaymentCoinId] = useState("");
+  const [coinLookup, setCoinLookup] = useState("");
+  const [pendingAction, setPendingAction] = useState<SponsoredTransactionAction | "find-coin" | null>(null);
+  const [lastRecord, setLastRecord] = useState<SponsoredTransactionRecord | null>(null);
+
+  async function findExactCoin() {
+    if (!account || !token) return;
+    onError("");
+    setCoinLookup("");
+    setPendingAction("find-coin");
+    try {
+      const coins = await client.getCoins({
+        owner: account.address,
+        coinType: token.coinType,
+        limit: 50,
+      });
+      const exactCoin = coins.data.find((coin) => coin.balance === expectedAmountUnits);
+      if (!exactCoin) {
+        setCoinLookup(`No exact ${paylink.amount} ${paylink.token} coin found`);
+        return;
+      }
+      setPaymentCoinId(exactCoin.coinObjectId);
+      setCoinLookup(`Selected ${shortId(exactCoin.coinObjectId)}`);
+    } catch (err) {
+      onError(errorText(err));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function executeSponsoredAction(action: SponsoredTransactionAction) {
+    if (!account) {
+      onError("Connect a Sui wallet first");
+      return;
+    }
+    if (!config?.sponsorEnabled) {
+      onError("Sponsor wallet is not configured on the API");
+      return;
+    }
+    if (action === "fund-mock-usdc" && !paymentCoinId) {
+      onError("Select or paste a payment coin object before funding");
+      return;
+    }
+    if (action !== "fund-mock-usdc" && !paylink.escrowObjectId) {
+      onError("This Paylink has no escrow object yet");
+      return;
+    }
+    const expectedSigner = signerAddressForAction(action, paylink);
+    if (expectedSigner && !sameSuiAddress(account.address, expectedSigner)) {
+      onError(`Connect the ${signerRoleForAction(action)} wallet for ${action}`);
+      return;
+    }
+
+    onError("");
+    setLastRecord(null);
+    setPendingAction(action);
+    try {
+      const built = await buildSponsoredTransaction({
+        action,
+        senderAddress: account.address,
+        paylinkId: paylink.id,
+        paymentCoinId: action === "fund-mock-usdc" ? paymentCoinId : undefined,
+        sellerAddress: action === "fund-mock-usdc" ? paylink.sellerAddress : undefined,
+        expectedAmountUnits: action === "fund-mock-usdc" ? expectedAmountUnits : undefined,
+        feeBps: action === "fund-mock-usdc" ? paylink.feeBps : undefined,
+        escrowObjectId: action === "fund-mock-usdc" ? undefined : paylink.escrowObjectId,
+        deliveryProofUri: action === "mark-delivered" ? "https://example.com/proofs/public-paylink-delivery.pdf" : undefined,
+        gasBudgetMist: action === "fund-mock-usdc" ? "50000000" : "10000000",
+      });
+      setLastRecord(built);
+
+      const transaction = Transaction.from(built.transactionBytes);
+      const signed = await signTransaction({
+        transaction,
+        chain: `sui:${config.network}`,
+      });
+
+      if (signed.bytes !== built.transactionBytes) {
+        throw new Error("Wallet returned different transaction bytes; refusing to submit");
+      }
+
+      const submitted = await submitSponsoredTransaction(built.id, signed.signature);
+      setLastRecord(submitted);
+      await onRefresh();
+    } catch (err) {
+      onError(errorText(err));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  const sponsorReady = Boolean(config?.sponsorEnabled);
+  const actionSigners: Array<{ label: string; action: SponsoredTransactionAction }> = [
+    { label: "Fund", action: "fund-mock-usdc" },
+    { label: "Deliver", action: "mark-delivered" },
+    { label: "Release", action: "release" },
+    { label: "Refund", action: "refund" },
+  ];
+
+  return (
+    <div className="sponsored-actions">
+      <div className="sponsored-actions-heading">
+        <div>
+          <p className="eyebrow">Sponsored escrow</p>
+          <h3>{sponsorReady ? "Sponsor ready" : "Sponsor not configured"}</h3>
+        </div>
+        <ConnectButton connectText="Connect wallet" />
+      </div>
+
+      <dl className="facts compact">
+        <div>
+          <dt>Wallet</dt>
+          <dd>{account ? shortId(account.address) : "not connected"}</dd>
+        </div>
+        <div>
+          <dt>Required signers</dt>
+          <dd className="signer-list">
+            {actionSigners.map((item) => (
+              <span key={item.action}>
+                {item.label}: {signerRoleForAction(item.action)} {shortId(signerAddressForAction(item.action, paylink)) || "missing"}
+              </span>
+            ))}
+          </dd>
+        </div>
+        <div>
+          <dt>Expected units</dt>
+          <dd>{expectedAmountUnits || "unknown"}</dd>
+        </div>
+        <div>
+          <dt>Escrow object</dt>
+          <dd>{paylink.escrowObjectId ? shortId(paylink.escrowObjectId) : "pending"}</dd>
+        </div>
+      </dl>
+
+      {paylink.status === "created" && (
+        <div className="coin-picker">
+          <label>
+            Payment coin object
+            <input value={paymentCoinId} onChange={(event) => setPaymentCoinId(event.target.value)} />
+          </label>
+          <button onClick={findExactCoin} disabled={!account || !token || pendingAction === "find-coin"}>
+            {pendingAction === "find-coin" ? "Finding..." : "Find exact coin"}
+          </button>
+          {coinLookup && <p className="muted">{coinLookup}</p>}
+        </div>
+      )}
+
+      <div className="actions">
+        <button
+          onClick={() => executeSponsoredAction("fund-mock-usdc")}
+          disabled={!sponsorReady || paylink.status !== "created" || pendingAction === "fund-mock-usdc"}
+        >
+          {pendingAction === "fund-mock-usdc" ? "Funding..." : "Fund with sponsor"}
+        </button>
+        <button
+          onClick={() => executeSponsoredAction("mark-delivered")}
+          disabled={!sponsorReady || paylink.status !== "funded" || pendingAction === "mark-delivered"}
+        >
+          {pendingAction === "mark-delivered" ? "Marking..." : "Mark delivered"}
+        </button>
+        <button
+          onClick={() => executeSponsoredAction("release")}
+          disabled={!sponsorReady || paylink.status !== "delivered" || pendingAction === "release"}
+        >
+          {pendingAction === "release" ? "Releasing..." : "Release with sponsor"}
+        </button>
+        <button
+          onClick={() => executeSponsoredAction("refund")}
+          disabled={!sponsorReady || !["funded", "delivered"].includes(paylink.status) || pendingAction === "refund"}
+        >
+          {pendingAction === "refund" ? "Refunding..." : "Refund with sponsor"}
+        </button>
+      </div>
+
+      {lastRecord && (
+        <div className="sponsored-latest">
+          <span>{lastRecord.action}</span>
+          <strong>{lastRecord.status}</strong>
+          {lastRecord.digest && (
+            <a href={explorerUrl(lastRecord.digest, config?.network ?? "testnet")} target="_blank" rel="noreferrer">
+              {shortId(lastRecord.digest)}
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SponsoredHistory({
+  records,
+  network,
+}: {
+  records: SponsoredTransactionRecord[];
+  network: AppConfig["network"];
+}) {
+  return (
+    <section className="panel sponsored-history">
+      <h2>Sponsored requests</h2>
+      <div className="history-list">
+        {records.map((record) => (
+          <div key={record.id} className="history-row">
+            <span>{record.action}</span>
+            <strong>{record.status}</strong>
+            <em>{record.gasCostMist ? `${record.gasCostMist} MIST` : record.gasBudgetMist}</em>
+            {record.digest ? (
+              <a href={explorerUrl(record.digest, network)} target="_blank" rel="noreferrer">
+                {shortId(record.digest)}
+              </a>
+            ) : (
+              <span>{shortId(record.id)}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -416,6 +666,35 @@ function parsePublicPaylinkId(pathname: string): string | null {
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleString();
+}
+
+function amountToBaseUnits(amount: string, decimals: number): string {
+  const [whole, fraction = ""] = amount.split(".");
+  if (fraction.length > decimals) {
+    return "";
+  }
+  const units = `${whole}${fraction.padEnd(decimals, "0")}`.replace(/^0+(?=\d)/, "");
+  return units || "0";
+}
+
+function shortId(value: string): string {
+  return value.length > 18 ? `${value.slice(0, 10)}...${value.slice(-6)}` : value;
+}
+
+function signerRoleForAction(action: SponsoredTransactionAction): "buyer" | "seller" {
+  return action === "mark-delivered" ? "seller" : "buyer";
+}
+
+function signerAddressForAction(action: SponsoredTransactionAction, paylink: Paylink): string {
+  return (signerRoleForAction(action) === "seller" ? paylink.sellerAddress : paylink.buyerAddress) ?? "";
+}
+
+function sameSuiAddress(left: string, right: string): boolean {
+  return left.toLowerCase() === right.toLowerCase();
+}
+
+function explorerUrl(digest: string, network: AppConfig["network"]): string {
+  return `https://suiexplorer.com/txblock/${digest}?network=${network}`;
 }
 
 function errorText(error: unknown): string {
