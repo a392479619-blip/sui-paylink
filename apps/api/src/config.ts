@@ -52,6 +52,21 @@ export const webDistDir = process.env.WEB_DIST_DIR
   ? resolveProjectPath(process.env.WEB_DIST_DIR)
   : resolve(projectRoot, "apps", "web", "dist");
 export const serveWebApp = (process.env.SERVE_WEB_APP ?? "auto").toLowerCase();
+export const demoSeedEnabled = process.env.DEMO_SEED_ENABLED === "true";
+export const demoSeedPaylinkId = process.env.DEMO_SEED_PAYLINK_ID ?? "demo-ai-workflow";
+export const demoSeedSellerName = process.env.DEMO_SEED_SELLER_NAME ?? "Alice AI Automation Studio";
+export const demoSeedSellerAddress =
+  process.env.DEMO_SEED_SELLER_ADDRESS ??
+  "0x648badce46f20a771d805670901239e868f5d0c7e297a3616b579075a800f9f5";
+export const demoSeedBuyerName = process.env.DEMO_SEED_BUYER_NAME ?? "Bob from Sui Project";
+export const demoSeedBuyerAddress =
+  process.env.DEMO_SEED_BUYER_ADDRESS ??
+  "0x3bb115974618e32b56dd6fb259b1c8cbfce72177fe7a36ab618e245ef19ca3f1";
+export const demoSeedAmount = process.env.DEMO_SEED_AMOUNT ?? "100";
+export const demoSeedToken = process.env.DEMO_SEED_TOKEN ?? "mUSDC";
+export const demoSeedMemo =
+  process.env.DEMO_SEED_MEMO ?? "AI automation workflow setup - 48 hour delivery escrow";
+export const demoSeedFeeBps = Number(process.env.DEMO_SEED_FEE_BPS ?? 100);
 
 function resolveProjectPath(path: string): string {
   return isAbsolute(path) ? path : resolve(projectRoot, path);

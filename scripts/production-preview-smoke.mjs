@@ -10,6 +10,7 @@ const port = await getOpenPort();
 const baseUrl = `http://127.0.0.1:${port}`;
 const tmpStoreDir = await mkdtemp(join(tmpdir(), "suipaylink-preview-smoke-"));
 let server;
+const logs = [];
 
 try {
   server = spawn("npm", ["start"], {
@@ -21,6 +22,8 @@ try {
       PORT: String(port),
       PUBLIC_BASE_URL: baseUrl,
       SERVE_WEB_APP: "true",
+      DEMO_SEED_ENABLED: "true",
+      DEMO_SEED_PAYLINK_ID: "demo-preview",
       PAYLINK_STORE_PATH: join(tmpStoreDir, "paylinks.json"),
       SPONSORED_TRANSACTION_STORE_PATH: join(tmpStoreDir, "sponsored-transactions.json"),
       SPONSOR_PRIVATE_KEY: "",
@@ -28,7 +31,6 @@ try {
     stdio: ["ignore", "pipe", "pipe"],
   });
 
-  const logs = [];
   server.stdout.on("data", (chunk) => logs.push(chunk.toString()));
   server.stderr.on("data", (chunk) => logs.push(chunk.toString()));
 
@@ -41,6 +43,11 @@ try {
   const config = await getJson(`${baseUrl}/api/config`);
   assert(config.publicBaseUrl === baseUrl, "PUBLIC_BASE_URL was not reflected by /api/config");
   assert(config.sponsorEnabled === false, "preview smoke should not use a sponsor private key");
+
+  const seeded = await getJson(`${baseUrl}/api/paylinks/demo-preview`);
+  assert(seeded.id === "demo-preview", "demo seed id was not stable");
+  assert(seeded.demoSeed === true, "demo seed should be marked");
+  assert(seeded.publicUrl === `${baseUrl}/pay/demo-preview`, "demo seed publicUrl should use PUBLIC_BASE_URL");
 
   const created = await postJson(`${baseUrl}/api/paylinks`, {
     mode: "escrow",
@@ -62,6 +69,9 @@ try {
   const paylinkHtml = await getText(`${baseUrl}/pay/${created.id}`);
   assert(paylinkHtml.includes("<title>SuiPayLink</title>"), "paylink route did not return the web app");
 
+  const seededPaylinkHtml = await getText(`${baseUrl}/pay/demo-preview`);
+  assert(seededPaylinkHtml.includes("<title>SuiPayLink</title>"), "demo seed route did not return the web app");
+
   const assetPath = extractFirstAssetPath(rootHtml);
   const assetResponse = await fetch(`${baseUrl}${assetPath}`);
   assert(assetResponse.ok, `asset ${assetPath} returned ${assetResponse.status}`);
@@ -78,7 +88,18 @@ try {
         baseUrl,
         paylinkId: created.id,
         sponsorEnabled: config.sponsorEnabled,
-        checked: ["health", "config", "create-paylink", "root-web", "paylink-web", "asset", "api-404"],
+        seededPaylinkId: seeded.id,
+        checked: [
+          "health",
+          "config",
+          "demo-seed",
+          "create-paylink",
+          "root-web",
+          "paylink-web",
+          "demo-seed-web",
+          "asset",
+          "api-404",
+        ],
       },
       null,
       2,
@@ -86,6 +107,9 @@ try {
   );
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
+  if (logs.length > 0) {
+    console.error(logs.join(""));
+  }
   process.exitCode = 1;
 } finally {
   if (server && !server.killed) {

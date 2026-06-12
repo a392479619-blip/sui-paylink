@@ -149,6 +149,7 @@ export type Paylink = CreatePaylinkInput & {
   id: string;
   status: PaylinkStatus;
   publicUrl: string;
+  demoSeed?: boolean;
   deliveryProofUri?: string;
   transactionDigest?: string;
   fundTransactionDigest?: string;

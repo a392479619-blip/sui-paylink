@@ -7,17 +7,31 @@ import type {
   ReceiptSummary,
   SponsoredTransactionRecord,
 } from "@suipaylink/shared";
-import { appConfig, paylinkStorePath } from "./config.js";
+import {
+  appConfig,
+  demoSeedAmount,
+  demoSeedBuyerAddress,
+  demoSeedBuyerName,
+  demoSeedEnabled,
+  demoSeedFeeBps,
+  demoSeedMemo,
+  demoSeedPaylinkId,
+  demoSeedSellerAddress,
+  demoSeedSellerName,
+  demoSeedToken,
+  paylinkStorePath,
+} from "./config.js";
 
 const paylinks = new Map<string, Paylink>();
+const now = () => new Date().toISOString();
+
 loadPaylinks();
+seedDemoPaylink();
 
 type StoreFile = {
   version: 1;
   paylinks: Paylink[];
 };
-
-const now = () => new Date().toISOString();
 
 export function listPaylinks(): Paylink[] {
   return [...paylinks.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -29,12 +43,17 @@ export function getPaylink(id: string): Paylink | undefined {
 
 export function createPaylink(input: CreatePaylinkInput): Paylink {
   const id = nanoid(10);
+  return insertPaylink(id, input);
+}
+
+function insertPaylink(id: string, input: CreatePaylinkInput, demoSeed = false): Paylink {
   const timestamp = now();
   const paylink: Paylink = {
     ...input,
     id,
     status: "created",
     publicUrl: `${appConfig.publicBaseUrl}/pay/${id}`,
+    demoSeed,
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -251,6 +270,38 @@ function loadPaylinks() {
       paylinks.set(paylink.id, paylink);
     }
   }
+}
+
+function seedDemoPaylink() {
+  if (!demoSeedEnabled) {
+    return;
+  }
+
+  const current = paylinks.get(demoSeedPaylinkId);
+  const publicUrl = `${appConfig.publicBaseUrl}/pay/${demoSeedPaylinkId}`;
+
+  if (current) {
+    if (current.demoSeed && current.publicUrl !== publicUrl) {
+      updatePaylink(demoSeedPaylinkId, { publicUrl });
+    }
+    return;
+  }
+
+  insertPaylink(
+    demoSeedPaylinkId,
+    {
+      mode: "escrow",
+      sellerName: demoSeedSellerName,
+      sellerAddress: demoSeedSellerAddress,
+      buyerName: demoSeedBuyerName,
+      buyerAddress: demoSeedBuyerAddress,
+      amount: demoSeedAmount,
+      token: demoSeedToken,
+      memo: demoSeedMemo,
+      feeBps: demoSeedFeeBps,
+    },
+    true,
+  );
 }
 
 function persistPaylinks() {

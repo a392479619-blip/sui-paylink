@@ -47,6 +47,7 @@ npm run preview:prod
 
 ```text
 http://127.0.0.1:5174/pay/<paylink-id>
+https://<demo-host>/pay/demo-ai-workflow
 ```
 
 ## 推荐视频结构

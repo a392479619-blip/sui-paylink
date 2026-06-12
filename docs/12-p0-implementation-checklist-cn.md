@@ -413,7 +413,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 1. 配置真实 `SPONSOR_PRIVATE_KEY`，在公开 `/pay/:id` 页面用浏览器钱包完成一次端到端 sponsored 交易。
 2. 重新跑扩展后的 `npm run chain:smoke:sponsored-mock-usdc:testnet`，刷新幂等拒绝证据。
 3. 验证并记录浏览器钱包签署 sponsored transaction bytes 的兼容性。
-4. 用现有 `Dockerfile` 或 `npm run preview:prod` 部署一个可公开访问的 demo URL。
+4. 用现有 `Dockerfile`、`render.yaml` 或 `npm run preview:prod` 部署一个可公开访问的 demo URL；部署环境可用 `DEMO_SEED_ENABLED=true` 自动生成 `/pay/demo-ai-workflow`。
 5. 按 `docs/13-demo-script-cn.md` 录制 2 分钟 demo，并按 `docs/14-submission-checklist-cn.md` 做提交前核验。
 
 理由：双地址 smoke、退款 smoke、MockUSDC smoke、Sponsored MockUSDC smoke、Move 单元测试、Paylink 文件持久化、公开买家页 sponsored 入口、Sponsor 请求持久化、Paylink 回写、后端幂等保护、最小链上同步、demo 脚本、提交核验清单和生产预览入口已完成。下一步的硬证据必须来自真实浏览器钱包、扩展后的 Testnet smoke 和可访问部署链接。
