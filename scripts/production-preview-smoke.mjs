@@ -49,6 +49,18 @@ try {
   assert(seeded.demoSeed === true, "demo seed should be marked");
   assert(seeded.publicUrl === `${baseUrl}/pay/demo-preview`, "demo seed publicUrl should use PUBLIC_BASE_URL");
 
+  const seededFunded = await postJson(`${baseUrl}/api/paylinks/demo-preview/fund`, {});
+  assert(seededFunded.status === "funded", "demo seed fund action failed");
+  const seededDelivered = await postJson(`${baseUrl}/api/paylinks/demo-preview/deliver`, {
+    deliveryProofUri: "https://example.com/proofs/preview-smoke-demo.pdf",
+  });
+  assert(seededDelivered.status === "delivered", "demo seed deliver action failed");
+  const seededReleased = await postJson(`${baseUrl}/api/paylinks/demo-preview/release`, {});
+  assert(seededReleased.status === "released", "demo seed release action failed");
+  const seededReceipt = await getJson(`${baseUrl}/api/paylinks/demo-preview/receipt`);
+  assert(seededReceipt.paylink.status === "released", "demo seed receipt did not reach released");
+  assert(seededReceipt.sellerAmount === "99.00", "demo seed receipt seller amount mismatch");
+
   const created = await postJson(`${baseUrl}/api/paylinks`, {
     mode: "escrow",
     sellerName: "Preview Smoke Seller",
@@ -93,6 +105,7 @@ try {
           "health",
           "config",
           "demo-seed",
+          "demo-seed-mock-release",
           "create-paylink",
           "root-web",
           "paylink-web",

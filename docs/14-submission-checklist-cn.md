@@ -67,6 +67,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 
 - 卖家创建 Paylink。
 - 或展示部署自动生成的 `/pay/demo-ai-workflow` 示例 Paylink。
+- 如果没有 sponsor 私钥，可以展示 demo mode 的 mock fund/deliver/release，但必须说明它不是链上交易。
 - 买家打开 `/pay/:id`。
 - sponsor 状态是 ready 还是 not configured。
 - required signer roles。

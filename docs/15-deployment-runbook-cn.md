@@ -37,6 +37,8 @@ npm run smoke:preview
 - `/health`
 - `/api/config`
 - `POST /api/paylinks`
+- demo seed Paylink
+- demo seed mock fund/deliver/release
 - `/`
 - `/pay/:id`
 - 前端静态资源
@@ -88,13 +90,13 @@ curl https://<service>.onrender.com/api/config
 1. 部署服务。
 2. 打开公开首页，或直接打开 `/pay/demo-ai-workflow`。
 3. 如果需要自定义金额/双方地址，再在首页创建一条新的 Paylink 并打开生成的 `/pay/:id`。
-4. 确认页面显示金额、双方地址、sponsor 状态、receipt。
+4. 无 sponsor 私钥时，可以点击 demo mode 按钮走 mock fund/deliver/release，确认 receipt 变为 released。
 5. 如果未配置 sponsor 私钥，视频里明确说 `Sponsor not configured`，不能说完成真实 gasless 浏览器交易。
 6. 把公开首页 URL 或具体 `/pay/:id` URL 填到黑客松提交表。
 
 ## 当前边界
 
 - Render 免费实例的 `/tmp` 是临时存储，重启后 Paylink 可能丢失。
-- `DEMO_SEED_ENABLED=true` 会在启动时生成 `/pay/demo-ai-workflow`，用于稳定展示，不代表真实链上交易。
+- `DEMO_SEED_ENABLED=true` 会在启动时生成 `/pay/demo-ai-workflow`，用于稳定展示；页面上的 demo mode 只走本地 mock API，不代表真实链上交易。
 - 当前 `mUSDC` 是项目 Testnet 测试币，不是真实 USDC。
 - 公开 URL 只能证明 demo 可访问，不能替代真实 browser-wallet sponsored E2E。

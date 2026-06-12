@@ -217,8 +217,9 @@ instead of pretending to execute on-chain.
 
 Set `DEMO_SEED_ENABLED=true` to create a stable demo Paylink at
 `/pay/demo-ai-workflow` on startup. This is useful for hosted demos on ephemeral
-storage and is still only a demo record until a real sponsored wallet flow is
-executed.
+storage. When sponsor is not configured, that seed page exposes a local demo
+button that can run the mock fund, deliver, and release sequence; it is still
+only a demo record until a real sponsored wallet flow is executed.
 
 `render.yaml` provides a Render Blueprint for a quick public demo deploy. See
 `docs/15-deployment-runbook-cn.md` for the deployment checklist and current

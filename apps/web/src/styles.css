@@ -93,6 +93,26 @@ textarea {
   background: #fbfcf7;
 }
 
+.demo-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 18px;
+  align-items: center;
+  margin-top: 20px;
+  padding: 22px;
+  border: 1px solid #e3d4ad;
+  border-radius: 8px;
+  background: #fffaf0;
+}
+
+.demo-panel h2 {
+  margin: 0 0 8px;
+}
+
+.demo-panel p:last-child {
+  margin-bottom: 0;
+}
+
 .chain-heading {
   display: flex;
   align-items: flex-start;
@@ -641,6 +661,7 @@ button:disabled {
   .sponsor-facts,
   .sponsor-grid,
   .sponsor-result,
+  .demo-panel,
   .receipt-grid,
   .timeline {
     grid-template-columns: 1fr;

@@ -271,6 +271,7 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
   const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
   const [sponsoredRecords, setSponsoredRecords] = useState<SponsoredTransactionRecord[]>([]);
   const [syncingChain, setSyncingChain] = useState(false);
+  const [runningMockDemo, setRunningMockDemo] = useState(false);
   const [error, setError] = useState<string>("");
 
   async function refresh() {
@@ -301,6 +302,23 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
       setError(errorText(err));
     } finally {
       setSyncingChain(false);
+    }
+  }
+
+  async function handleRunMockDemo() {
+    if (!paylink) return;
+    setError("");
+    setRunningMockDemo(true);
+    try {
+      const remainingActions = mockDemoActionsForStatus(paylink.status);
+      for (const action of remainingActions) {
+        await runPaylinkAction(paylink.id, action);
+      }
+      await refresh();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setRunningMockDemo(false);
     }
   }
 
@@ -340,6 +358,10 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
             onRefresh={refresh}
           />
         </section>
+      )}
+
+      {paylink?.demoSeed && !config?.sponsorEnabled && (
+        <DemoSeedPanel paylink={paylink} running={runningMockDemo} onRun={handleRunMockDemo} />
       )}
 
       {receipt && <ReceiptPanel receipt={receipt} onSyncChain={handleSyncChain} syncingChain={syncingChain} />}
@@ -552,6 +574,35 @@ function SponsoredPaylinkActions({
         </div>
       )}
     </div>
+  );
+}
+
+function DemoSeedPanel({
+  paylink,
+  running,
+  onRun,
+}: {
+  paylink: Paylink;
+  running: boolean;
+  onRun: () => void;
+}) {
+  const remainingActions = mockDemoActionsForStatus(paylink.status);
+  const complete = remainingActions.length === 0 && paylink.status === "released";
+
+  return (
+    <section className="demo-panel">
+      <div>
+        <p className="eyebrow">Demo mode</p>
+        <h2>{complete ? "Mock escrow released" : "Run local mock escrow"}</h2>
+        <p>
+          This hosted seed uses the local demo API only. It does not create a wallet signature, spend gas,
+          or submit a new Sui transaction.
+        </p>
+      </div>
+      <button className="primary" onClick={onRun} disabled={running || remainingActions.length === 0}>
+        {running ? "Running demo..." : complete ? "Demo complete" : `Run ${remainingActions.join(" -> ")}`}
+      </button>
+    </section>
   );
 }
 
@@ -778,6 +829,19 @@ async function runPaylinkAction(paylinkId: string, action: PaylinkAction) {
     actor: action === "deliver" ? "seller" : "buyer",
     deliveryProofUri: "https://example.com/proofs/alice-ai-workflow-delivery.pdf",
   });
+}
+
+function mockDemoActionsForStatus(status: Paylink["status"]): PaylinkAction[] {
+  if (status === "created") {
+    return ["fund", "deliver", "release"];
+  }
+  if (status === "funded") {
+    return ["deliver", "release"];
+  }
+  if (status === "delivered") {
+    return ["release"];
+  }
+  return [];
 }
 
 function parsePublicPaylinkId(pathname: string): string | null {

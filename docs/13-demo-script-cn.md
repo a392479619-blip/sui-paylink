@@ -94,6 +94,10 @@ https://<demo-host>/pay/demo-ai-workflow
 
 > 这台本地环境没有配置 sponsor 私钥，所以真实 sponsor 按钮被禁用。后端不会回退到假链上执行；这是为了避免把 mock 能力说成真实能力。
 
+如果展示 `/pay/demo-ai-workflow` 的 demo mode，旁白必须加：
+
+> 这个按钮只跑本地 mock API，用来让评委看到托管状态流和 receipt。它不是钱包签名，也不是新的 Sui 链上交易。
+
 必须展示：
 
 - `Sponsor ready` 或 `Sponsor not configured`
