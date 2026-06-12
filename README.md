@@ -48,6 +48,7 @@ Secondary fit: Agentic Web, if we add AI invoice generation, payment reminder ge
 ```text
 sui-paylink/
 ├── AGENTS.md
+├── Dockerfile
 ├── README.md
 ├── contracts/
 │   ├── Move.toml
@@ -107,10 +108,12 @@ Verified Testnet evidence:
 The latest Testnet smoke tests include both Test SUI and `mUSDC`. `mUSDC` is a
 project-owned test coin, not real USDC. The API now has a verified sponsored
 transaction path for `mUSDC` escrow actions on Testnet, file-backed Paylink
-persistence for the mock product flow, and a direct `/pay/:id` buyer page. This
-proves the gasless escrow mechanism and gives reviewers a runnable Paylink UX,
-but production stablecoin support, event indexing, browser-wallet sponsored
-signing, and hosted deployment are still separate work.
+persistence for the mock product flow, a direct `/pay/:id` buyer page, and a
+single-service production preview mode that serves the built web app from the
+API process. This proves the gasless escrow mechanism and gives reviewers a
+runnable Paylink UX, but production stablecoin support, event indexing,
+browser-wallet sponsored signing, and a public hosted demo URL are still
+separate work.
 
 Local API regression smoke:
 
@@ -181,6 +184,31 @@ requests are persisted to `.data/sponsored-transactions.json`; override that
 with `SPONSORED_TRANSACTION_STORE_PATH`. After starting the app with `npm run
 dev`, create a Paylink in the seller dashboard and open the generated
 `http://127.0.0.1:5174/pay/<id>` URL to review the buyer page.
+
+Production demo preview:
+
+```bash
+npm run build
+HOST=0.0.0.0 PORT=8787 SERVE_WEB_APP=true PUBLIC_BASE_URL=http://127.0.0.1:8787 npm start
+```
+
+Then open `http://127.0.0.1:8787`. In production builds, the web app calls the
+same origin API unless `VITE_API_BASE` is explicitly set.
+
+Docker demo:
+
+```bash
+docker build -t sui-paylink .
+docker run --rm -p 8787:8787 \
+  -e PUBLIC_BASE_URL=http://127.0.0.1:8787 \
+  sui-paylink
+```
+
+For a hosted hackathon demo, set `HOST=0.0.0.0`, the platform-provided `PORT`,
+`PUBLIC_BASE_URL=<hosted-url>`, and a persistent `PAYLINK_STORE_PATH` if the
+host supports disk persistence. Set `SPONSOR_PRIVATE_KEY` only when recording a
+real browser-wallet sponsored flow; otherwise sponsored buttons stay disabled
+instead of pretending to execute on-chain.
 
 See `docs/10-testnet-runbook.md` for the exact completion gate.
 See `docs/11-prd-cn.md` for the detailed Chinese PRD, field dictionary, and P0

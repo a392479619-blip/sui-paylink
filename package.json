@@ -12,6 +12,8 @@
     "dev:api": "npm run dev -w @suipaylink/api",
     "dev:web": "npm run dev -w @suipaylink/web",
     "build": "npm run build -ws --if-present",
+    "start": "npm run start -w @suipaylink/api",
+    "preview:prod": "npm run build && npm start",
     "typecheck": "npm run typecheck -ws --if-present",
     "smoke:api": "node scripts/api-regression-smoke.mjs",
     "sponsor:readiness": "node scripts/sponsor-readiness.mjs",

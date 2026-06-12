@@ -14,7 +14,7 @@
 | Secondary track | Agentic Web, only if展示 AI invoice/payment-agent workflow |
 | Repo | `https://github.com/a392479619-blip/sui-paylink` |
 | Demo video | 2 分钟，按 `docs/13-demo-script-cn.md` 录 |
-| Demo URL | 若未部署，填本地运行说明；部署后替换 |
+| Demo URL | 若未部署，填 `npm run preview:prod` 或 Docker 运行说明；部署后替换为公开 URL |
 | Contract package | `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340` |
 | Token boundary | Testnet `mUSDC` 是项目测试币，不是真实 USDC |
 
@@ -114,4 +114,4 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 - 真实 sponsor 私钥 readiness 通过。
 - 公开页真实浏览器钱包 sponsored flow 成功一次。
 - 扩展后的 sponsored smoke 重跑，刷新 `deployments/testnet-sponsored-mock-usdc-smoke.json`。
-- 部署一个可访问的 demo URL。
+- 用现有 `Dockerfile` 或 `npm run preview:prod` 部署一个可访问的 demo URL。

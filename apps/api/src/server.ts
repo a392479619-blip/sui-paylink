@@ -1,12 +1,14 @@
 import cors from "@fastify/cors";
 import Fastify, { type FastifyReply } from "fastify";
+import { createReadStream, existsSync, statSync } from "node:fs";
+import { extname, isAbsolute, relative, resolve } from "node:path";
 import {
   buildSponsoredTransactionSchema,
   createPaylinkSchema,
   mutatePaylinkSchema,
   submitSponsoredTransactionSchema,
 } from "@suipaylink/shared";
-import { appConfig, port } from "./config.js";
+import { appConfig, host, port, serveWebApp, webDistDir } from "./config.js";
 import {
   SponsorError,
   buildSponsoredTransaction,
@@ -173,12 +175,19 @@ app.post<{ Params: { id: string } }>("/api/sponsored-transactions/:id/submit", a
   }
 });
 
+app.setNotFoundHandler((request, reply) => {
+  if (request.url.startsWith("/api/")) {
+    return reply.code(404).send({ error: "API route not found" });
+  }
+  return sendWebAppAsset(request.url, reply);
+});
+
 app.setErrorHandler((error, _request, reply) => {
   app.log.error(error);
   reply.code(500).send({ error: "Internal server error" });
 });
 
-await app.listen({ port, host: "127.0.0.1" });
+await app.listen({ port, host });
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
@@ -197,4 +206,60 @@ function safeSponsorAddress(): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function sendWebAppAsset(rawUrl: string, reply: FastifyReply) {
+  if (serveWebApp === "false") {
+    return reply.code(404).send({ error: "Not found" });
+  }
+
+  const indexPath = resolve(webDistDir, "index.html");
+  if (!isReadableFile(indexPath)) {
+    const statusCode = serveWebApp === "true" ? 500 : 404;
+    return reply.code(statusCode).send({
+      code: "web_app_not_built",
+      error: `Web app build not found at ${webDistDir}. Run npm run build or set WEB_DIST_DIR.`,
+    });
+  }
+
+  const assetPath = assetPathForUrl(rawUrl);
+  const filePath = assetPath && isInsideWebDist(assetPath) && isReadableFile(assetPath) ? assetPath : indexPath;
+  return reply.type(contentTypeFor(filePath)).send(createReadStream(filePath));
+}
+
+function assetPathForUrl(rawUrl: string): string | undefined {
+  try {
+    const pathname = new URL(rawUrl, "http://localhost").pathname;
+    return resolve(webDistDir, `.${decodeURIComponent(pathname)}`);
+  } catch {
+    return undefined;
+  }
+}
+
+function isInsideWebDist(filePath: string): boolean {
+  const relativePath = relative(webDistDir, filePath);
+  return relativePath === "" || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
+}
+
+function isReadableFile(filePath: string): boolean {
+  try {
+    return existsSync(filePath) && statSync(filePath).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function contentTypeFor(filePath: string): string {
+  const contentTypes: Record<string, string> = {
+    ".css": "text/css; charset=utf-8",
+    ".html": "text/html; charset=utf-8",
+    ".ico": "image/x-icon",
+    ".js": "text/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".txt": "text/plain; charset=utf-8",
+    ".webp": "image/webp",
+  };
+  return contentTypes[extname(filePath)] ?? "application/octet-stream";
 }

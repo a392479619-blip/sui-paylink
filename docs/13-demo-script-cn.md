@@ -36,6 +36,12 @@ SPONSOR_PRIVATE_KEY=<sui-private-key> npm run sponsor:readiness
 npm run dev
 ```
 
+单服务生产预览：
+
+```bash
+npm run preview:prod
+```
+
 公开买家页示例：
 
 ```text

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { resolve } from "node:path";
+import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AppConfig } from "@suipaylink/shared";
 
@@ -20,10 +20,10 @@ export const maxSponsorGasBudgetMist = process.env.MAX_SPONSOR_GAS_BUDGET_MIST ?
 export const sponsoredTransactionTtlMs = Number(process.env.SPONSORED_TX_TTL_MS ?? 10 * 60 * 1000);
 export const sponsorKeySecret = sponsorPrivateKey;
 export const paylinkStorePath = process.env.PAYLINK_STORE_PATH
-  ? resolve(process.env.PAYLINK_STORE_PATH)
+  ? resolveProjectPath(process.env.PAYLINK_STORE_PATH)
   : resolve(projectRoot, ".data", "paylinks.json");
 export const sponsoredTransactionStorePath = process.env.SPONSORED_TRANSACTION_STORE_PATH
-  ? resolve(process.env.SPONSORED_TRANSACTION_STORE_PATH)
+  ? resolveProjectPath(process.env.SPONSORED_TRANSACTION_STORE_PATH)
   : resolve(projectRoot, ".data", "sponsored-transactions.json");
 
 export const appConfig: AppConfig = {
@@ -47,3 +47,12 @@ export const appConfig: AppConfig = {
 };
 
 export const port = Number(process.env.PORT ?? 8787);
+export const host = process.env.HOST ?? "127.0.0.1";
+export const webDistDir = process.env.WEB_DIST_DIR
+  ? resolveProjectPath(process.env.WEB_DIST_DIR)
+  : resolve(projectRoot, "apps", "web", "dist");
+export const serveWebApp = (process.env.SERVE_WEB_APP ?? "auto").toLowerCase();
+
+function resolveProjectPath(path: string): string {
+  return isAbsolute(path) ? path : resolve(projectRoot, path);
+}
