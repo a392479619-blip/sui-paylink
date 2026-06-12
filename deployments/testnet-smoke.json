@@ -1,0 +1,19 @@
+{
+  "network": "testnet",
+  "packageId": "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340",
+  "actor": "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef",
+  "escrowObjectId": "0x7d57991709a3ab42f083c33421b9b33da4edb8266cdcb3bd447129ffa6f5128c",
+  "digests": {
+    "splitPaymentCoin": "3W9EpPYYt5XiH6cXT8wqEyRWLM9y76agwVJygH7UcwN6",
+    "createFundedEscrow": "2Hev56WiNtHQQXRDyF9xUPxcfBt24tLPgYQFKGdvMHir",
+    "markDelivered": "CDvHWVZ98tN5YAAXS3F1qtdpFgzPT3zd93fRNRp1yamq",
+    "release": "5SyCRy8Hif79HYRYrkomc32TPSHxd6DiJAorp3p1avPT"
+  },
+  "releaseEvent": {
+    "amount_to_seller": "9900000",
+    "escrow_id": "0x7d57991709a3ab42f083c33421b9b33da4edb8266cdcb3bd447129ffa6f5128c",
+    "fee_amount": "100000",
+    "seller": "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef"
+  },
+  "verifiedAt": "2026-06-11T08:54:38Z"
+}

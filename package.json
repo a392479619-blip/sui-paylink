@@ -1,0 +1,35 @@
+{
+  "name": "sui-paylink",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Gasless stablecoin escrow payment links for cross-border digital service work on Sui.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @suipaylink/api\" \"npm run dev -w @suipaylink/web\"",
+    "dev:api": "npm run dev -w @suipaylink/api",
+    "dev:web": "npm run dev -w @suipaylink/web",
+    "build": "npm run build -ws --if-present",
+    "typecheck": "npm run typecheck -ws --if-present",
+    "chain:build": "sui move build --path contracts --build-env testnet",
+    "chain:test": "sui move test --path contracts --build-env testnet",
+    "chain:deploy:testnet": "bash scripts/testnet-deploy.sh",
+    "chain:smoke:testnet": "bash scripts/testnet-smoke.sh",
+    "chain:smoke:refund:testnet": "bash scripts/testnet-refund-smoke.sh",
+    "chain:smoke:two-party:testnet": "bash scripts/testnet-two-party-smoke.sh",
+    "chain:smoke:mock-usdc:testnet": "bash scripts/testnet-mock-usdc-smoke.sh",
+    "chain:smoke:sponsored-mock-usdc:testnet": "node scripts/testnet-sponsored-mock-usdc-smoke.mjs",
+    "lint": "npm run lint -ws --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css}\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

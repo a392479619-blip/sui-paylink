@@ -1,0 +1,8 @@
+[package]
+name = "suipaylink"
+edition = "2024.beta"
+
+[dependencies]
+
+[addresses]
+suipaylink = "0x0"

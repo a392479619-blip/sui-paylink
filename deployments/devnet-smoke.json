@@ -1,0 +1,19 @@
+{
+  "network": "devnet",
+  "packageId": "0xe63bd534c678e2ab120d1e55172ab85628ae7bbe6287e617e470e20c9e7b4620",
+  "escrowObjectId": "0xe8e4a26f640b176f5dfce70d689d75789655c37a95e05e1418af59d1797fa472",
+  "actor": "0xa3951355af6fcd40307455338331b72d2f87429d49c3eb165109b4450e85ed4e",
+  "digests": {
+    "publish": "3Gqe11oGH8aRaj2m58U34iEBjGzyyQVoXpHoirGhv2YX",
+    "splitPaymentCoin": "Cgr8y7nP7wxwMAke94389FRUJ7ayxn1fFnQAm7r4FD6Y",
+    "createFundedEscrow": "8XunqWXi499ufNvU1qksgN2BCsh9NgoiHyUpzKTbu432",
+    "markDelivered": "DMB5AxvaQCCcXYMF623t8AqqcTRM2bG6swKgUnYxrb13",
+    "release": "2KHKB3N2eDnNwb4sNJXbiHajnCe1LruYNf8nCtGkWxER"
+  },
+  "releaseEvent": {
+    "amount_to_seller": "99000000",
+    "escrow_id": "0xe8e4a26f640b176f5dfce70d689d75789655c37a95e05e1418af59d1797fa472",
+    "fee_amount": "1000000",
+    "seller": "0xa3951355af6fcd40307455338331b72d2f87429d49c3eb165109b4450e85ed4e"
+  }
+}

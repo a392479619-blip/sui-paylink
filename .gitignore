@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.local
+.DS_Store
+coverage/
+apps/web/.vite/
+contracts/build/
+contracts/Published*.toml
+Pub.*.toml

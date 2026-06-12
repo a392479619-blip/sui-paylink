@@ -1,0 +1,16 @@
+{
+  "network": "testnet",
+  "packageId": "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340",
+  "upgradeCapId": "0x91174bcbcdef7d23b29f1f4cff53104e61e952eea5cfae259d1e8d9fef22853a",
+  "publishDigest": "ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3",
+  "deployer": "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef",
+  "deployedAt": "2026-06-11T08:52:25Z",
+  "mockUsdc": {
+    "coinType": "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340::mock_usdc::MOCK_USDC",
+    "treasuryCapId": "0xbd9979321bfae7f3becb1114e92ae6208c316dcfd26852adef50fce1c8c17fae",
+    "metadataId": "0x1b471b701733c5dccfe25a352bfa5f34971a4e33b38eaa51f00fa354a1b5634e",
+    "symbol": "mUSDC",
+    "decimals": 6,
+    "testOnly": true
+  }
+}

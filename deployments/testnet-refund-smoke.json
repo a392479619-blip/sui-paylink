@@ -1,0 +1,24 @@
+{
+  "network": "testnet",
+  "packageId": "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340",
+  "actor": "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef",
+  "escrowObjectId": "0x5c858335a12b11fe44ccd7955e7fa838c84004b900e2839cbe08be5eaeb5215b",
+  "digests": {
+    "splitPaymentCoin": "8q166AqDYnTm9vc6sdkS7aMMs1zbc6wag9MjQnCqT2dA",
+    "createFundedEscrow": "HhxnchKg24TCzGWPYy8GHBzDFLM57Jx2aB1LyGUdMS7E",
+    "refund": "BFjypQRCWAfTJWMrSBhYJpV2FoWiXS26FGmpThFjJZ3m"
+  },
+  "refundEvent": {
+    "amount": "10000000",
+    "buyer": "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef",
+    "escrow_id": "0x5c858335a12b11fe44ccd7955e7fa838c84004b900e2839cbe08be5eaeb5215b"
+  },
+  "finalObject": {
+    "delivered": false,
+    "released": false,
+    "refunded": true,
+    "funds": "0",
+    "prevTx": "BFjypQRCWAfTJWMrSBhYJpV2FoWiXS26FGmpThFjJZ3m"
+  },
+  "verifiedAt": "2026-06-11T08:55:06Z"
+}
