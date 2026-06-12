@@ -98,6 +98,12 @@ path, but not a production stablecoin payment product.
 
 ## Commands
 
+Run the no-chain API regression smoke before Testnet work:
+
+```bash
+npm run smoke:api
+```
+
 ```bash
 sui client switch --env testnet
 sui client gas --json

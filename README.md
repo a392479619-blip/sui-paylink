@@ -110,6 +110,16 @@ proves the gasless escrow mechanism and gives reviewers a runnable Paylink UX,
 but production stablecoin support, event indexing, browser-wallet sponsored
 signing, and hosted deployment are still separate work.
 
+Local API regression smoke:
+
+```bash
+npm run smoke:api
+```
+
+This starts the API on an isolated local port with temporary stores and verifies
+Paylink creation, mock escrow state transitions, receipt math, `sync-chain`
+pending behavior, and the `sponsor_not_configured` guard.
+
 ```bash
 sui client switch --env testnet
 npm run chain:deploy:testnet
