@@ -386,6 +386,12 @@ npm run chain:build
 npm run chain:test
 ```
 
+配置真实 Sponsor 私钥后追加：
+
+```bash
+npm run sponsor:readiness
+```
+
 涉及 Testnet 时追加：
 
 ```bash

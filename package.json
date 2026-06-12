@@ -14,6 +14,7 @@
     "build": "npm run build -ws --if-present",
     "typecheck": "npm run typecheck -ws --if-present",
     "smoke:api": "node scripts/api-regression-smoke.mjs",
+    "sponsor:readiness": "node scripts/sponsor-readiness.mjs",
     "chain:build": "sui move build --path contracts --build-env testnet",
     "chain:test": "sui move test --path contracts --build-env testnet",
     "chain:deploy:testnet": "bash scripts/testnet-deploy.sh",

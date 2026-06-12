@@ -104,6 +104,13 @@ Run the no-chain API regression smoke before Testnet work:
 npm run smoke:api
 ```
 
+After configuring a real sponsor private key, verify sponsor readiness without
+printing the secret:
+
+```bash
+SPONSOR_PRIVATE_KEY=<sui-private-key> npm run sponsor:readiness
+```
+
 ```bash
 sui client switch --env testnet
 sui client gas --json

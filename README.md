@@ -120,6 +120,16 @@ This starts the API on an isolated local port with temporary stores and verifies
 Paylink creation, mock escrow state transitions, receipt math, `sync-chain`
 pending behavior, and the `sponsor_not_configured` guard.
 
+Sponsor readiness before browser-wallet E2E:
+
+```bash
+SPONSOR_PRIVATE_KEY=<sui-private-key> npm run sponsor:readiness
+```
+
+This validates the sponsor key without printing it, derives the sponsor address,
+checks Testnet SUI gas balance, verifies the deployed package object, reads
+MockUSDC metadata, and checks gas budget configuration.
+
 ```bash
 sui client switch --env testnet
 npm run chain:deploy:testnet
