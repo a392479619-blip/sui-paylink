@@ -20,6 +20,7 @@ SuiPayLink 是面向跨境数字服务的 gasless stablecoin escrow paylink：�
 
 ```bash
 npm run smoke:api
+npm run smoke:preview
 npm run typecheck
 npm run build
 ```
@@ -158,3 +159,4 @@ http://127.0.0.1:5174/pay/<paylink-id>
 - `deployments/testnet-sponsored-mock-usdc-smoke.json`。
 - Sui Explorer 中的 sponsored fund/release digests。
 - `npm run smoke:api` 成功输出。
+- `npm run smoke:preview` 成功输出。

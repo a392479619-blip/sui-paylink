@@ -67,7 +67,8 @@ sui-paylink/
     ├── 11-prd-cn.md
     ├── 12-p0-implementation-checklist-cn.md
     ├── 13-demo-script-cn.md
-    └── 14-submission-checklist-cn.md
+    ├── 14-submission-checklist-cn.md
+    └── 15-deployment-runbook-cn.md
 ```
 
 ## Current status
@@ -115,15 +116,19 @@ runnable Paylink UX, but production stablecoin support, event indexing,
 browser-wallet sponsored signing, and a public hosted demo URL are still
 separate work.
 
-Local API regression smoke:
+Local verification:
 
 ```bash
 npm run smoke:api
+npm run smoke:preview
 ```
 
-This starts the API on an isolated local port with temporary stores and verifies
-Paylink creation, mock escrow state transitions, receipt math, `sync-chain`
-pending behavior, and the `sponsor_not_configured` guard.
+`smoke:api` starts the API on an isolated local port with temporary stores and
+verifies Paylink creation, mock escrow state transitions, receipt math,
+`sync-chain` pending behavior, and the `sponsor_not_configured` guard.
+`smoke:preview` starts the production single-service preview and verifies
+`/health`, `/api/config`, Paylink creation, web fallback routes, built assets,
+and unknown API 404 behavior.
 
 Sponsor readiness before browser-wallet E2E:
 
@@ -209,6 +214,10 @@ For a hosted hackathon demo, set `HOST=0.0.0.0`, the platform-provided `PORT`,
 host supports disk persistence. Set `SPONSOR_PRIVATE_KEY` only when recording a
 real browser-wallet sponsored flow; otherwise sponsored buttons stay disabled
 instead of pretending to execute on-chain.
+
+`render.yaml` provides a Render Blueprint for a quick public demo deploy. See
+`docs/15-deployment-runbook-cn.md` for the deployment checklist and current
+boundaries.
 
 See `docs/10-testnet-runbook.md` for the exact completion gate.
 See `docs/11-prd-cn.md` for the detailed Chinese PRD, field dictionary, and P0

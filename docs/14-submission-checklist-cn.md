@@ -24,6 +24,7 @@
 
 ```bash
 npm run smoke:api
+npm run smoke:preview
 npm run typecheck
 npm run build
 ```
@@ -58,6 +59,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 | MockUSDC escrow | `deployments/testnet-mock-usdc-smoke.json` | 已有 |
 | Sponsored MockUSDC | `deployments/testnet-sponsored-mock-usdc-smoke.json` | 已有，扩展幂等后需重跑刷新 |
 | 本地 API smoke | `npm run smoke:api` 输出 | 已有命令 |
+| 生产预览 smoke | `npm run smoke:preview` 输出 | 已有命令 |
 | Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥 |
 | 浏览器钱包端到端 | 录屏 + digest | 未完成 |
 
@@ -102,6 +104,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 满足以下条件即可提交 demo：
 
 - `npm run smoke:api` 通过。
+- `npm run smoke:preview` 通过。
 - `npm run typecheck` 通过。
 - `npm run build` 通过。
 - README 中 Testnet evidence 链接可打开。

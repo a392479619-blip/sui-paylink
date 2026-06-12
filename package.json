@@ -16,6 +16,7 @@
     "preview:prod": "npm run build && npm start",
     "typecheck": "npm run typecheck -ws --if-present",
     "smoke:api": "node scripts/api-regression-smoke.mjs",
+    "smoke:preview": "node scripts/production-preview-smoke.mjs",
     "sponsor:readiness": "node scripts/sponsor-readiness.mjs",
     "chain:build": "sui move build --path contracts --build-env testnet",
     "chain:test": "sui move test --path contracts --build-env testnet",
