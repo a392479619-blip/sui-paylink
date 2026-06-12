@@ -32,3 +32,6 @@ jobs:
 
       - name: Production preview smoke
         run: npm run smoke:preview
+
+      - name: Static demo smoke
+        run: npm run smoke:static-demo

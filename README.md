@@ -234,6 +234,19 @@ only a demo record until a real sponsored wallet flow is executed.
 `docs/15-deployment-runbook-cn.md` for the deployment checklist and current
 boundaries.
 
+Static public demo:
+
+```bash
+npm run smoke:static-demo
+```
+
+This builds a GitHub Pages-compatible demo under `/sui-paylink/`, verifies the
+SPA fallback for `/pay/demo-ai-workflow`, and keeps all state in browser local
+storage. It is a public mock demo only: it does not build sponsored transaction
+bytes, spend gas, or submit a new Sui transaction. The Pages URL is expected to
+be `https://a392479619-blip.github.io/sui-paylink/` after the Pages workflow
+finishes successfully.
+
 See `docs/10-testnet-runbook.md` for the exact completion gate.
 See `docs/11-prd-cn.md` for the detailed Chinese PRD, field dictionary, and P0
 acceptance criteria.

@@ -117,9 +117,33 @@ curl https://<service>.onrender.com/api/config
 5. 如果未配置 sponsor 私钥，视频里明确说 `Sponsor not configured`，不能说完成真实 gasless 浏览器交易。
 6. 把公开首页 URL 或具体 `/pay/:id` URL 填到黑客松提交表。
 
+## GitHub Pages 静态 Demo
+
+仓库也提供 `.github/workflows/pages.yml`。推送到 `main` 后，GitHub Actions 会构建一个
+GitHub Pages 静态 demo：
+
+```bash
+npm run smoke:static-demo
+```
+
+预期公开地址：
+
+```text
+https://a392479619-blip.github.io/sui-paylink/
+https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
+```
+
+这个 Pages demo 只用于降低评委打开成本。它运行 `VITE_STATIC_DEMO=true`，Paylink 数据保存在浏览器
+`localStorage`，可以演示创建 Paylink 和 mock fund/deliver/release，但不能构建 sponsored transaction
+bytes，不能花 gas，也不会提交新的 Sui Testnet 交易。
+
+提交材料里如果使用 GitHub Pages URL，必须把它标为 `public static mock demo`。真实链上证据仍然引用
+README 里的 Testnet package、smoke digest 和后续浏览器钱包 sponsored E2E 录屏。
+
 ## 当前边界
 
 - Render 免费实例的 `/tmp` 是临时存储，重启后 Paylink 可能丢失。
 - `DEMO_SEED_ENABLED=true` 会在启动时生成 `/pay/demo-ai-workflow`，用于稳定展示；页面上的 demo mode 只走本地 mock API，不代表真实链上交易。
+- GitHub Pages 静态 demo 没有后端 API，只能展示 browser-only mock flow。
 - 当前 `mUSDC` 是项目 Testnet 测试币，不是真实 USDC。
 - 公开 URL 只能证明 demo 可访问，不能替代真实 browser-wallet sponsored E2E。

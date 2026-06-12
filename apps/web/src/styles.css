@@ -71,6 +71,27 @@ textarea {
   color: #526070;
 }
 
+.static-demo-banner {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 14px 16px;
+  border: 1px solid #d5c28b;
+  border-radius: 8px;
+  background: #fff7dc;
+}
+
+.static-demo-banner strong {
+  display: block;
+}
+
+.static-demo-banner p:last-child {
+  margin: 0;
+  color: #66592f;
+}
+
 .layout {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
@@ -652,6 +673,7 @@ button:disabled {
 
   .layout,
   .grid,
+  .static-demo-banner,
   .public-paylink,
   .facts,
   .history-row,

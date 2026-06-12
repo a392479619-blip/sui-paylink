@@ -8,20 +8,52 @@ import type {
 } from "@suipaylink/shared";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "http://127.0.0.1:8787" : "");
+export const STATIC_DEMO_ENABLED = import.meta.env.VITE_STATIC_DEMO === "true";
+const STATIC_STORE_KEY = "suipaylink.static.paylinks.v1";
+const PACKAGE_ID = "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340";
+const MOCK_USDC_COIN_TYPE = `${PACKAGE_ID}::mock_usdc::MOCK_USDC`;
 
 export async function getConfig(): Promise<AppConfig> {
+  if (STATIC_DEMO_ENABLED) {
+    return staticConfig();
+  }
   return request("/api/config");
 }
 
 export async function listPaylinks(): Promise<Paylink[]> {
+  if (STATIC_DEMO_ENABLED) {
+    return loadStaticPaylinks();
+  }
   return request("/api/paylinks");
 }
 
 export async function getPaylink(id: string): Promise<Paylink> {
+  if (STATIC_DEMO_ENABLED) {
+    const paylink = loadStaticPaylinks().find((item) => item.id === id);
+    if (!paylink) {
+      throw new Error("Static demo Paylink not found");
+    }
+    return paylink;
+  }
   return request(`/api/paylinks/${id}`);
 }
 
 export async function createPaylink(input: CreatePaylinkInput): Promise<Paylink> {
+  if (STATIC_DEMO_ENABLED) {
+    const timestamp = new Date().toISOString();
+    const id = staticId();
+    const paylink: Paylink = {
+      ...input,
+      id,
+      status: "created",
+      publicUrl: staticPaylinkUrl(id),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const paylinks = [paylink, ...loadStaticPaylinks()];
+    saveStaticPaylinks(paylinks);
+    return paylink;
+  }
   return request("/api/paylinks", {
     method: "POST",
     body: JSON.stringify(input),
@@ -33,6 +65,17 @@ export async function mutatePaylink(
   action: "fund" | "deliver" | "release" | "refund",
   body: Record<string, unknown> = {},
 ): Promise<Paylink> {
+  if (STATIC_DEMO_ENABLED) {
+    const paylinks = loadStaticPaylinks();
+    const index = paylinks.findIndex((item) => item.id === id);
+    if (index < 0) {
+      throw new Error("Static demo Paylink not found");
+    }
+    const next = mutateStaticPaylink(paylinks[index], action, body);
+    paylinks[index] = next;
+    saveStaticPaylinks(paylinks);
+    return next;
+  }
   return request(`/api/paylinks/${id}/${action}`, {
     method: "POST",
     body: JSON.stringify(body),
@@ -40,10 +83,16 @@ export async function mutatePaylink(
 }
 
 export async function getReceipt(id: string): Promise<ReceiptSummary> {
+  if (STATIC_DEMO_ENABLED) {
+    return staticReceipt(await getPaylink(id));
+  }
   return request(`/api/paylinks/${id}/receipt`);
 }
 
 export async function syncPaylinkChain(id: string): Promise<ReceiptSummary> {
+  if (STATIC_DEMO_ENABLED) {
+    return staticReceipt(await getPaylink(id));
+  }
   return request(`/api/paylinks/${id}/sync-chain`, {
     method: "POST",
     body: JSON.stringify({}),
@@ -53,6 +102,11 @@ export async function syncPaylinkChain(id: string): Promise<ReceiptSummary> {
 export async function buildSponsoredTransaction(
   input: BuildSponsoredTransactionInput,
 ): Promise<SponsoredTransactionRecord> {
+  if (STATIC_DEMO_ENABLED) {
+    throw new Error(
+      `Static demo mode cannot build sponsored transactions for ${input.action}; run the API with SPONSOR_PRIVATE_KEY for real wallet signing.`,
+    );
+  }
   return request("/api/sponsored-transactions/build", {
     method: "POST",
     body: JSON.stringify(input),
@@ -60,10 +114,17 @@ export async function buildSponsoredTransaction(
 }
 
 export async function getSponsoredTransaction(id: string): Promise<SponsoredTransactionRecord> {
+  if (STATIC_DEMO_ENABLED) {
+    throw new Error(`Static demo mode has no sponsored transaction ${id}`);
+  }
   return request(`/api/sponsored-transactions/${id}`);
 }
 
 export async function listSponsoredTransactions(paylinkId?: string): Promise<SponsoredTransactionRecord[]> {
+  if (STATIC_DEMO_ENABLED) {
+    void paylinkId;
+    return [];
+  }
   const query = paylinkId ? `?paylinkId=${encodeURIComponent(paylinkId)}` : "";
   return request(`/api/sponsored-transactions${query}`);
 }
@@ -72,6 +133,10 @@ export async function submitSponsoredTransaction(
   id: string,
   userSignature: string,
 ): Promise<SponsoredTransactionRecord> {
+  if (STATIC_DEMO_ENABLED) {
+    void userSignature;
+    throw new Error(`Static demo mode cannot submit sponsored transaction ${id}`);
+  }
   return request(`/api/sponsored-transactions/${id}/submit`, {
     method: "POST",
     body: JSON.stringify({ userSignature }),
@@ -92,4 +157,208 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(data.error ? JSON.stringify(data.error) : "Request failed");
   }
   return data as T;
+}
+
+function staticConfig(): AppConfig {
+  return {
+    network: "testnet",
+    publicBaseUrl: staticPublicBaseUrl(),
+    sponsorMode: "mock",
+    sponsorEnabled: false,
+    packageId: PACKAGE_ID,
+    feeReceiverAddress: "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef",
+    sponsoredActions: ["fund-mock-usdc", "mark-delivered", "release", "refund"],
+    supportedTokens: [
+      {
+        symbol: "mUSDC",
+        displayName: "SuiPayLink Mock USDC",
+        coinType: MOCK_USDC_COIN_TYPE,
+        decimals: 6,
+        gaslessEligible: false,
+        testnetOnly: true,
+      },
+    ],
+  };
+}
+
+function loadStaticPaylinks(): Paylink[] {
+  const seed = staticSeedPaylink();
+  const stored = readStoredPaylinks();
+  const withSeed = stored.some((paylink) => paylink.id === seed.id) ? stored : [seed, ...stored];
+  return withSeed.map((paylink) => ({
+    ...paylink,
+    publicUrl: staticPaylinkUrl(paylink.id),
+  }));
+}
+
+function readStoredPaylinks(): Paylink[] {
+  try {
+    const raw = window.localStorage.getItem(STATIC_STORE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter(isStoredPaylink);
+  } catch {
+    return [];
+  }
+}
+
+function saveStaticPaylinks(paylinks: Paylink[]) {
+  window.localStorage.setItem(STATIC_STORE_KEY, JSON.stringify(paylinks));
+}
+
+function staticSeedPaylink(): Paylink {
+  const timestamp = "2026-06-12T00:00:00.000Z";
+  return {
+    id: "demo-ai-workflow",
+    mode: "escrow",
+    sellerName: "Alice AI Automation Studio",
+    sellerAddress: "0x648badce46f20a771d805670901239e868f5d0c7e297a3616b579075a800f9f5",
+    buyerName: "Bob from Sui Project",
+    buyerAddress: "0x3bb115974618e32b56dd6fb259b1c8cbfce72177fe7a36ab618e245ef19ca3f1",
+    amount: "100",
+    token: "mUSDC",
+    memo: "AI automation workflow setup - 48 hour delivery escrow",
+    feeBps: 100,
+    status: "created",
+    demoSeed: true,
+    publicUrl: staticPaylinkUrl("demo-ai-workflow"),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
+
+function mutateStaticPaylink(
+  paylink: Paylink,
+  action: "fund" | "deliver" | "release" | "refund",
+  body: Record<string, unknown>,
+): Paylink {
+  const timestamp = new Date().toISOString();
+  if (action === "fund") {
+    if (paylink.status !== "created") {
+      throw new Error(`Cannot fund in status ${paylink.status}`);
+    }
+    return {
+      ...paylink,
+      status: "funded",
+      escrowObjectId: `mock-escrow-${paylink.id}`,
+      fundedAt: timestamp,
+      updatedAt: timestamp,
+    };
+  }
+  if (action === "deliver") {
+    if (paylink.status !== "funded") {
+      throw new Error(`Cannot mark delivered in status ${paylink.status}`);
+    }
+    return {
+      ...paylink,
+      status: "delivered",
+      deliveryProofUri: typeof body.deliveryProofUri === "string" ? body.deliveryProofUri : paylink.deliveryProofUri,
+      deliveredAt: timestamp,
+      updatedAt: timestamp,
+    };
+  }
+  if (action === "release") {
+    if (paylink.status !== "delivered") {
+      throw new Error(`Cannot release in status ${paylink.status}`);
+    }
+    return {
+      ...paylink,
+      status: "released",
+      releasedAt: timestamp,
+      updatedAt: timestamp,
+    };
+  }
+  if (paylink.status !== "funded" && paylink.status !== "delivered") {
+    throw new Error(`Cannot refund in status ${paylink.status}`);
+  }
+  return {
+    ...paylink,
+    status: "refunded",
+    refundedAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
+
+function staticReceipt(paylink: Paylink): ReceiptSummary {
+  const amount = Number(paylink.amount);
+  const platformFee = paylink.mode === "escrow" ? amount * (paylink.feeBps / 10000) : 0;
+  const sellerAmount = amount - platformFee;
+  return {
+    paylink,
+    platformFee: formatStaticAmount(platformFee),
+    sellerAmount: formatStaticAmount(sellerAmount),
+    chain: {
+      status: "not_available",
+      syncedAt: new Date().toISOString(),
+      network: "testnet",
+      digests: [],
+      events: [],
+      errors: ["Static demo mode: no Sui transaction was submitted."],
+    },
+    timeline: [
+      staticTimelineItem("Created", paylink.status, ["created", "funded", "delivered", "released", "refunded"], paylink.createdAt),
+      staticTimelineItem("Funded", paylink.status, ["funded", "delivered", "released", "refunded"], paylink.fundedAt),
+      staticTimelineItem("Delivered", paylink.status, ["delivered", "released"], paylink.deliveredAt),
+      staticTimelineItem(
+        paylink.status === "refunded" ? "Refunded" : "Released",
+        paylink.status,
+        ["released", "refunded"],
+        paylink.status === "refunded" ? paylink.refundedAt : paylink.releasedAt,
+      ),
+    ],
+  };
+}
+
+function staticTimelineItem(
+  label: string,
+  currentStatus: Paylink["status"],
+  completeStatuses: Paylink["status"][],
+  timestamp?: string,
+) {
+  const status = completeStatuses.includes(currentStatus)
+    ? "complete"
+    : currentStatus === "created" && label === "Created"
+      ? "current"
+      : "pending";
+  return { label, status, timestamp } as const;
+}
+
+function staticId(): string {
+  const suffix = globalThis.crypto?.randomUUID?.().slice(0, 8) ?? Math.random().toString(36).slice(2, 10);
+  return `demo-${suffix}`;
+}
+
+function staticPublicBaseUrl(): string {
+  return new URL(import.meta.env.BASE_URL, window.location.origin).toString().replace(/\/$/, "");
+}
+
+function staticPaylinkUrl(id: string): string {
+  const base = `${staticPublicBaseUrl()}/`;
+  return new URL(`pay/${encodeURIComponent(id)}`, base).toString();
+}
+
+function formatStaticAmount(value: number): string {
+  return Number.isFinite(value) ? value.toFixed(2) : "0.00";
+}
+
+function isStoredPaylink(value: unknown): value is Paylink {
+  const candidate = value as Partial<Paylink>;
+  return Boolean(
+    candidate &&
+      typeof candidate.id === "string" &&
+      typeof candidate.mode === "string" &&
+      typeof candidate.status === "string" &&
+      typeof candidate.sellerName === "string" &&
+      typeof candidate.sellerAddress === "string" &&
+      typeof candidate.amount === "string" &&
+      typeof candidate.token === "string" &&
+      typeof candidate.memo === "string" &&
+      typeof candidate.createdAt === "string" &&
+      typeof candidate.updatedAt === "string",
+  );
 }

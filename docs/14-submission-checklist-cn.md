@@ -14,7 +14,7 @@
 | Secondary track | Agentic Web, only if展示 AI invoice/payment-agent workflow |
 | Repo | `https://github.com/a392479619-blip/sui-paylink` |
 | Demo video | 2 分钟，按 `docs/13-demo-script-cn.md` 录 |
-| Demo URL | 若未部署，填 `npm run preview:prod` 或 Docker 运行说明；部署后替换为公开 URL，可用 `/pay/demo-ai-workflow` 作为稳定示例页 |
+| Demo URL | 优先填 Render/API 公开 URL；未完成时可填 GitHub Pages 静态 mock demo：`https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow` |
 | Contract package | `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340` |
 | Token boundary | Testnet `mUSDC` 是项目测试币，不是真实 USDC |
 
@@ -25,6 +25,7 @@
 ```bash
 npm run smoke:api
 npm run smoke:preview
+npm run smoke:static-demo
 npm run typecheck
 npm run build
 ```
@@ -64,6 +65,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 | Sponsored MockUSDC | `deployments/testnet-sponsored-mock-usdc-smoke.json` | 已有，扩展幂等后需重跑刷新 |
 | 本地 API smoke | `npm run smoke:api` 输出 | 已有命令 |
 | 生产预览 smoke | `npm run smoke:preview` 输出 | 已有命令 |
+| GitHub Pages 静态 demo smoke | `npm run smoke:static-demo` 输出 | 已有命令，只证明静态 mock 可访问 |
 | Sponsor bootstrap | `npm run sponsor:bootstrap` 输出 | 已有命令，不能泄露私钥 |
 | Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥和 Testnet SUI gas 余额 |
 | 浏览器钱包端到端 | 录屏 + digest | 未完成 |
@@ -72,6 +74,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 
 - 卖家创建 Paylink。
 - 或展示部署自动生成的 `/pay/demo-ai-workflow` 示例 Paylink。
+- 如果使用 GitHub Pages URL，必须说这是 `public static mock demo`，不是 API/链上交易。
 - 如果没有 sponsor 私钥，可以展示 demo mode 的 mock fund/deliver/release，但必须说明它不是链上交易。
 - 买家打开 `/pay/:id`。
 - sponsor 状态是 ready 还是 not configured。
@@ -103,6 +106,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 | 浏览器钱包 sponsored flow 未验证 | 评委可能认为 UX 证据不足 | 视频中展示后端 Testnet smoke，同时明确该项为下一步 |
 | mUSDC 不是官方稳定币 | 支付真实性不足 | 明确是 Testnet 测试币，用于证明非 SUI Coin escrow |
 | 未部署公开 URL | 评委试用成本高 | 尽快部署，或给出本地一键命令 |
+| 只有 GitHub Pages 静态 URL | 评委只能看 mock 交互，不能验证 API | 同时附 README Testnet digest 和真实 sponsor 待完成边界 |
 | sponsor 私钥/资金不足 | 不能录真实 gasless demo | 先跑 `sponsor:bootstrap`，注资后再跑 `sponsor:readiness` |
 | 过度包装 | 降低可信度 | 使用“已验证 / 未完成”表述 |
 
@@ -112,6 +116,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 
 - `npm run smoke:api` 通过。
 - `npm run smoke:preview` 通过。
+- `npm run smoke:static-demo` 通过。
 - `npm run typecheck` 通过。
 - `npm run build` 通过。
 - README 中 Testnet evidence 链接可打开。

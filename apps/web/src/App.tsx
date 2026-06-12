@@ -20,6 +20,7 @@ import {
   mutatePaylink,
   syncPaylinkChain,
   submitSponsoredTransaction,
+  STATIC_DEMO_ENABLED,
 } from "./api";
 import { ChainDemo } from "./ChainDemo";
 import { SponsoredDemo } from "./SponsoredDemo";
@@ -128,6 +129,7 @@ function DashboardPage() {
 
   return (
     <main className="shell">
+      {STATIC_DEMO_ENABLED && <StaticDemoBanner />}
       <section className="hero">
         <div>
           <p className="eyebrow">Sui Overflow 2026 MVP</p>
@@ -324,6 +326,7 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
 
   return (
     <main className="shell">
+      {STATIC_DEMO_ENABLED && <StaticDemoBanner />}
       <section className="hero">
         <div>
           <p className="eyebrow">Buyer payment link</p>
@@ -369,6 +372,21 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
         <SponsoredHistory records={sponsoredRecords} network={config?.network ?? "testnet"} />
       )}
     </main>
+  );
+}
+
+function StaticDemoBanner() {
+  return (
+    <section className="static-demo-banner">
+      <div>
+        <p className="eyebrow">Public static demo</p>
+        <strong>Browser-only mock mode</strong>
+      </div>
+      <p>
+        This page is built for GitHub Pages. It can demonstrate Paylink creation and mock escrow state,
+        but it does not build sponsored transactions, spend gas, or submit new Sui transactions.
+      </p>
+    </section>
   );
 }
 
@@ -845,7 +863,9 @@ function mockDemoActionsForStatus(status: Paylink["status"]): PaylinkAction[] {
 }
 
 function parsePublicPaylinkId(pathname: string): string | null {
-  const match = pathname.match(/^\/pay\/([^/]+)\/?$/);
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+  const appPath = base && pathname.startsWith(base) ? pathname.slice(base.length) || "/" : pathname;
+  const match = appPath.match(/^\/pay\/([^/]+)\/?$/);
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
