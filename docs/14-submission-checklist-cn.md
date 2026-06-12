@@ -1,0 +1,117 @@
+# SuiPayLink 黑客松提交核验清单
+
+## 提交前结论
+
+当前项目适合作为 hackathon demo 提交，但不能包装成生产支付产品。提交材料必须把 `mUSDC` 测试币、mock API、本地 sponsor 未配置状态和真实 Testnet smoke 证据分开讲。
+
+## 必填提交信息
+
+| 字段 | 建议内容 |
+|---|---|
+| Project name | SuiPayLink |
+| Tagline | Gasless stablecoin escrow links for cross-border digital services |
+| Track | DeFi & Payments |
+| Secondary track | Agentic Web, only if展示 AI invoice/payment-agent workflow |
+| Repo | `https://github.com/a392479619-blip/sui-paylink` |
+| Demo video | 2 分钟，按 `docs/13-demo-script-cn.md` 录 |
+| Demo URL | 若未部署，填本地运行说明；部署后替换 |
+| Contract package | `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340` |
+| Token boundary | Testnet `mUSDC` 是项目测试币，不是真实 USDC |
+
+## 提交前必须跑的命令
+
+本地必跑：
+
+```bash
+npm run smoke:api
+npm run typecheck
+npm run build
+```
+
+如果本机有 Sui CLI 和 Testnet 环境：
+
+```bash
+npm run chain:build
+npm run chain:test
+```
+
+如果配置真实 sponsor 私钥：
+
+```bash
+SPONSOR_PRIVATE_KEY=<sui-private-key> npm run sponsor:readiness
+```
+
+如果要刷新链上证据：
+
+```bash
+npm run chain:smoke:sponsored-mock-usdc:testnet
+```
+
+## 必须附上的证据
+
+| 证据 | 文件或位置 | 状态 |
+|---|---|---|
+| Package 发布 | `deployments/testnet.json` | 已有 |
+| SUI escrow release | `deployments/testnet-smoke.json` | 已有 |
+| Refund | `deployments/testnet-refund-smoke.json` | 已有 |
+| Two-party buyer/seller | `deployments/testnet-two-party-smoke.json` | 已有 |
+| MockUSDC escrow | `deployments/testnet-mock-usdc-smoke.json` | 已有 |
+| Sponsored MockUSDC | `deployments/testnet-sponsored-mock-usdc-smoke.json` | 已有，扩展幂等后需重跑刷新 |
+| 本地 API smoke | `npm run smoke:api` 输出 | 已有命令 |
+| Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥 |
+| 浏览器钱包端到端 | 录屏 + digest | 未完成 |
+
+## Demo 必须展示
+
+- 卖家创建 Paylink。
+- 买家打开 `/pay/:id`。
+- sponsor 状态是 ready 还是 not configured。
+- required signer roles。
+- receipt timeline。
+- `Sync chain` 后的 chain verification。
+- Testnet evidence 或 Explorer digest。
+
+## 不能说的话
+
+- “已经支持真实 USDC 生产支付。”
+- “无需钱包即可完成所有流程。”
+- “完整事件索引已经完成。”
+- “这是 Stripe 替代品。”
+- “已经解决争议仲裁。”
+
+## 可以说的话
+
+- “合约状态机和 sponsored MockUSDC escrow 已经在 Sui Testnet 验证。”
+- “buyer 和 seller 在 sponsored smoke 里可以保持 0 SUI，由 sponsor 支付 gas。”
+- “公开 Paylink 页面已经接入 sponsored build/sign/submit 入口。”
+- “当前真实浏览器钱包端到端仍是最后的验证门槛。”
+- “完整产品化还需要真实稳定币、后台事件索引、部署和风控。”
+
+## 提交风险
+
+| 风险 | 影响 | 处理 |
+|---|---|---|
+| 浏览器钱包 sponsored flow 未验证 | 评委可能认为 UX 证据不足 | 视频中展示后端 Testnet smoke，同时明确该项为下一步 |
+| mUSDC 不是官方稳定币 | 支付真实性不足 | 明确是 Testnet 测试币，用于证明非 SUI Coin escrow |
+| 未部署公开 URL | 评委试用成本高 | 尽快部署，或给出本地一键命令 |
+| sponsor 私钥/资金不足 | 不能录真实 gasless demo | 先跑 `sponsor:readiness` |
+| 过度包装 | 降低可信度 | 使用“已验证 / 未完成”表述 |
+
+## 最小可提交版本
+
+满足以下条件即可提交 demo：
+
+- `npm run smoke:api` 通过。
+- `npm run typecheck` 通过。
+- `npm run build` 通过。
+- README 中 Testnet evidence 链接可打开。
+- Demo 视频按 `docs/13-demo-script-cn.md` 录制。
+- 视频中明确 `mUSDC` 是测试币。
+- 视频中明确浏览器钱包 sponsored E2E 是否已经验证。
+
+## 强烈建议补齐后再提交
+
+- 真实 sponsor 私钥 readiness 通过。
+- 公开页真实浏览器钱包 sponsored flow 成功一次。
+- 扩展后的 sponsored smoke 重跑，刷新 `deployments/testnet-sponsored-mock-usdc-smoke.json`。
+- 部署一个可访问的 demo URL。

@@ -40,8 +40,10 @@ Sui is uniquely suited because of:
 
 ## Demo script
 
-1. Alice creates a `100 USDC` escrow paylink for an AI workflow setup.
-2. Bob opens the link and pays into escrow without needing SUI gas.
+Use `docs/13-demo-script-cn.md` as the source of truth for the 2-minute video. The demo must separate verified Testnet evidence from local mock/API behavior and must state that `mUSDC` is a project Testnet token, not production USDC.
+
+1. Alice creates a `100 mUSDC` escrow paylink for an AI workflow setup.
+2. Bob opens the link and pays into escrow without first holding SUI gas in the verified sponsored Testnet path.
 3. SuiPayLink shows the escrow object as funded.
 4. Alice attaches delivery proof.
 5. Bob releases funds.

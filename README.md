@@ -64,7 +64,9 @@ sui-paylink/
     ├── 09-mvp-prd.md
     ├── 10-testnet-runbook.md
     ├── 11-prd-cn.md
-    └── 12-p0-implementation-checklist-cn.md
+    ├── 12-p0-implementation-checklist-cn.md
+    ├── 13-demo-script-cn.md
+    └── 14-submission-checklist-cn.md
 ```
 
 ## Current status
