@@ -14,7 +14,7 @@
 | Secondary track | Agentic Web, only if展示 AI invoice/payment-agent workflow |
 | Repo | `https://github.com/a392479619-blip/sui-paylink` |
 | Demo video | 2 分钟，按 `docs/13-demo-script-cn.md` 录 |
-| Demo URL | 优先填 Render/API 公开 URL；未完成时可填 GitHub Pages 静态 mock demo：`https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow` |
+| Demo URL | 优先填 Render/API 公开 URL；仓库公开或支持 private Pages 后，可填 GitHub Pages 静态 mock demo：`https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow` |
 | Contract package | `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340` |
 | Token boundary | Testnet `mUSDC` 是项目测试币，不是真实 USDC |
 

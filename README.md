@@ -243,9 +243,11 @@ npm run smoke:static-demo
 This builds a GitHub Pages-compatible demo under `/sui-paylink/`, verifies the
 SPA fallback for `/pay/demo-ai-workflow`, and keeps all state in browser local
 storage. It is a public mock demo only: it does not build sponsored transaction
-bytes, spend gas, or submit a new Sui transaction. The Pages URL is expected to
-be `https://a392479619-blip.github.io/sui-paylink/` after the Pages workflow
-finishes successfully.
+bytes, spend gas, or submit a new Sui transaction. The repository is currently
+private, so GitHub Pages must be enabled manually after making the repository
+public or using a plan that supports private Pages. After that, run the
+`Static Demo Pages` workflow manually; the expected URL is
+`https://a392479619-blip.github.io/sui-paylink/`.
 
 See `docs/10-testnet-runbook.md` for the exact completion gate.
 See `docs/11-prd-cn.md` for the detailed Chinese PRD, field dictionary, and P0

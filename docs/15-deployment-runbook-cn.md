@@ -119,8 +119,13 @@ curl https://<service>.onrender.com/api/config
 
 ## GitHub Pages 静态 Demo
 
-仓库也提供 `.github/workflows/pages.yml`。推送到 `main` 后，GitHub Actions 会构建一个
-GitHub Pages 静态 demo：
+仓库也提供 `.github/workflows/pages.yml`。当前仓库是 private，当前 GitHub plan 不支持为这个仓库启用
+GitHub Pages，所以 workflow 默认只支持手动触发。要使用 Pages URL，需要先满足其中一个条件：
+
+- 将仓库改为 public。
+- 或使用支持 private repository Pages 的 GitHub plan。
+
+然后在 GitHub Actions 里手动运行 `Static Demo Pages` workflow。运行前可本地验证：
 
 ```bash
 npm run smoke:static-demo
