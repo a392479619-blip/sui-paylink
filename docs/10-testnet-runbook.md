@@ -128,5 +128,5 @@ Testnet deployment alone is not a complete submission. The final submission stil
 
 Sponsored gas has Testnet smoke evidence for package-owned `mUSDC`. The final
 submission still must state that `mUSDC` is a test coin and that real stablecoin
-support, persistence, event indexing, and hosted UX are separate from the chain
-mechanism proof.
+support, sponsor request persistence, event indexing, and hosted UX are separate
+from the chain mechanism proof.

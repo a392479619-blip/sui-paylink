@@ -108,10 +108,18 @@ export type Paylink = CreatePaylinkInput & {
   publicUrl: string;
   deliveryProofUri?: string;
   transactionDigest?: string;
+  fundTransactionDigest?: string;
+  deliverTransactionDigest?: string;
+  releaseTransactionDigest?: string;
+  refundTransactionDigest?: string;
   escrowObjectId?: string;
   receiptObjectId?: string;
   createdAt: string;
   updatedAt: string;
+  fundedAt?: string;
+  deliveredAt?: string;
+  releasedAt?: string;
+  refundedAt?: string;
 };
 
 export type ReceiptSummary = {

@@ -182,7 +182,8 @@ textarea {
 }
 
 .panel,
-.paylink {
+.paylink,
+.public-paylink {
   padding: 22px;
   border: 1px solid #dce5ed;
   border-radius: 8px;
@@ -191,7 +192,8 @@ textarea {
 }
 
 .panel h2,
-.paylink h2 {
+.paylink h2,
+.public-paylink h2 {
   margin: 0 0 18px;
 }
 
@@ -249,6 +251,20 @@ button:disabled {
   font-weight: 800;
 }
 
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid #cfd9e2;
+  border-radius: 6px;
+  padding: 9px 12px;
+  color: #17202a;
+  background: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .table {
   display: grid;
   gap: 10px;
@@ -295,10 +311,80 @@ button:disabled {
   font-size: 36px;
 }
 
+.public-paylink {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 24px;
+}
+
+.public-summary {
+  min-width: 0;
+}
+
+.public-summary h2 {
+  font-size: 42px;
+  line-height: 1;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 22px 0 0;
+}
+
+.facts > div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e0e8ef;
+  border-radius: 8px;
+  background: #f9fbfd;
+}
+
+.facts dt {
+  margin-bottom: 5px;
+  color: #687789;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.facts dd {
+  overflow: hidden;
+  margin: 0;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-pill {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #176b87;
+  background: #e1f3f7;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.status-pill.released {
+  color: #23663f;
+  background: #edf8f1;
+}
+
+.status-pill.refunded,
+.status-pill.expired {
+  color: #8c2525;
+  background: #fff4f4;
+}
+
 .actions {
   display: grid;
   min-width: 220px;
   gap: 8px;
+  align-content: start;
 }
 
 .receipt {
@@ -343,6 +429,16 @@ button:disabled {
   text-align: center;
 }
 
+.timeline li strong,
+.timeline li span {
+  display: block;
+}
+
+.timeline li span {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
 .timeline li.complete {
   border-style: solid;
   border-color: #47a06b;
@@ -377,6 +473,8 @@ button:disabled {
 
   .layout,
   .grid,
+  .public-paylink,
+  .facts,
   .chain-facts,
   .chain-digests,
   .chain-actions,

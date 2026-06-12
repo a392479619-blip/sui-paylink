@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AppConfig, CreatePaylinkInput, Paylink, ReceiptSummary } from "@suipaylink/shared";
-import { createPaylink, getConfig, getReceipt, listPaylinks, mutatePaylink } from "./api";
+import { createPaylink, getConfig, getPaylink, getReceipt, listPaylinks, mutatePaylink } from "./api";
 import { ChainDemo } from "./ChainDemo";
 import { SponsoredDemo } from "./SponsoredDemo";
+
+type PaylinkAction = "fund" | "deliver" | "release" | "refund";
 
 const initialForm: CreatePaylinkInput = {
   mode: "escrow",
@@ -17,6 +19,17 @@ const initialForm: CreatePaylinkInput = {
 };
 
 export function App() {
+  const [initialPath] = useState(() => window.location.pathname);
+  const publicPaylinkId = parsePublicPaylinkId(initialPath);
+
+  if (publicPaylinkId) {
+    return <PublicPaylinkPage paylinkId={publicPaylinkId} />;
+  }
+
+  return <DashboardPage />;
+}
+
+function DashboardPage() {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [form, setForm] = useState<CreatePaylinkInput>(initialForm);
   const [paylinks, setPaylinks] = useState<Paylink[]>([]);
@@ -33,13 +46,16 @@ export function App() {
     const [nextConfig, nextPaylinks] = await Promise.all([getConfig(), listPaylinks()]);
     setConfig(nextConfig);
     setPaylinks(nextPaylinks);
-    if (!selectedId && nextPaylinks[0]) {
-      setSelectedId(nextPaylinks[0].id);
-    }
+    setSelectedId((current) => {
+      if (current && nextPaylinks.some((paylink) => paylink.id === current)) {
+        return current;
+      }
+      return nextPaylinks[0]?.id ?? "";
+    });
   }
 
   useEffect(() => {
-    refresh().catch((err) => setError(String(err)));
+    refresh().catch((err) => setError(errorText(err)));
   }, []);
 
   useEffect(() => {
@@ -59,21 +75,18 @@ export function App() {
       await refresh();
       setSelectedId(paylink.id);
     } catch (err) {
-      setError(String(err));
+      setError(errorText(err));
     }
   }
 
-  async function handleAction(action: "fund" | "deliver" | "release" | "refund") {
+  async function handleAction(action: PaylinkAction) {
     if (!selected) return;
     setError("");
     try {
-      await mutatePaylink(selected.id, action, {
-        actor: action === "deliver" ? "seller" : "buyer",
-        deliveryProofUri: "https://example.com/proofs/alice-ai-workflow-delivery.pdf",
-      });
+      await runPaylinkAction(selected.id, action);
       await refresh();
     } catch (err) {
-      setError(String(err));
+      setError(errorText(err));
     }
   }
 
@@ -203,55 +216,208 @@ export function App() {
             <p className="muted">Seller: {selected.sellerName}</p>
             <p className="muted">Buyer: {selected.buyerName ?? "not specified"}</p>
             <p className="muted">Buyer address: {selected.buyerAddress ?? "not specified"}</p>
-            <p className="muted">Share URL: {selected.publicUrl}</p>
+            <p className="muted">
+              Share URL: <a href={selected.publicUrl}>{selected.publicUrl}</a>
+            </p>
           </div>
-          <div className="actions">
-            <button onClick={() => handleAction("fund")} disabled={selected.status !== "created"}>
-              Buyer funds escrow
-            </button>
-            <button onClick={() => handleAction("deliver")} disabled={selected.status !== "funded"}>
-              Seller marks delivered
-            </button>
-            <button onClick={() => handleAction("release")} disabled={selected.status !== "delivered"}>
-              Buyer releases
-            </button>
-            <button onClick={() => handleAction("refund")} disabled={!["funded", "delivered"].includes(selected.status)}>
-              Refund
-            </button>
-          </div>
+          <PaylinkActions paylink={selected} onAction={handleAction} />
         </section>
       )}
 
-      {receipt && (
-        <section className="panel receipt">
-          <h2>Receipt</h2>
-          <div className="receipt-grid">
-            <div>
-              <p className="muted">Seller receives</p>
-              <strong>{receipt.sellerAmount} {receipt.paylink.token}</strong>
-            </div>
-            <div>
-              <p className="muted">Platform fee</p>
-              <strong>{receipt.platformFee} {receipt.paylink.token}</strong>
-            </div>
-            <div>
-              <p className="muted">Digest</p>
-              <strong>{receipt.paylink.transactionDigest ?? "pending"}</strong>
-            </div>
-            <div>
-              <p className="muted">Escrow object</p>
-              <strong>{receipt.paylink.escrowObjectId ?? "pending"}</strong>
-            </div>
-          </div>
-          <ol className="timeline">
-            {receipt.timeline.map((item) => (
-              <li key={item.label} className={item.status}>
-                {item.label}
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
+      {receipt && <ReceiptPanel receipt={receipt} />}
     </main>
   );
+}
+
+function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
+  const [config, setConfig] = useState<AppConfig | null>(null);
+  const [paylink, setPaylink] = useState<Paylink | null>(null);
+  const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
+  const [pendingAction, setPendingAction] = useState<PaylinkAction | null>(null);
+  const [error, setError] = useState<string>("");
+
+  async function refresh() {
+    const [nextConfig, nextPaylink, nextReceipt] = await Promise.all([
+      getConfig(),
+      getPaylink(paylinkId),
+      getReceipt(paylinkId),
+    ]);
+    setConfig(nextConfig);
+    setPaylink(nextPaylink);
+    setReceipt(nextReceipt);
+  }
+
+  useEffect(() => {
+    refresh().catch((err) => setError(errorText(err)));
+  }, [paylinkId]);
+
+  async function handleAction(action: PaylinkAction) {
+    if (!paylink) return;
+    setError("");
+    setPendingAction(action);
+    try {
+      await runPaylinkAction(paylink.id, action);
+      await refresh();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  return (
+    <main className="shell">
+      <section className="hero">
+        <div>
+          <p className="eyebrow">Buyer payment link</p>
+          <h1>SuiPayLink</h1>
+          <p className="hero-copy">{paylink?.memo ?? "Loading paylink..."}</p>
+        </div>
+        <div className="network-pill">
+          <span>{config?.network ?? "testnet"}</span>
+          <strong>{paylink?.status ?? "loading"}</strong>
+        </div>
+      </section>
+
+      {error && <div className="error">{error}</div>}
+
+      {!paylink && !error && <section className="panel">Loading paylink...</section>}
+
+      {paylink && (
+        <section className="public-paylink">
+          <div className="public-summary">
+            <div>
+              <p className="eyebrow">Escrow request</p>
+              <h2>{paylink.amount} {paylink.token}</h2>
+            </div>
+            <StatusPill status={paylink.status} />
+            <p>{paylink.memo}</p>
+            <PaylinkFacts paylink={paylink} />
+          </div>
+          <PaylinkActions paylink={paylink} onAction={handleAction} pendingAction={pendingAction} />
+        </section>
+      )}
+
+      {receipt && <ReceiptPanel receipt={receipt} />}
+    </main>
+  );
+}
+
+function PaylinkFacts({ paylink }: { paylink: Paylink }) {
+  return (
+    <dl className="facts">
+      <div>
+        <dt>Seller</dt>
+        <dd>{paylink.sellerName}</dd>
+      </div>
+      <div>
+        <dt>Seller address</dt>
+        <dd>{paylink.sellerAddress}</dd>
+      </div>
+      <div>
+        <dt>Buyer</dt>
+        <dd>{paylink.buyerName ?? "not specified"}</dd>
+      </div>
+      <div>
+        <dt>Buyer address</dt>
+        <dd>{paylink.buyerAddress ?? "not specified"}</dd>
+      </div>
+      <div>
+        <dt>Fee</dt>
+        <dd>{paylink.feeBps / 100}%</dd>
+      </div>
+      <div>
+        <dt>Created</dt>
+        <dd>{formatDate(paylink.createdAt)}</dd>
+      </div>
+    </dl>
+  );
+}
+
+function PaylinkActions({
+  paylink,
+  onAction,
+  pendingAction,
+}: {
+  paylink: Paylink;
+  onAction: (action: PaylinkAction) => void;
+  pendingAction?: PaylinkAction | null;
+}) {
+  return (
+    <div className="actions">
+      <button onClick={() => onAction("fund")} disabled={paylink.status !== "created" || pendingAction === "fund"}>
+        {pendingAction === "fund" ? "Funding..." : "Buyer funds escrow"}
+      </button>
+      <button onClick={() => onAction("deliver")} disabled={paylink.status !== "funded" || pendingAction === "deliver"}>
+        {pendingAction === "deliver" ? "Marking..." : "Seller marks delivered"}
+      </button>
+      <button onClick={() => onAction("release")} disabled={paylink.status !== "delivered" || pendingAction === "release"}>
+        {pendingAction === "release" ? "Releasing..." : "Buyer releases"}
+      </button>
+      <button
+        onClick={() => onAction("refund")}
+        disabled={!["funded", "delivered"].includes(paylink.status) || pendingAction === "refund"}
+      >
+        {pendingAction === "refund" ? "Refunding..." : "Refund"}
+      </button>
+    </div>
+  );
+}
+
+function ReceiptPanel({ receipt }: { receipt: ReceiptSummary }) {
+  return (
+    <section className="panel receipt">
+      <h2>Receipt</h2>
+      <div className="receipt-grid">
+        <div>
+          <p className="muted">Seller receives</p>
+          <strong>{receipt.sellerAmount} {receipt.paylink.token}</strong>
+        </div>
+        <div>
+          <p className="muted">Platform fee</p>
+          <strong>{receipt.platformFee} {receipt.paylink.token}</strong>
+        </div>
+        <div>
+          <p className="muted">Digest</p>
+          <strong>{receipt.paylink.transactionDigest ?? "pending"}</strong>
+        </div>
+        <div>
+          <p className="muted">Escrow object</p>
+          <strong>{receipt.paylink.escrowObjectId ?? "pending"}</strong>
+        </div>
+      </div>
+      <ol className="timeline">
+        {receipt.timeline.map((item) => (
+          <li key={item.label} className={item.status}>
+            <strong>{item.label}</strong>
+            {item.timestamp && <span>{formatDate(item.timestamp)}</span>}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function StatusPill({ status }: { status: Paylink["status"] }) {
+  return <span className={`status-pill ${status}`}>{status}</span>;
+}
+
+async function runPaylinkAction(paylinkId: string, action: PaylinkAction) {
+  await mutatePaylink(paylinkId, action, {
+    actor: action === "deliver" ? "seller" : "buyer",
+    deliveryProofUri: "https://example.com/proofs/alice-ai-workflow-delivery.pdf",
+  });
+}
+
+function parsePublicPaylinkId(pathname: string): string | null {
+  const match = pathname.match(/^\/pay\/([^/]+)\/?$/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleString();
+}
+
+function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

@@ -1,8 +1,11 @@
 import "dotenv/config";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { AppConfig } from "@suipaylink/shared";
 
 const network = (process.env.SUI_NETWORK ?? "testnet") as AppConfig["network"];
 const sponsorPrivateKey = process.env.SPONSOR_PRIVATE_KEY;
+const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
 
 export const packageId =
   process.env.SUI_PACKAGE_ID ??
@@ -16,10 +19,13 @@ export const defaultSponsorGasBudgetMist = process.env.SPONSOR_GAS_BUDGET_MIST ?
 export const maxSponsorGasBudgetMist = process.env.MAX_SPONSOR_GAS_BUDGET_MIST ?? "200000000";
 export const sponsoredTransactionTtlMs = Number(process.env.SPONSORED_TX_TTL_MS ?? 10 * 60 * 1000);
 export const sponsorKeySecret = sponsorPrivateKey;
+export const paylinkStorePath = process.env.PAYLINK_STORE_PATH
+  ? resolve(process.env.PAYLINK_STORE_PATH)
+  : resolve(projectRoot, ".data", "paylinks.json");
 
 export const appConfig: AppConfig = {
   network,
-  publicBaseUrl: process.env.PUBLIC_BASE_URL ?? "http://localhost:5173",
+  publicBaseUrl: process.env.PUBLIC_BASE_URL ?? "http://127.0.0.1:5174",
   sponsorMode: (process.env.SPONSOR_MODE ?? (sponsorPrivateKey ? "self-sponsored" : "mock")) as AppConfig["sponsorMode"],
   packageId,
   feeReceiverAddress,

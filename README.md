@@ -104,9 +104,11 @@ Verified Testnet evidence:
 
 The latest Testnet smoke tests include both Test SUI and `mUSDC`. `mUSDC` is a
 project-owned test coin, not real USDC. The API now has a verified sponsored
-transaction path for `mUSDC` escrow actions on Testnet. This proves the gasless
-escrow mechanism, but production stablecoin support and Paylink persistence are
-still separate work.
+transaction path for `mUSDC` escrow actions on Testnet, file-backed Paylink
+persistence for the mock product flow, and a direct `/pay/:id` buyer page. This
+proves the gasless escrow mechanism and gives reviewers a runnable Paylink UX,
+but production stablecoin support, sponsor request persistence, event indexing,
+and hosted deployment are still separate work.
 
 ```bash
 sui client switch --env testnet
@@ -136,6 +138,11 @@ the verified Testnet deployment. Override it with:
 VITE_SUI_NETWORK=<devnet-or-testnet>
 VITE_PACKAGE_ID=<package-id>
 ```
+
+Local Paylinks are persisted to `.data/paylinks.json` by default. Override the
+path with `PAYLINK_STORE_PATH` when running the API. After starting the app with
+`npm run dev`, create a Paylink in the seller dashboard and open the generated
+`http://127.0.0.1:5174/pay/<id>` URL to review the buyer page.
 
 See `docs/10-testnet-runbook.md` for the exact completion gate.
 See `docs/11-prd-cn.md` for the detailed Chinese PRD, field dictionary, and P0

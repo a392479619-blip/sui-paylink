@@ -17,6 +17,10 @@ export async function listPaylinks(): Promise<Paylink[]> {
   return request("/api/paylinks");
 }
 
+export async function getPaylink(id: string): Promise<Paylink> {
+  return request(`/api/paylinks/${id}`);
+}
+
 export async function createPaylink(input: CreatePaylinkInput): Promise<Paylink> {
   return request("/api/paylinks", {
     method: "POST",
