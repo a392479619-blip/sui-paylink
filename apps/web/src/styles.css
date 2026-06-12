@@ -491,6 +491,19 @@ button:disabled {
   margin-top: 20px;
 }
 
+.receipt-heading,
+.chain-receipt-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.receipt-heading h2,
+.chain-receipt-header h3 {
+  margin: 0;
+}
+
 .receipt-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -510,6 +523,52 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.chain-receipt {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid #d7e2ea;
+  border-radius: 8px;
+  background: #fcfdf9;
+}
+
+.chain-receipt-header span {
+  color: #687789;
+  font-size: 13px;
+}
+
+.chain-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chain-list a,
+.chain-list span {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 6px 8px;
+  border: 1px solid #d7e2ea;
+  border-radius: 8px;
+  color: #24435c;
+  background: #ffffff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chain-errors {
+  display: grid;
+  gap: 6px;
+}
+
+.chain-errors p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #8a3030;
+  font-size: 13px;
 }
 
 .timeline {

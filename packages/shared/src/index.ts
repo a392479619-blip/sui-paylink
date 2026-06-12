@@ -110,6 +110,41 @@ export type SponsoredTransactionRecord = {
   executedAt?: string;
 };
 
+export type ChainVerificationStatus =
+  | "not_available"
+  | "pending"
+  | "verified"
+  | "mismatch"
+  | "error";
+
+export type ChainEventSummary = {
+  digest: string;
+  type: string;
+  parsedJson?: unknown;
+};
+
+export type ChainEscrowState = {
+  objectId: string;
+  coinType: string;
+  seller: string;
+  buyer: string;
+  funded: boolean;
+  delivered: boolean;
+  released: boolean;
+  refunded: boolean;
+};
+
+export type ChainReceiptSummary = {
+  status: ChainVerificationStatus;
+  syncedAt: string;
+  network: AppConfig["network"];
+  digests: string[];
+  escrowObjectId?: string;
+  escrow?: ChainEscrowState;
+  events: ChainEventSummary[];
+  errors: string[];
+};
+
 export type Paylink = CreatePaylinkInput & {
   id: string;
   status: PaylinkStatus;
@@ -136,6 +171,7 @@ export type ReceiptSummary = {
   paylink: Paylink;
   platformFee: string;
   sellerAmount: string;
+  chain?: ChainReceiptSummary;
   timeline: Array<{
     label: string;
     status: "complete" | "current" | "pending";

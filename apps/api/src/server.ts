@@ -13,6 +13,7 @@ import {
   getSponsorAddress,
   getSponsoredTransaction,
   listSponsoredTransactions,
+  syncPaylinkChainState,
   submitSponsoredTransaction,
 } from "./sponsor.js";
 import {
@@ -67,6 +68,21 @@ app.get<{ Params: { id: string } }>("/api/paylinks/:id/receipt", async (request,
     return buildReceipt(request.params.id);
   } catch (error) {
     return reply.code(404).send({ error: errorMessage(error) });
+  }
+});
+
+app.post<{ Params: { id: string } }>("/api/paylinks/:id/sync-chain", async (request, reply) => {
+  try {
+    const chain = await syncPaylinkChainState(request.params.id);
+    return {
+      ...buildReceipt(request.params.id),
+      chain,
+    };
+  } catch (error) {
+    if (error instanceof SponsorError) {
+      return sendSponsorError(reply, error);
+    }
+    return reply.code(502).send({ code: "chain_sync_failed", error: errorMessage(error) });
   }
 });
 

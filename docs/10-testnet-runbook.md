@@ -85,12 +85,13 @@ Current verified status:
 - Sponsored transaction requests are persisted to `.data/sponsored-transactions.json`.
 - When a sponsored transaction has `paylinkId`, successful execution can update the Paylink with digest, escrow object, status, and actual gas cost.
 - The API rejects duplicate active sponsored requests for the same Paylink/action and re-dry-runs built bytes before sponsor signing.
+- `POST /api/paylinks/:id/sync-chain` can build an on-demand chain verification summary from recorded sponsored digests, transaction events, and current Escrow object state.
 
 Still not verified:
 
 - Browser wallet compatibility for the sponsored UI panel.
 - Fresh Testnet evidence for the expanded Paylink idempotency smoke path.
-- Event-indexed receipt state sourced from chain events.
+- Background event-indexed receipt state sourced from checkpoints or cursors.
 
 Therefore the product can claim a verified Testnet sponsored `mUSDC` escrow
 path, but not a production stablecoin payment product.

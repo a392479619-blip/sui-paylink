@@ -140,6 +140,11 @@ input, action buttons, and sponsored request history. In a local mock sponsor
 environment the real sponsor buttons are disabled instead of falling back to the
 old mock state mutation flow.
 
+Receipt pages can call `POST /api/paylinks/:id/sync-chain` to refresh a
+Paylink-bound receipt from recorded sponsored digests, Sui transaction events,
+and the current Escrow object state. This is a minimal on-demand chain sync, not
+a production event indexer.
+
 The web app includes a wallet-signed on-chain verification panel and defaults to
 the verified Testnet deployment. Override it with:
 

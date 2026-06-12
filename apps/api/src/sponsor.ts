@@ -22,6 +22,8 @@ import {
 import { nanoid } from "nanoid";
 import type {
   BuildSponsoredTransactionInput,
+  ChainReceiptSummary,
+  ChainVerificationStatus,
   Paylink,
   SponsoredTransactionAction,
   SponsoredTransactionRecord,
@@ -240,6 +242,94 @@ export function getSponsoredTransaction(id: string): SponsoredTransactionRecord 
     setSponsoredTransactionRecord(record);
   }
   return record;
+}
+
+export async function syncPaylinkChainState(paylinkId: string): Promise<ChainReceiptSummary> {
+  const paylink = getPaylink(paylinkId);
+  if (!paylink) {
+    throw new SponsorError(404, "paylink_not_found", "Paylink not found");
+  }
+
+  const executedRecords = listSponsoredTransactions(paylinkId)
+    .filter((record) => record.status === "executed" && record.digest)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const digests = uniqueStrings(executedRecords.map((record) => record.digest).filter(isString));
+  const syncedAt = new Date().toISOString();
+
+  if (digests.length === 0) {
+    return {
+      status: "pending",
+      syncedAt,
+      network: appConfig.network,
+      digests: [],
+      escrowObjectId: paylink.escrowObjectId,
+      events: [],
+      errors: ["No executed sponsored transaction digests are linked to this Paylink"],
+    };
+  }
+
+  const errors: string[] = [];
+  const events: ChainReceiptSummary["events"] = [];
+  let escrowObjectId = paylink.escrowObjectId;
+
+  for (const record of executedRecords) {
+    if (!record.digest) {
+      continue;
+    }
+    try {
+      const transaction = await client.getTransactionBlock({
+        digest: record.digest,
+        options: {
+          showBalanceChanges: true,
+          showEffects: true,
+          showEvents: true,
+          showObjectChanges: true,
+        },
+      });
+      const updatedRecord: SponsoredTransactionRecord = {
+        ...record,
+        gasCostMist: record.gasCostMist ?? actualGasCostMist(transaction),
+        escrowObjectId: record.escrowObjectId ?? extractCreatedEscrowObjectId(transaction),
+      };
+      setSponsoredTransactionRecord(updatedRecord);
+      applySponsoredTransactionResult(updatedRecord);
+      escrowObjectId = escrowObjectId ?? updatedRecord.escrowObjectId;
+      events.push(...chainEventsFromTransaction(transaction));
+      const transactionStatus = transaction.effects?.status.status;
+      if (transactionStatus !== "success") {
+        errors.push(`${record.digest}: ${transaction.effects?.status.error ?? "transaction did not succeed"}`);
+      }
+    } catch (error) {
+      errors.push(`${record.digest}: ${errorMessage(error)}`);
+    }
+  }
+
+  let escrow: ChainReceiptSummary["escrow"];
+  if (escrowObjectId) {
+    try {
+      escrow = await readEscrow(escrowObjectId);
+    } catch (error) {
+      errors.push(`${escrowObjectId}: ${errorMessage(error)}`);
+    }
+  }
+
+  const refreshedPaylink = getPaylink(paylinkId) ?? paylink;
+  const status = chainVerificationStatus({
+    paylink: refreshedPaylink,
+    escrow,
+    errors,
+  });
+
+  return {
+    status,
+    syncedAt,
+    network: appConfig.network,
+    digests,
+    escrowObjectId,
+    escrow,
+    events,
+    errors,
+  };
 }
 
 export async function submitSponsoredTransaction(
@@ -580,6 +670,57 @@ function actualGasCostMist(response: SuiTransactionBlockResponse): string | unde
   const nonRefundableStorageFee = BigInt(gasUsed.nonRefundableStorageFee ?? "0");
   const total = computationCost + storageCost + nonRefundableStorageFee - storageRebate;
   return total > 0n ? total.toString() : "0";
+}
+
+function chainEventsFromTransaction(response: SuiTransactionBlockResponse): ChainReceiptSummary["events"] {
+  return (response.events ?? []).map((event) => ({
+    digest: response.digest,
+    type: event.type,
+    parsedJson: event.parsedJson,
+  }));
+}
+
+function chainVerificationStatus(input: {
+  paylink: Paylink;
+  escrow?: ChainReceiptSummary["escrow"];
+  errors: string[];
+}): ChainVerificationStatus {
+  if (input.errors.length > 0) {
+    return "error";
+  }
+  if (!input.escrow) {
+    return "pending";
+  }
+  const escrowStatus = statusFromEscrow(input.escrow);
+  return escrowStatus === input.paylink.status ? "verified" : "mismatch";
+}
+
+function statusFromEscrow(escrow: NonNullable<ChainReceiptSummary["escrow"]>): Paylink["status"] {
+  if (escrow.released) {
+    return "released";
+  }
+  if (escrow.refunded) {
+    return "refunded";
+  }
+  if (escrow.delivered) {
+    return "delivered";
+  }
+  if (escrow.funded) {
+    return "funded";
+  }
+  return "created";
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values)];
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === "string";
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function requireSponsorSigner(): Signer {

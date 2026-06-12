@@ -43,6 +43,13 @@ export async function getReceipt(id: string): Promise<ReceiptSummary> {
   return request(`/api/paylinks/${id}/receipt`);
 }
 
+export async function syncPaylinkChain(id: string): Promise<ReceiptSummary> {
+  return request(`/api/paylinks/${id}/sync-chain`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
 export async function buildSponsoredTransaction(
   input: BuildSponsoredTransactionInput,
 ): Promise<SponsoredTransactionRecord> {

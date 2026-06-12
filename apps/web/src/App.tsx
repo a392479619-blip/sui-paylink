@@ -18,6 +18,7 @@ import {
   listPaylinks,
   listSponsoredTransactions,
   mutatePaylink,
+  syncPaylinkChain,
   submitSponsoredTransaction,
 } from "./api";
 import { ChainDemo } from "./ChainDemo";
@@ -54,6 +55,7 @@ function DashboardPage() {
   const [paylinks, setPaylinks] = useState<Paylink[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
+  const [syncingChain, setSyncingChain] = useState(false);
   const [error, setError] = useState<string>("");
 
   const selected = useMemo(
@@ -106,6 +108,21 @@ function DashboardPage() {
       await refresh();
     } catch (err) {
       setError(errorText(err));
+    }
+  }
+
+  async function handleSyncChain() {
+    if (!selected) return;
+    setError("");
+    setSyncingChain(true);
+    try {
+      const nextReceipt = await syncPaylinkChain(selected.id);
+      await refresh();
+      setReceipt(nextReceipt);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSyncingChain(false);
     }
   }
 
@@ -243,7 +260,7 @@ function DashboardPage() {
         </section>
       )}
 
-      {receipt && <ReceiptPanel receipt={receipt} />}
+      {receipt && <ReceiptPanel receipt={receipt} onSyncChain={handleSyncChain} syncingChain={syncingChain} />}
     </main>
   );
 }
@@ -253,6 +270,7 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
   const [paylink, setPaylink] = useState<Paylink | null>(null);
   const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
   const [sponsoredRecords, setSponsoredRecords] = useState<SponsoredTransactionRecord[]>([]);
+  const [syncingChain, setSyncingChain] = useState(false);
   const [error, setError] = useState<string>("");
 
   async function refresh() {
@@ -271,6 +289,20 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
   useEffect(() => {
     refresh().catch((err) => setError(errorText(err)));
   }, [paylinkId]);
+
+  async function handleSyncChain() {
+    setError("");
+    setSyncingChain(true);
+    try {
+      const nextReceipt = await syncPaylinkChain(paylinkId);
+      await refresh();
+      setReceipt(nextReceipt);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSyncingChain(false);
+    }
+  }
 
   return (
     <main className="shell">
@@ -310,7 +342,7 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
         </section>
       )}
 
-      {receipt && <ReceiptPanel receipt={receipt} />}
+      {receipt && <ReceiptPanel receipt={receipt} onSyncChain={handleSyncChain} syncingChain={syncingChain} />}
       {sponsoredRecords.length > 0 && (
         <SponsoredHistory records={sponsoredRecords} network={config?.network ?? "testnet"} />
       )}
@@ -614,10 +646,27 @@ function PaylinkActions({
   );
 }
 
-function ReceiptPanel({ receipt }: { receipt: ReceiptSummary }) {
+function ReceiptPanel({
+  receipt,
+  onSyncChain,
+  syncingChain,
+}: {
+  receipt: ReceiptSummary;
+  onSyncChain?: () => void;
+  syncingChain?: boolean;
+}) {
+  const chain = receipt.chain;
+
   return (
     <section className="panel receipt">
-      <h2>Receipt</h2>
+      <div className="receipt-heading">
+        <h2>Receipt</h2>
+        {onSyncChain && (
+          <button onClick={onSyncChain} disabled={syncingChain}>
+            {syncingChain ? "Syncing..." : "Sync chain"}
+          </button>
+        )}
+      </div>
       <div className="receipt-grid">
         <div>
           <p className="muted">Seller receives</p>
@@ -644,6 +693,78 @@ function ReceiptPanel({ receipt }: { receipt: ReceiptSummary }) {
           </li>
         ))}
       </ol>
+      {chain && (
+        <div className="chain-receipt">
+          <div className="chain-receipt-header">
+            <div>
+              <p className="eyebrow">Chain verification</p>
+              <h3>{chain.status}</h3>
+            </div>
+            <span>{formatDate(chain.syncedAt)}</span>
+          </div>
+          <dl className="facts compact">
+            <div>
+              <dt>Network</dt>
+              <dd>{chain.network}</dd>
+            </div>
+            <div>
+              <dt>Escrow object</dt>
+              <dd>{chain.escrowObjectId ? shortId(chain.escrowObjectId) : "pending"}</dd>
+            </div>
+            <div>
+              <dt>Digests</dt>
+              <dd>{chain.digests.length}</dd>
+            </div>
+            <div>
+              <dt>Events</dt>
+              <dd>{chain.events.length}</dd>
+            </div>
+          </dl>
+          {chain.escrow && (
+            <dl className="facts compact">
+              <div>
+                <dt>Funded</dt>
+                <dd>{String(chain.escrow.funded)}</dd>
+              </div>
+              <div>
+                <dt>Delivered</dt>
+                <dd>{String(chain.escrow.delivered)}</dd>
+              </div>
+              <div>
+                <dt>Released</dt>
+                <dd>{String(chain.escrow.released)}</dd>
+              </div>
+              <div>
+                <dt>Refunded</dt>
+                <dd>{String(chain.escrow.refunded)}</dd>
+              </div>
+            </dl>
+          )}
+          {chain.digests.length > 0 && (
+            <div className="chain-list">
+              {chain.digests.map((digest) => (
+                <a key={digest} href={explorerUrl(digest, chain.network)} target="_blank" rel="noreferrer">
+                  {shortId(digest)}
+                </a>
+              ))}
+            </div>
+          )}
+          {chain.events.length > 0 && (
+            <div className="chain-list">
+              {chain.events.slice(0, 6).map((event, index) => (
+                <span key={`${event.digest}-${event.type}-${index}`}>{event.type.split("::").slice(-1)[0]}</span>
+              ))}
+            </div>
+          )}
+          {chain.errors.length > 0 && (
+            <div className="chain-errors">
+              {chain.errors.map((item) => (
+                <p key={item}>{item}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
