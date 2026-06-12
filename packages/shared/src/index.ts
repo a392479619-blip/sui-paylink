@@ -65,7 +65,7 @@ export const buildSponsoredTransactionSchema = z.object({
   feeBps: z.number().int().min(0).max(500).optional(),
   feeReceiverAddress: z.string().min(1).optional(),
   gasBudgetMist: z.string().regex(/^\d+$/).optional(),
-  paylinkId: z.string().optional(),
+  paylinkId: z.string().min(1).optional(),
 });
 
 export type BuildSponsoredTransactionInput = z.infer<typeof buildSponsoredTransactionSchema>;
@@ -96,6 +96,14 @@ export type SponsoredTransactionRecord = {
   error?: string;
   paylinkId?: string;
   escrowObjectId?: string;
+  paymentCoinId?: string;
+  sellerAddress?: string;
+  deliveryProofUri?: string;
+  expectedAmountUnits?: string;
+  feeBps?: number;
+  feeReceiverAddress?: string;
+  gasBudgetMist: string;
+  gasCostMist?: string;
   createdAt: string;
   expiresAt: string;
   submittedAt?: string;
@@ -112,6 +120,8 @@ export type Paylink = CreatePaylinkInput & {
   deliverTransactionDigest?: string;
   releaseTransactionDigest?: string;
   refundTransactionDigest?: string;
+  sponsoredTransactionIds?: string[];
+  lastSponsoredTransactionId?: string;
   escrowObjectId?: string;
   receiptObjectId?: string;
   createdAt: string;

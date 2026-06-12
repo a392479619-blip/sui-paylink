@@ -82,12 +82,14 @@ Current verified status:
 - A build request without `SPONSOR_PRIVATE_KEY` returns `503 sponsor_not_configured`.
 - With a funded Testnet sponsor key, the API builds, dry-runs, dual-signs, submits, and records sponsored `mUSDC` escrow transactions.
 - `deployments/testnet-sponsored-mock-usdc-smoke.json` proves buyer and seller can execute the escrow flow with `0` SUI.
+- Sponsored transaction requests are persisted to `.data/sponsored-transactions.json`.
+- When a sponsored transaction has `paylinkId`, successful execution can update the Paylink with digest, escrow object, status, and actual gas cost.
 
 Still not verified:
 
 - Browser wallet compatibility for the sponsored UI panel.
-- Paylink-specific idempotency and persistence for sponsor requests.
-- Actual gas-cost persistence in a database.
+- Paylink-specific idempotency rejection for duplicate sponsor actions.
+- Event-indexed receipt state sourced from chain events.
 
 Therefore the product can claim a verified Testnet sponsored `mUSDC` escrow
 path, but not a production stablecoin payment product.
@@ -128,5 +130,5 @@ Testnet deployment alone is not a complete submission. The final submission stil
 
 Sponsored gas has Testnet smoke evidence for package-owned `mUSDC`. The final
 submission still must state that `mUSDC` is a test coin and that real stablecoin
-support, sponsor request persistence, event indexing, and hosted UX are separate
-from the chain mechanism proof.
+support, browser-wallet sponsored signing, event indexing, and hosted UX are
+separate from the chain mechanism proof.

@@ -22,6 +22,9 @@ export const sponsorKeySecret = sponsorPrivateKey;
 export const paylinkStorePath = process.env.PAYLINK_STORE_PATH
   ? resolve(process.env.PAYLINK_STORE_PATH)
   : resolve(projectRoot, ".data", "paylinks.json");
+export const sponsoredTransactionStorePath = process.env.SPONSORED_TRANSACTION_STORE_PATH
+  ? resolve(process.env.SPONSORED_TRANSACTION_STORE_PATH)
+  : resolve(projectRoot, ".data", "sponsored-transactions.json");
 
 export const appConfig: AppConfig = {
   network,

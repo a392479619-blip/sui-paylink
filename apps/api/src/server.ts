@@ -12,6 +12,7 @@ import {
   buildSponsoredTransaction,
   getSponsorAddress,
   getSponsoredTransaction,
+  listSponsoredTransactions,
   submitSponsoredTransaction,
 } from "./sponsor.js";
 import {
@@ -130,6 +131,10 @@ app.post("/api/sponsored-transactions/build", async (request, reply) => {
   } catch (error) {
     return sendSponsorError(reply, error);
   }
+});
+
+app.get<{ Querystring: { paylinkId?: string } }>("/api/sponsored-transactions", async (request) => {
+  return listSponsoredTransactions(request.query.paylinkId);
 });
 
 app.get<{ Params: { id: string } }>("/api/sponsored-transactions/:id", async (request, reply) => {

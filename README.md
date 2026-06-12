@@ -107,8 +107,8 @@ project-owned test coin, not real USDC. The API now has a verified sponsored
 transaction path for `mUSDC` escrow actions on Testnet, file-backed Paylink
 persistence for the mock product flow, and a direct `/pay/:id` buyer page. This
 proves the gasless escrow mechanism and gives reviewers a runnable Paylink UX,
-but production stablecoin support, sponsor request persistence, event indexing,
-and hosted deployment are still separate work.
+but production stablecoin support, event indexing, browser-wallet sponsored
+signing, and hosted deployment are still separate work.
 
 ```bash
 sui client switch --env testnet
@@ -124,6 +124,7 @@ npm run chain:test
 Sponsored API endpoints:
 
 - `POST /api/sponsored-transactions/build`
+- `GET /api/sponsored-transactions`
 - `GET /api/sponsored-transactions/:id`
 - `POST /api/sponsored-transactions/:id/submit`
 
@@ -140,8 +141,10 @@ VITE_PACKAGE_ID=<package-id>
 ```
 
 Local Paylinks are persisted to `.data/paylinks.json` by default. Override the
-path with `PAYLINK_STORE_PATH` when running the API. After starting the app with
-`npm run dev`, create a Paylink in the seller dashboard and open the generated
+path with `PAYLINK_STORE_PATH` when running the API. Sponsored transaction
+requests are persisted to `.data/sponsored-transactions.json`; override that
+with `SPONSORED_TRANSACTION_STORE_PATH`. After starting the app with `npm run
+dev`, create a Paylink in the seller dashboard and open the generated
 `http://127.0.0.1:5174/pay/<id>` URL to review the buyer page.
 
 See `docs/10-testnet-runbook.md` for the exact completion gate.

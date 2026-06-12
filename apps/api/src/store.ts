@@ -1,7 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { nanoid } from "nanoid";
-import type { CreatePaylinkInput, Paylink, ReceiptSummary } from "@suipaylink/shared";
+import type {
+  CreatePaylinkInput,
+  Paylink,
+  ReceiptSummary,
+  SponsoredTransactionRecord,
+} from "@suipaylink/shared";
 import { appConfig, paylinkStorePath } from "./config.js";
 
 const paylinks = new Map<string, Paylink>();
@@ -134,6 +139,64 @@ export function buildReceipt(id: string): ReceiptSummary {
   };
 }
 
+export function applySponsoredTransactionResult(record: SponsoredTransactionRecord): Paylink | undefined {
+  if (!record.paylinkId || record.status !== "executed" || !record.digest) {
+    return undefined;
+  }
+
+  const paylink = getPaylink(record.paylinkId);
+  if (!paylink) {
+    return undefined;
+  }
+
+  const timestamp = record.executedAt ?? now();
+  const basePatch: Partial<Paylink> = {
+    transactionDigest: record.digest,
+    lastSponsoredTransactionId: record.id,
+    sponsoredTransactionIds: appendUnique(paylink.sponsoredTransactionIds, record.id),
+  };
+
+  if (record.action === "fund-mock-usdc") {
+    return updatePaylink(record.paylinkId, {
+      ...basePatch,
+      status: "funded",
+      fundTransactionDigest: record.digest,
+      escrowObjectId: record.escrowObjectId ?? paylink.escrowObjectId,
+      fundedAt: timestamp,
+    }, timestamp);
+  }
+
+  if (record.action === "mark-delivered") {
+    return updatePaylink(record.paylinkId, {
+      ...basePatch,
+      status: "delivered",
+      deliverTransactionDigest: record.digest,
+      deliveryProofUri: record.deliveryProofUri ?? paylink.deliveryProofUri,
+      deliveredAt: timestamp,
+    }, timestamp);
+  }
+
+  if (record.action === "release") {
+    return updatePaylink(record.paylinkId, {
+      ...basePatch,
+      status: "released",
+      releaseTransactionDigest: record.digest,
+      releasedAt: timestamp,
+    }, timestamp);
+  }
+
+  if (record.action === "refund") {
+    return updatePaylink(record.paylinkId, {
+      ...basePatch,
+      status: "refunded",
+      refundTransactionDigest: record.digest,
+      refundedAt: timestamp,
+    }, timestamp);
+  }
+
+  return undefined;
+}
+
 function updatePaylink(id: string, patch: Partial<Paylink>, timestamp = now()): Paylink {
   const current = requirePaylink(id);
   const updated = {
@@ -160,6 +223,11 @@ function mockDigest(label: string): string {
 
 function mockObjectId(label: string): string {
   return `0x${label}${nanoid(28).replace(/[^a-zA-Z0-9]/g, "0").slice(0, 28)}`;
+}
+
+function appendUnique(values: string[] | undefined, nextValue: string): string[] {
+  const existing = values ?? [];
+  return existing.includes(nextValue) ? existing : [...existing, nextValue];
 }
 
 function loadPaylinks() {

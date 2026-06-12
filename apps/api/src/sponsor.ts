@@ -1,5 +1,13 @@
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { decodeSuiPrivateKey, type Signer } from "@mysten/sui/cryptography";
-import { SuiJsonRpcClient, getJsonRpcFullnodeUrl, type SuiObjectResponse } from "@mysten/sui/jsonRpc";
+import {
+  SuiJsonRpcClient,
+  getJsonRpcFullnodeUrl,
+  type SuiObjectChange,
+  type SuiObjectResponse,
+  type SuiTransactionBlockResponse,
+} from "@mysten/sui/jsonRpc";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { Secp256k1Keypair } from "@mysten/sui/keypairs/secp256k1";
 import { Secp256r1Keypair } from "@mysten/sui/keypairs/secp256r1";
@@ -14,6 +22,7 @@ import {
 import { nanoid } from "nanoid";
 import type {
   BuildSponsoredTransactionInput,
+  Paylink,
   SponsoredTransactionRecord,
   SubmitSponsoredTransactionInput,
 } from "@suipaylink/shared";
@@ -24,11 +33,20 @@ import {
   maxSponsorGasBudgetMist,
   mockUsdcCoinType,
   packageId,
+  sponsoredTransactionStorePath,
   sponsoredTransactionTtlMs,
   sponsorKeySecret,
 } from "./config.js";
+import { applySponsoredTransactionResult, getPaylink } from "./store.js";
 
 const records = new Map<string, SponsoredTransactionRecord>();
+loadSponsoredTransactions();
+
+type SponsoredTransactionStoreFile = {
+  version: 1;
+  records: SponsoredTransactionRecord[];
+};
+
 const client = new SuiJsonRpcClient({
   network: appConfig.network,
   url: getJsonRpcFullnodeUrl(appConfig.network),
@@ -58,6 +76,7 @@ export async function buildSponsoredTransaction(
   const sponsorAddress = sponsor.toSuiAddress();
   const sender = normalizeAddressInput(input.senderAddress, "senderAddress");
   const coinType = normalizeStructTag(mockUsdcCoinType);
+  const paylink = requireBoundPaylink(input);
   const transaction = new Transaction();
   const gasBudget = parseGasBudget(input.gasBudgetMist);
 
@@ -66,10 +85,18 @@ export async function buildSponsoredTransaction(
   transaction.setGasBudget(gasBudget);
 
   let escrowObjectId: string | undefined;
+  let deliveryProofUri = input.deliveryProofUri;
 
   if (input.action === "fund-mock-usdc") {
     const paymentCoinId = normalizeObjectIdInput(input.paymentCoinId, "paymentCoinId");
-    const sellerAddress = normalizeAddressInput(input.sellerAddress, "sellerAddress");
+    const sellerAddress = normalizeAddressInput(input.sellerAddress ?? paylink?.sellerAddress, "sellerAddress");
+    const expectedAmountUnits = input.expectedAmountUnits ?? (paylink ? amountToBaseUnits(paylink.amount, 6) : undefined);
+    assertPaylinkActionAllowed({
+      action: input.action,
+      sender,
+      paylink,
+      sellerAddress,
+    });
     if (sellerAddress === sender) {
       throw new SponsorError(400, "same_sender_and_seller", "sellerAddress must differ from senderAddress");
     }
@@ -77,16 +104,16 @@ export async function buildSponsoredTransaction(
       objectId: paymentCoinId,
       owner: sender,
       coinType,
-      expectedAmountUnits: input.expectedAmountUnits,
+      expectedAmountUnits,
     });
     transaction.moveCall({
       target: contractTarget("create_funded_escrow"),
       typeArguments: [coinType],
       arguments: [
         transaction.pure.address(sellerAddress),
-        transaction.pure.string(input.memo ?? "SuiPayLink sponsored MockUSDC escrow"),
+        transaction.pure.string(input.memo ?? paylink?.memo ?? "SuiPayLink sponsored MockUSDC escrow"),
         transaction.object(paymentCoinId),
-        transaction.pure.u64(input.feeBps ?? 100),
+        transaction.pure.u64(input.feeBps ?? paylink?.feeBps ?? 100),
         transaction.pure.address(normalizeAddressInput(input.feeReceiverAddress ?? feeReceiverAddress, "feeReceiverAddress")),
       ],
     });
@@ -94,7 +121,14 @@ export async function buildSponsoredTransaction(
 
   if (input.action === "mark-delivered") {
     escrowObjectId = normalizeObjectIdInput(input.escrowObjectId, "escrowObjectId");
+    deliveryProofUri = input.deliveryProofUri ?? "https://example.com/proofs/sponsored-delivery.pdf";
     const escrow = await readEscrow(escrowObjectId);
+    assertPaylinkActionAllowed({
+      action: input.action,
+      sender,
+      paylink,
+      escrowObjectId,
+    });
     assertAddressEquals(escrow.seller, sender, "Only the escrow seller can mark delivery");
     assertEscrowOpen(escrow);
     if (escrow.delivered) {
@@ -105,7 +139,7 @@ export async function buildSponsoredTransaction(
       typeArguments: [escrow.coinType],
       arguments: [
         transaction.object(escrowObjectId),
-        transaction.pure.string(input.deliveryProofUri ?? "https://example.com/proofs/sponsored-delivery.pdf"),
+        transaction.pure.string(deliveryProofUri),
       ],
     });
   }
@@ -113,6 +147,12 @@ export async function buildSponsoredTransaction(
   if (input.action === "release") {
     escrowObjectId = normalizeObjectIdInput(input.escrowObjectId, "escrowObjectId");
     const escrow = await readEscrow(escrowObjectId);
+    assertPaylinkActionAllowed({
+      action: input.action,
+      sender,
+      paylink,
+      escrowObjectId,
+    });
     assertAddressEquals(escrow.buyer, sender, "Only the escrow buyer can release funds");
     assertEscrowOpen(escrow);
     if (!escrow.delivered) {
@@ -128,6 +168,12 @@ export async function buildSponsoredTransaction(
   if (input.action === "refund") {
     escrowObjectId = normalizeObjectIdInput(input.escrowObjectId, "escrowObjectId");
     const escrow = await readEscrow(escrowObjectId);
+    assertPaylinkActionAllowed({
+      action: input.action,
+      sender,
+      paylink,
+      escrowObjectId,
+    });
     assertAddressEquals(escrow.buyer, sender, "Only the escrow buyer can refund funds");
     assertEscrowOpen(escrow);
     transaction.moveCall({
@@ -153,11 +199,23 @@ export async function buildSponsoredTransaction(
     transactionBytes,
     paylinkId: input.paylinkId,
     escrowObjectId,
+    paymentCoinId: input.paymentCoinId,
+    sellerAddress: input.sellerAddress ?? paylink?.sellerAddress,
+    deliveryProofUri,
+    expectedAmountUnits: input.expectedAmountUnits ?? (paylink ? amountToBaseUnits(paylink.amount, 6) : undefined),
+    feeBps: input.feeBps ?? paylink?.feeBps,
+    feeReceiverAddress: input.feeReceiverAddress ?? feeReceiverAddress,
+    gasBudgetMist: gasBudget,
     createdAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + sponsoredTransactionTtlMs).toISOString(),
   };
-  records.set(record.id, record);
+  setSponsoredTransactionRecord(record);
   return record;
+}
+
+export function listSponsoredTransactions(paylinkId?: string): SponsoredTransactionRecord[] {
+  const values = [...records.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return paylinkId ? values.filter((record) => record.paylinkId === paylinkId) : values;
 }
 
 export function getSponsoredTransaction(id: string): SponsoredTransactionRecord {
@@ -167,7 +225,7 @@ export function getSponsoredTransaction(id: string): SponsoredTransactionRecord 
   }
   if (isExpired(record) && record.status === "built") {
     record.status = "expired";
-    records.set(record.id, record);
+    setSponsoredTransactionRecord(record);
   }
   return record;
 }
@@ -195,7 +253,7 @@ export async function submitSponsoredTransaction(
     status: "submitted",
     submittedAt: new Date().toISOString(),
   };
-  records.set(record.id, submitted);
+  setSponsoredTransactionRecord(submitted);
 
   try {
     const response = await client.executeTransactionBlock({
@@ -209,14 +267,20 @@ export async function submitSponsoredTransaction(
       },
     });
     const status = response.effects?.status.status;
+    const escrowObjectId = record.escrowObjectId ?? extractCreatedEscrowObjectId(response);
     const executed: SponsoredTransactionRecord = {
       ...submitted,
       status: status === "success" ? "executed" : "failed",
       digest: response.digest,
+      escrowObjectId,
+      gasCostMist: actualGasCostMist(response),
       error: status === "failure" ? response.effects?.status.error : undefined,
       executedAt: new Date().toISOString(),
     };
-    records.set(record.id, executed);
+    setSponsoredTransactionRecord(executed);
+    if (executed.status === "executed") {
+      applySponsoredTransactionResult(executed);
+    }
     return executed;
   } catch (cause) {
     const failed: SponsoredTransactionRecord = {
@@ -225,9 +289,181 @@ export async function submitSponsoredTransaction(
       error: cause instanceof Error ? cause.message : String(cause),
       executedAt: new Date().toISOString(),
     };
-    records.set(record.id, failed);
+    setSponsoredTransactionRecord(failed);
     throw cause;
   }
+}
+
+function loadSponsoredTransactions() {
+  if (!existsSync(sponsoredTransactionStorePath)) {
+    return;
+  }
+
+  const raw = readFileSync(sponsoredTransactionStorePath, "utf8").trim();
+  if (!raw) {
+    return;
+  }
+
+  const parsed = JSON.parse(raw) as Partial<SponsoredTransactionStoreFile> | SponsoredTransactionRecord[];
+  const storedRecords = Array.isArray(parsed) ? parsed : parsed.records;
+  if (!Array.isArray(storedRecords)) {
+    throw new Error(`Invalid sponsored transaction store at ${sponsoredTransactionStorePath}`);
+  }
+
+  for (const record of storedRecords) {
+    if (isStoredSponsoredTransaction(record)) {
+      records.set(record.id, record);
+    }
+  }
+}
+
+function setSponsoredTransactionRecord(record: SponsoredTransactionRecord) {
+  records.set(record.id, record);
+  persistSponsoredTransactions();
+}
+
+function persistSponsoredTransactions() {
+  const payload: SponsoredTransactionStoreFile = {
+    version: 1,
+    records: listSponsoredTransactions(),
+  };
+  mkdirSync(dirname(sponsoredTransactionStorePath), { recursive: true });
+  const temporaryPath = `${sponsoredTransactionStorePath}.${process.pid}.tmp`;
+  writeFileSync(temporaryPath, `${JSON.stringify(payload, null, 2)}\n`);
+  renameSync(temporaryPath, sponsoredTransactionStorePath);
+}
+
+function isStoredSponsoredTransaction(value: unknown): value is SponsoredTransactionRecord {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const candidate = value as Partial<SponsoredTransactionRecord>;
+  return (
+    typeof candidate.id === "string" &&
+    typeof candidate.action === "string" &&
+    typeof candidate.status === "string" &&
+    typeof candidate.sender === "string" &&
+    typeof candidate.sponsor === "string" &&
+    typeof candidate.packageId === "string" &&
+    typeof candidate.coinType === "string" &&
+    typeof candidate.transactionBytes === "string" &&
+    typeof candidate.gasBudgetMist === "string" &&
+    typeof candidate.createdAt === "string" &&
+    typeof candidate.expiresAt === "string"
+  );
+}
+
+function requireBoundPaylink(input: BuildSponsoredTransactionInput): Paylink | undefined {
+  if (!input.paylinkId) {
+    return undefined;
+  }
+  const paylink = getPaylink(input.paylinkId);
+  if (!paylink) {
+    throw new SponsorError(404, "paylink_not_found", "Paylink not found");
+  }
+  if (paylink.mode !== "escrow") {
+    throw new SponsorError(400, "paylink_not_escrow", "Only escrow paylinks can use sponsored escrow transactions");
+  }
+  if (paylink.token !== "mUSDC") {
+    throw new SponsorError(400, "unsupported_paylink_token", "Only mUSDC paylinks can use the current sponsored path");
+  }
+  return paylink;
+}
+
+function assertPaylinkActionAllowed(input: {
+  action: BuildSponsoredTransactionInput["action"];
+  sender: string;
+  paylink?: Paylink;
+  sellerAddress?: string;
+  escrowObjectId?: string;
+}) {
+  if (!input.paylink) {
+    return;
+  }
+
+  if (input.action === "fund-mock-usdc") {
+    if (input.paylink.status !== "created") {
+      throw new SponsorError(409, "paylink_not_created", `Cannot fund paylink in status ${input.paylink.status}`);
+    }
+    if (input.sellerAddress) {
+      assertAddressEquals(input.sellerAddress, input.paylink.sellerAddress, "sellerAddress does not match the Paylink seller");
+    }
+    assertOptionalPaylinkAddress(input.paylink.buyerAddress, input.sender, "senderAddress does not match the Paylink buyer");
+    return;
+  }
+
+  if (!input.escrowObjectId) {
+    throw new SponsorError(400, "missing_escrow_object", "escrowObjectId is required for this Paylink action");
+  }
+  if (input.paylink.escrowObjectId && normalizeObjectIdInput(input.paylink.escrowObjectId, "paylink.escrowObjectId") !== input.escrowObjectId) {
+    throw new SponsorError(409, "escrow_object_mismatch", "escrowObjectId does not match the Paylink");
+  }
+
+  if (input.action === "mark-delivered") {
+    if (input.paylink.status !== "funded") {
+      throw new SponsorError(409, "paylink_not_funded", `Cannot mark delivery in status ${input.paylink.status}`);
+    }
+    assertOptionalPaylinkAddress(input.paylink.sellerAddress, input.sender, "senderAddress does not match the Paylink seller");
+    return;
+  }
+
+  if (input.action === "release") {
+    if (input.paylink.status !== "delivered") {
+      throw new SponsorError(409, "paylink_not_delivered", `Cannot release paylink in status ${input.paylink.status}`);
+    }
+    assertOptionalPaylinkAddress(input.paylink.buyerAddress, input.sender, "senderAddress does not match the Paylink buyer");
+    return;
+  }
+
+  if (input.action === "refund") {
+    if (input.paylink.status !== "funded" && input.paylink.status !== "delivered") {
+      throw new SponsorError(409, "paylink_not_refundable", `Cannot refund paylink in status ${input.paylink.status}`);
+    }
+    assertOptionalPaylinkAddress(input.paylink.buyerAddress, input.sender, "senderAddress does not match the Paylink buyer");
+  }
+}
+
+function assertOptionalPaylinkAddress(value: string | undefined, expected: string, message: string) {
+  if (!value) {
+    return;
+  }
+  assertAddressEquals(value, expected, message);
+}
+
+function amountToBaseUnits(amount: string, decimals: number): string {
+  const [whole, fraction = ""] = amount.split(".");
+  if (fraction.length > decimals) {
+    throw new SponsorError(400, "amount_precision_too_high", `mUSDC supports at most ${decimals} decimals`);
+  }
+  const paddedFraction = fraction.padEnd(decimals, "0");
+  return `${whole}${paddedFraction}`.replace(/^0+(?=\d)/, "");
+}
+
+function extractCreatedEscrowObjectId(response: SuiTransactionBlockResponse): string | undefined {
+  const createdEscrow = response.objectChanges?.find((change) => isCreatedEscrowChange(change));
+  return createdEscrow && "objectId" in createdEscrow ? createdEscrow.objectId : undefined;
+}
+
+function isCreatedEscrowChange(change: SuiObjectChange): boolean {
+  return (
+    change.type === "created" &&
+    "objectType" in change &&
+    typeof change.objectType === "string" &&
+    change.objectType.includes(`${packageId}::escrow::Escrow<`)
+  );
+}
+
+function actualGasCostMist(response: SuiTransactionBlockResponse): string | undefined {
+  const gasUsed = response.effects?.gasUsed;
+  if (!gasUsed) {
+    return undefined;
+  }
+  const computationCost = BigInt(gasUsed.computationCost);
+  const storageCost = BigInt(gasUsed.storageCost);
+  const storageRebate = BigInt(gasUsed.storageRebate);
+  const nonRefundableStorageFee = BigInt(gasUsed.nonRefundableStorageFee ?? "0");
+  const total = computationCost + storageCost + nonRefundableStorageFee - storageRebate;
+  return total > 0n ? total.toString() : "0";
 }
 
 function requireSponsorSigner(): Signer {
