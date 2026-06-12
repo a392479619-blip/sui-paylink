@@ -11,7 +11,9 @@ import { isValidSuiAddress, normalizeSuiAddress, parseStructTag } from "@mysten/
 import { config as loadEnv } from "dotenv";
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+loadIfExists(resolve(rootDir, ".env.local"));
 loadIfExists(resolve(rootDir, ".env"));
+loadIfExists(resolve(rootDir, "apps/api/.env.local"));
 loadIfExists(resolve(rootDir, "apps/api/.env"));
 
 const network = process.env.SUI_NETWORK ?? "testnet";
@@ -137,7 +139,7 @@ function finish(summary) {
 
 function loadIfExists(path) {
   if (existsSync(path)) {
-    loadEnv({ path, override: false });
+    loadEnv({ path, override: false, quiet: true });
   }
 }
 

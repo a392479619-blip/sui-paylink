@@ -44,6 +44,29 @@ npm run smoke:preview
 - 前端静态资源
 - 未知 `/api/*` 返回 JSON 404
 
+## Sponsor 钱包准备
+
+先生成或复用 sponsor 钱包，但不要把私钥提交到 Git：
+
+```bash
+npm run sponsor:bootstrap
+npm run sponsor:bootstrap -- --write-env-local --request-faucet --readiness
+```
+
+脚本会输出 `sponsorAddress`，默认不会输出私钥。`--write-env-local` 会把
+`SPONSOR_PRIVATE_KEY`、`SPONSOR_MODE=self-sponsored` 和 `SUI_NETWORK` 写入根目录
+`.env.local`，该文件已被 Git 忽略。
+
+如果 faucet 被限流，或页面要求 CAPTCHA，就手动把 Testnet SUI 转入脚本输出的
+`sponsorAddress`，然后重新运行：
+
+```bash
+npm run sponsor:readiness
+```
+
+只有 readiness 通过后，才能说 sponsor 钱包已准备好。只生成私钥、但没有
+Testnet SUI gas 余额，不算完成真实 sponsor 准备。
+
 ## Render 部署
 
 仓库已经提供 `render.yaml`。在 Render 中使用 Blueprint 部署后，至少设置：

@@ -39,8 +39,12 @@ npm run chain:test
 如果配置真实 sponsor 私钥：
 
 ```bash
+npm run sponsor:bootstrap -- --write-env-local --request-faucet --readiness
 SPONSOR_PRIVATE_KEY=<sui-private-key> npm run sponsor:readiness
 ```
+
+如果 faucet 返回限流或需要 CAPTCHA，先用 Web faucet 给 `sponsor:bootstrap`
+输出的 `sponsorAddress` 注入 Testnet SUI，再重新跑 `npm run sponsor:readiness`。
 
 如果要刷新链上证据：
 
@@ -60,7 +64,8 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 | Sponsored MockUSDC | `deployments/testnet-sponsored-mock-usdc-smoke.json` | 已有，扩展幂等后需重跑刷新 |
 | 本地 API smoke | `npm run smoke:api` 输出 | 已有命令 |
 | 生产预览 smoke | `npm run smoke:preview` 输出 | 已有命令 |
-| Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥 |
+| Sponsor bootstrap | `npm run sponsor:bootstrap` 输出 | 已有命令，不能泄露私钥 |
+| Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥和 Testnet SUI gas 余额 |
 | 浏览器钱包端到端 | 录屏 + digest | 未完成 |
 
 ## Demo 必须展示
@@ -98,7 +103,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 | 浏览器钱包 sponsored flow 未验证 | 评委可能认为 UX 证据不足 | 视频中展示后端 Testnet smoke，同时明确该项为下一步 |
 | mUSDC 不是官方稳定币 | 支付真实性不足 | 明确是 Testnet 测试币，用于证明非 SUI Coin escrow |
 | 未部署公开 URL | 评委试用成本高 | 尽快部署，或给出本地一键命令 |
-| sponsor 私钥/资金不足 | 不能录真实 gasless demo | 先跑 `sponsor:readiness` |
+| sponsor 私钥/资金不足 | 不能录真实 gasless demo | 先跑 `sponsor:bootstrap`，注资后再跑 `sponsor:readiness` |
 | 过度包装 | 降低可信度 | 使用“已验证 / 未完成”表述 |
 
 ## 最小可提交版本
@@ -117,6 +122,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 ## 强烈建议补齐后再提交
 
 - 真实 sponsor 私钥 readiness 通过。
+- sponsor 地址有足够 Testnet SUI gas 余额。
 - 公开页真实浏览器钱包 sponsored flow 成功一次。
 - 扩展后的 sponsored smoke 重跑，刷新 `deployments/testnet-sponsored-mock-usdc-smoke.json`。
 - 用现有 `Dockerfile` 或 `npm run preview:prod` 部署一个可访问的 demo URL。

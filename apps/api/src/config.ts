@@ -1,11 +1,17 @@
-import "dotenv/config";
+import { existsSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { config as loadEnv } from "dotenv";
 import type { AppConfig } from "@suipaylink/shared";
+
+const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
+loadIfExists(resolve(projectRoot, ".env.local"));
+loadIfExists(resolve(projectRoot, ".env"));
+loadIfExists(resolve(projectRoot, "apps", "api", ".env.local"));
+loadIfExists(resolve(projectRoot, "apps", "api", ".env"));
 
 const network = (process.env.SUI_NETWORK ?? "testnet") as AppConfig["network"];
 const sponsorPrivateKey = process.env.SPONSOR_PRIVATE_KEY;
-const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
 
 export const packageId =
   process.env.SUI_PACKAGE_ID ??
@@ -70,4 +76,10 @@ export const demoSeedFeeBps = Number(process.env.DEMO_SEED_FEE_BPS ?? 100);
 
 function resolveProjectPath(path: string): string {
   return isAbsolute(path) ? path : resolve(projectRoot, path);
+}
+
+function loadIfExists(path: string) {
+  if (existsSync(path)) {
+    loadEnv({ path, override: false, quiet: true });
+  }
 }

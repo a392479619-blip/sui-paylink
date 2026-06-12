@@ -133,12 +133,21 @@ and unknown API 404 behavior.
 Sponsor readiness before browser-wallet E2E:
 
 ```bash
+npm run sponsor:bootstrap
+npm run sponsor:bootstrap -- --write-env-local --request-faucet --readiness
 SPONSOR_PRIVATE_KEY=<sui-private-key> npm run sponsor:readiness
 ```
 
-This validates the sponsor key without printing it, derives the sponsor address,
-checks Testnet SUI gas balance, verifies the deployed package object, reads
-MockUSDC metadata, and checks gas budget configuration.
+`sponsor:bootstrap` generates or reuses an Ed25519 sponsor key, prints the
+derived sponsor address without printing the private key, can write the key to
+the gitignored `.env.local`, can request Testnet SUI from the official faucet,
+and can immediately run readiness. If faucet access is rate-limited or requires
+browser CAPTCHA, fund the printed sponsor address manually from a Sui Testnet
+faucet, then run `npm run sponsor:readiness`.
+
+`sponsor:readiness` validates the sponsor key without printing it, derives the
+sponsor address, checks Testnet SUI gas balance, verifies the deployed package
+object, reads MockUSDC metadata, and checks gas budget configuration.
 
 ```bash
 sui client switch --env testnet
