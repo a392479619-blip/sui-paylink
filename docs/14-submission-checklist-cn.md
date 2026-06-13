@@ -17,6 +17,7 @@
 | Demo URL | 优先填 Render/API 公开 URL；未完成时可填 Cloudflare 静态 mock demo：`https://sui-paylink.pages.dev/pay/demo-ai-workflow`；仓库公开或支持 private Pages 后也可填 GitHub Pages 静态 mock demo |
 | Contract package | `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340` |
 | Token boundary | Testnet `mUSDC` 是项目测试币，不是真实 USDC |
+| Registration copy | 使用 `docs/16-registration-pack-cn.md` 的可复制字段 |
 
 ## 提交前必须跑的命令
 
@@ -80,6 +81,7 @@ npm run submission:readiness -- --with-sponsor
 | GitHub Pages 静态 demo smoke | `npm run smoke:static-demo` 输出 | 已有命令，只证明静态 mock 可访问 |
 | Cloudflare Pages 静态 demo smoke | `npm run smoke:cloudflare-demo` 输出 | 已有命令，只证明静态 mock 可访问 |
 | 提交就绪度 | `npm run submission:readiness` 输出 | 已有命令，会区分最小可提交和竞争力缺口 |
+| 报名材料包 | `docs/16-registration-pack-cn.md` | 已有，登录报名页后逐项复制 |
 | Sponsor bootstrap | `npm run sponsor:bootstrap` 输出 | 已有命令，不能泄露私钥 |
 | Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥和 Testnet SUI gas 余额 |
 | 浏览器钱包端到端 | 录屏 + `deployments/browser-wallet-sponsored-e2e.json` | 未完成 |

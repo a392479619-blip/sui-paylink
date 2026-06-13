@@ -30,6 +30,7 @@ checkFile("Chinese PRD", "docs/11-prd-cn.md");
 checkFile("Demo script", "docs/13-demo-script-cn.md");
 checkFile("Submission checklist", "docs/14-submission-checklist-cn.md");
 checkFile("Deployment runbook", "docs/15-deployment-runbook-cn.md");
+checkFile("Registration pack", "docs/16-registration-pack-cn.md");
 checkFile("Cloudflare workflow", ".github/workflows/cloudflare-pages.yml");
 
 addCheck({
@@ -40,6 +41,7 @@ addCheck({
 });
 
 addCheck(latestCiCheck());
+addCheck(repositoryVisibilityCheck());
 addCheck(staticPublicDemoCheck());
 addCheck(realApiDeploymentCheck());
 addCheck(browserWalletE2eCheck());
@@ -59,6 +61,7 @@ const requiredFailures = checks.filter((check) => check.required && check.status
 const warnings = checks.filter((check) => check.status === "warn");
 const blockers = checks.filter((check) => check.status === "block");
 const competitiveGapNames = new Set([
+  "Repository visibility",
   "Static public demo path",
   "Real API hosted demo",
   "Browser wallet sponsored E2E",
@@ -209,6 +212,38 @@ function latestCiCheck() {
   }
 }
 
+function repositoryVisibilityCheck() {
+  const result = spawnSync("gh", ["repo", "view", "--json", "visibility,url"], {
+    cwd: rootDir,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    return {
+      name: "Repository visibility",
+      status: "warn",
+      detail: "could not read gh repo visibility",
+      required: false,
+    };
+  }
+  try {
+    const repo = JSON.parse(result.stdout);
+    const publicRepo = repo.visibility === "PUBLIC";
+    return {
+      name: "Repository visibility",
+      status: publicRepo ? "ok" : "warn",
+      detail: publicRepo ? `${repo.url} is public` : `${repo.url} is ${String(repo.visibility).toLowerCase()}; judges may not be able to access it`,
+      required: false,
+    };
+  } catch {
+    return {
+      name: "Repository visibility",
+      status: "warn",
+      detail: "gh repo output was not parseable",
+      required: false,
+    };
+  }
+}
+
 function staticPublicDemoCheck() {
   const workflowPath = resolve(rootDir, ".github/workflows/cloudflare-pages.yml");
   if (!existsSync(workflowPath)) {
@@ -309,6 +344,9 @@ function addCheck(check) {
 
 function nextActionsFor(allChecks) {
   const actions = [];
+  if (allChecks.some((check) => check.name === "Repository visibility" && check.status !== "ok")) {
+    actions.push("Make the GitHub repository public or confirm the submission platform can access a private repository.");
+  }
   if (allChecks.some((check) => check.name === "Static public demo path" && check.status !== "ok")) {
     actions.push("Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN in GitHub secrets, then run Cloudflare Static Demo.");
   }

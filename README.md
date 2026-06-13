@@ -68,7 +68,8 @@ sui-paylink/
     ├── 12-p0-implementation-checklist-cn.md
     ├── 13-demo-script-cn.md
     ├── 14-submission-checklist-cn.md
-    └── 15-deployment-runbook-cn.md
+    ├── 15-deployment-runbook-cn.md
+    └── 16-registration-pack-cn.md
 ```
 
 ## Current status
@@ -268,5 +269,7 @@ the `Cloudflare Static Demo` workflow manually. The expected Cloudflare URL is
 See `docs/10-testnet-runbook.md` for the exact completion gate.
 See `docs/11-prd-cn.md` for the detailed Chinese PRD, field dictionary, and P0
 acceptance criteria.
+See `docs/16-registration-pack-cn.md` for the copy-paste registration fields
+and founder verification checklist.
 See `docs/12-p0-implementation-checklist-cn.md` for the next implementation
 queue.
