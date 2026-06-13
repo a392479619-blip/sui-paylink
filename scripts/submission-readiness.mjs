@@ -237,12 +237,41 @@ function realApiDeploymentCheck() {
 }
 
 function browserWalletE2eCheck() {
-  return {
-    name: "Browser wallet sponsored E2E",
-    status: existsSync(resolve(rootDir, "deployments/browser-wallet-sponsored-e2e.json")) ? "ok" : "warn",
-    detail: "no browser-wallet sponsored digest file found yet",
-    required: false,
-  };
+  const evidencePath = resolve(rootDir, "deployments/browser-wallet-sponsored-e2e.json");
+  if (!existsSync(evidencePath)) {
+    return {
+      name: "Browser wallet sponsored E2E",
+      status: "warn",
+      detail: "no browser-wallet sponsored digest file found yet; run npm run evidence:browser-wallet after the real flow",
+      required: false,
+    };
+  }
+  try {
+    const evidence = JSON.parse(readFileSync(evidencePath, "utf8"));
+    const digests = Object.values(evidence.digests ?? {}).filter((value) => typeof value === "string" && value.length > 0);
+    const ok = Boolean(
+      evidence.verification?.ok &&
+        evidence.source === "browser-wallet-sponsored-flow" &&
+        evidence.sponsor &&
+        evidence.escrowObjectId &&
+        digests.length >= 3,
+    );
+    return {
+      name: "Browser wallet sponsored E2E",
+      status: ok ? "ok" : "warn",
+      detail: ok
+        ? `${digests.length} digest(s), escrow ${short(evidence.escrowObjectId)}`
+        : "browser-wallet evidence file exists but is incomplete or not verified",
+      required: false,
+    };
+  } catch (error) {
+    return {
+      name: "Browser wallet sponsored E2E",
+      status: "warn",
+      detail: `browser-wallet evidence is not parseable: ${errorMessage(error)}`,
+      required: false,
+    };
+  }
 }
 
 function runSponsorReadiness() {

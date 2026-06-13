@@ -56,6 +56,15 @@ npm run submission:readiness -- --with-sponsor
 npm run chain:smoke:sponsored-mock-usdc:testnet
 ```
 
+完成真实浏览器钱包 sponsored flow 后，导出提交证据：
+
+```bash
+npm run evidence:browser-wallet -- --paylink-id <paylink-id>
+npm run submission:readiness -- --with-sponsor
+```
+
+该命令会读取 `.data/paylinks.json` 和 `.data/sponsored-transactions.json`，校验 `fund-mock-usdc`、`mark-delivered`、`release/refund` 三段 executed digest，并写入 `deployments/browser-wallet-sponsored-e2e.json`。不要手工伪造这个文件。
+
 ## 必须附上的证据
 
 | 证据 | 文件或位置 | 状态 |
@@ -73,7 +82,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 | 提交就绪度 | `npm run submission:readiness` 输出 | 已有命令，会区分最小可提交和竞争力缺口 |
 | Sponsor bootstrap | `npm run sponsor:bootstrap` 输出 | 已有命令，不能泄露私钥 |
 | Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥和 Testnet SUI gas 余额 |
-| 浏览器钱包端到端 | 录屏 + digest | 未完成 |
+| 浏览器钱包端到端 | 录屏 + `deployments/browser-wallet-sponsored-e2e.json` | 未完成 |
 
 ## Demo 必须展示
 
@@ -137,5 +146,6 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 - 真实 sponsor 私钥 readiness 通过。
 - sponsor 地址有足够 Testnet SUI gas 余额。
 - 公开页真实浏览器钱包 sponsored flow 成功一次。
+- `npm run evidence:browser-wallet -- --paylink-id <paylink-id>` 成功写入证据。
 - 扩展后的 sponsored smoke 重跑，刷新 `deployments/testnet-sponsored-mock-usdc-smoke.json`。
 - 用现有 `Dockerfile` 或 `npm run preview:prod` 部署一个可访问的 demo URL。

@@ -141,6 +141,7 @@ Sponsor readiness before browser-wallet E2E:
 npm run sponsor:bootstrap
 npm run sponsor:bootstrap -- --write-env-local --request-faucet --readiness
 SPONSOR_PRIVATE_KEY=<sui-private-key> npm run sponsor:readiness
+npm run evidence:browser-wallet -- --paylink-id <paylink-id>
 ```
 
 `sponsor:bootstrap` generates or reuses an Ed25519 sponsor key, prints the
@@ -153,6 +154,10 @@ faucet, then run `npm run sponsor:readiness`.
 `sponsor:readiness` validates the sponsor key without printing it, derives the
 sponsor address, checks Testnet SUI gas balance, verifies the deployed package
 object, reads MockUSDC metadata, and checks gas budget configuration.
+After a real browser-wallet sponsored flow succeeds, `evidence:browser-wallet`
+reads the local Paylink and sponsored transaction stores, verifies the executed
+digests on Sui Testnet, checks that gas owner is the sponsor, and writes
+`deployments/browser-wallet-sponsored-e2e.json` for the hackathon submission.
 
 ```bash
 sui client switch --env testnet
