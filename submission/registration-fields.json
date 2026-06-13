@@ -1,0 +1,132 @@
+{
+  "updatedAt": "2026-06-13",
+  "event": {
+    "name": "Sui Overflow 2026",
+    "officialUrl": "https://overflow.sui.io/",
+    "registrationUrl": "https://www.deepsurge.xyz/hackathons/b587dc0c-4cb8-4e63-ada5-519df38103bf",
+    "selectedTrack": "DeFi & Payments",
+    "trackRationale": "SuiPayLink is a payment rail and escrow primitive for real-world cross-border digital service payments."
+  },
+  "fields": [
+    {
+      "label": "Project name",
+      "value": "SuiPayLink",
+      "status": "ready"
+    },
+    {
+      "label": "Tagline",
+      "value": "Gasless stablecoin escrow links for cross-border digital services.",
+      "status": "ready"
+    },
+    {
+      "label": "Track",
+      "value": "DeFi & Payments",
+      "status": "ready"
+    },
+    {
+      "label": "Short description",
+      "value": "SuiPayLink lets service sellers create gasless stablecoin escrow payment links on Sui. Buyers can enter a sponsored mUSDC escrow flow without holding SUI gas, sellers can mark delivery, buyers can release or refund, and both sides get verifiable Testnet receipts.",
+      "status": "ready",
+      "maxLength": 500
+    },
+    {
+      "label": "One-sentence description",
+      "value": "SuiPayLink turns cross-border digital service payments into gasless Sui escrow links with sponsored transactions and verifiable receipts.",
+      "status": "ready",
+      "maxLength": 280
+    },
+    {
+      "label": "Long description",
+      "value": "SuiPayLink is a payment-link product for Web3 services, AI automation sellers, small cross-border agencies, creators, and Sui ecosystem teams paying contributors. It turns a service agreement into a Sui escrow payment link: the seller creates a link, the buyer opens it, signs the business transaction, and the sponsor pays gas in the verified sponsored flow. The Move package records escrow state on Sui; the API persists Paylinks and sponsored transaction records; the receipt page can sync against Sui digests and Escrow object state. The current MVP proves the payment rail and escrow state machine on public Sui Testnet using a project-owned MockUSDC coin. It is not production USDC support, a Stripe replacement, or a legal arbitration platform.",
+      "status": "ready",
+      "maxLength": 1500
+    },
+    {
+      "label": "Problem",
+      "value": "Stablecoin service payments still require too much manual coordination. Buyers do not want to acquire SUI before paying. Sellers do not want to send raw wallet addresses and manually reconcile payments. Both sides need a simple escrow workflow and a receipt that can be verified later.",
+      "status": "ready",
+      "maxLength": 800
+    },
+    {
+      "label": "Solution",
+      "value": "SuiPayLink turns a service invoice into a Sui payment link. It supports escrow creation, sponsored transaction build/sign/submit, seller delivery marking, buyer release/refund, receipt math, and on-demand chain verification against Sui transaction digests and Escrow object state.",
+      "status": "ready",
+      "maxLength": 800
+    },
+    {
+      "label": "Tech stack",
+      "value": "Sui Move, Sui TypeScript SDK, React, Vite, Fastify, Node.js 22, GitHub Actions, Cloudflare Pages workflow, file-backed JSON stores for hackathon MVP persistence.",
+      "status": "ready",
+      "maxLength": 500
+    },
+    {
+      "label": "Repository URL",
+      "value": "https://github.com/a392479619-blip/sui-paylink",
+      "status": "needs_user_verification",
+      "reason": "The repository is currently private. Make it public before final submission, or confirm the platform can access a private repository."
+    },
+    {
+      "label": "Demo URL",
+      "value": "",
+      "status": "hold",
+      "reason": "Do not submit a demo URL until Cloudflare or another public host is actually deployed and browser-verified."
+    },
+    {
+      "label": "Demo video URL",
+      "value": "",
+      "status": "hold",
+      "reason": "Record and upload the demo video first. Use docs/13-demo-script-cn.md."
+    },
+    {
+      "label": "Contract package",
+      "value": "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340",
+      "status": "ready"
+    },
+    {
+      "label": "Team",
+      "value": "Solo builder. Founder / developer / product: criss.",
+      "status": "ready",
+      "maxLength": 300
+    }
+  ],
+  "evidenceLinks": [
+    {
+      "label": "Package",
+      "url": "https://suiexplorer.com/object/0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340?network=testnet",
+      "status": "ready"
+    },
+    {
+      "label": "Package publish transaction",
+      "url": "https://suiexplorer.com/txblock/ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3?network=testnet",
+      "status": "ready"
+    },
+    {
+      "label": "Sponsored MockUSDC fund transaction",
+      "url": "https://suiexplorer.com/txblock/ADJcJgnyaC5K8q7tUyygehMqYKYPJ9V2VYbTRUGqK7Nm?network=testnet",
+      "status": "ready"
+    },
+    {
+      "label": "Sponsored MockUSDC release transaction",
+      "url": "https://suiexplorer.com/txblock/FHpRgU1UBvaHVQBNQMh9ReUKmr2jHWgaGZWxQHCkqAeQ?network=testnet",
+      "status": "ready"
+    },
+    {
+      "label": "Sponsored escrow object",
+      "url": "https://suiexplorer.com/object/0xfa140db34391e6d7af3968c8cca37725028a7d4c97b3346fc6c4fda2a97ca0dc?network=testnet",
+      "status": "ready"
+    }
+  ],
+  "minimumGoNoGo": {
+    "go": [
+      "The form accepts project basics, track, repository URL, and written description.",
+      "The form allows demo URL and demo video URL to be omitted or added later.",
+      "The repository is made public or the platform can access a private repository."
+    ],
+    "noGo": [
+      "The form requires a public demo URL before submission.",
+      "The form requires a public or unlisted demo video before submission.",
+      "The form requires a public repository and the repository is still private.",
+      "The form requires production payment claims beyond current Testnet mUSDC evidence."
+    ]
+  }
+}

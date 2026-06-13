@@ -28,6 +28,16 @@
 
 ## 可复制报名字段
 
+结构化字段文件：`submission/registration-fields.json`
+
+报名前先跑：
+
+```bash
+npm run registration:audit
+```
+
+这个命令会检查字段长度、demo/video 是否被误填、GitHub 仓库可见性、以及最低提交 readiness。
+
 ### Project name
 
 SuiPayLink

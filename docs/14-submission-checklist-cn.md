@@ -29,6 +29,7 @@ npm run smoke:preview
 npm run smoke:static-demo
 npm run smoke:cloudflare-demo
 npm run submission:readiness
+npm run registration:audit
 npm run typecheck
 npm run build
 ```

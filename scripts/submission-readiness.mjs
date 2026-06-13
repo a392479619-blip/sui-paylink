@@ -25,12 +25,14 @@ checkPackageScript("smoke:static-demo");
 checkPackageScript("smoke:cloudflare-demo");
 checkPackageScript("typecheck");
 checkPackageScript("build");
+checkPackageScript("registration:audit");
 
 checkFile("Chinese PRD", "docs/11-prd-cn.md");
 checkFile("Demo script", "docs/13-demo-script-cn.md");
 checkFile("Submission checklist", "docs/14-submission-checklist-cn.md");
 checkFile("Deployment runbook", "docs/15-deployment-runbook-cn.md");
 checkFile("Registration pack", "docs/16-registration-pack-cn.md");
+checkFile("Registration fields", "submission/registration-fields.json", validateRegistrationFields);
 checkFile("Cloudflare workflow", ".github/workflows/cloudflare-pages.yml");
 
 addCheck({
@@ -159,6 +161,28 @@ function validateSponsoredEvidence(raw) {
   return {
     status: "ok",
     detail: `buyer/seller 0 SUI, ${digests.length} digest(s), sponsor paid gas`,
+  };
+}
+
+function validateRegistrationFields(raw) {
+  const data = JSON.parse(raw);
+  const fields = Array.isArray(data.fields) ? data.fields : [];
+  const readyFields = fields.filter((field) => field.status === "ready" && String(field.value ?? "").trim());
+  const holdFields = fields.filter((field) => field.status === "hold");
+  const badHoldFields = holdFields.filter((field) => String(field.value ?? "").trim());
+  if (readyFields.length < 8) {
+    return { status: "block", detail: `only ${readyFields.length} ready registration fields` };
+  }
+  if (badHoldFields.length > 0) {
+    return {
+      status: "warn",
+      detail: `hold fields have values: ${badHoldFields.map((field) => field.label).join(", ")}`,
+      required: false,
+    };
+  }
+  return {
+    status: "ok",
+    detail: `${readyFields.length} ready field(s), ${holdFields.length} held field(s)`,
   };
 }
 

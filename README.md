@@ -70,6 +70,8 @@ sui-paylink/
     ├── 14-submission-checklist-cn.md
     ├── 15-deployment-runbook-cn.md
     └── 16-registration-pack-cn.md
+├── submission/
+│   └── registration-fields.json
 ```
 
 ## Current status
@@ -271,5 +273,8 @@ See `docs/11-prd-cn.md` for the detailed Chinese PRD, field dictionary, and P0
 acceptance criteria.
 See `docs/16-registration-pack-cn.md` for the copy-paste registration fields
 and founder verification checklist.
+Run `npm run registration:audit` before opening the registration form; it checks
+field lengths, held demo/video fields, repository visibility, and minimum
+readiness.
 See `docs/12-p0-implementation-checklist-cn.md` for the next implementation
 queue.
