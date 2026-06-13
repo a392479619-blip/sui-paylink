@@ -12,6 +12,7 @@ const registration = JSON.parse(readFileSync(resolve(rootDir, "submission/regist
 const registrationAudit = runJson("node", ["scripts/registration-audit.mjs", "--json"]);
 const submissionReadiness = runJson("node", ["scripts/submission-readiness.mjs", "--with-sponsor", "--json"]);
 const publicPreflight = runJson("node", ["scripts/public-preflight.mjs", "--json"]);
+const sponsorReadiness = runJson("node", ["scripts/sponsor-readiness.mjs"], { allowNonzeroJson: true });
 
 const readyFields = registration.fields.filter((field) => field.status === "ready");
 const userFields = registration.fields.filter((field) => field.status === "needs_user_verification");
@@ -50,6 +51,12 @@ const summary = {
     registrationAudit: compactRun(registrationAudit),
     submissionReadiness: compactRun(submissionReadiness),
     publicPreflight: compactRun(publicPreflight),
+    sponsorReadiness: compactRun(sponsorReadiness),
+  },
+  sponsor: {
+    address: sponsorReadiness.data?.sponsorAddress,
+    minimumSponsorBalanceMist: sponsorReadiness.data?.minimumSponsorBalanceMist,
+    ready: sponsorReadiness.data?.ok === true,
   },
   competitiveGaps,
   actionItems,
@@ -87,7 +94,11 @@ function buildActionItems() {
     actions.push("If the form requires Demo URL, deploy Cloudflare/GitHub Pages static demo or a hosted API demo first, then rerun npm run founder:verify.");
   }
   if (sponsorGap) {
-    actions.push("Fund the sponsor address with Testnet SUI, then rerun npm run sponsor:readiness and npm run founder:verify.");
+    const sponsorAddress = sponsorReadiness.data?.sponsorAddress;
+    const required = sponsorReadiness.data?.minimumSponsorBalanceMist;
+    const target = sponsorAddress ? ` ${sponsorAddress}` : "";
+    const amount = required ? ` to at least ${required} MIST` : "";
+    actions.push(`Fund the sponsor address${target} with Testnet SUI${amount}, then rerun npm run sponsor:readiness and npm run founder:verify.`);
   }
   if (browserWalletGap) {
     actions.push("For a stronger demo, record one browser-wallet sponsored flow and export evidence with npm run evidence:browser-wallet.");
@@ -118,30 +129,31 @@ function findCheck(checks, name) {
   return Array.isArray(checks) ? checks.find((check) => check.name === name) : undefined;
 }
 
-function runJson(command, commandArgs) {
+function runJson(command, commandArgs, options = {}) {
   const result = spawnSync(command, commandArgs, {
     cwd: rootDir,
     encoding: "utf8",
     maxBuffer: 10 * 1024 * 1024,
   });
-  if (result.status !== 0) {
-    return {
-      ok: false,
-      exitCode: result.status ?? 1,
-      error: result.stderr.trim() || "command failed",
-      stdout: result.stdout,
-    };
-  }
   try {
+    const data = JSON.parse(result.stdout);
+    if (result.status !== 0 && !options.allowNonzeroJson) {
+      return {
+        ok: false,
+        exitCode: result.status ?? 1,
+        error: result.stderr.trim() || "command failed",
+        data,
+      };
+    }
     return {
-      ok: true,
-      exitCode: 0,
-      data: JSON.parse(result.stdout),
+      ok: result.status === 0,
+      exitCode: result.status ?? 0,
+      data,
     };
   } catch (error) {
     return {
       ok: false,
-      exitCode: 1,
+      exitCode: result.status ?? 1,
       error: `JSON parse failed: ${errorMessage(error)}`,
       stdout: result.stdout,
     };
@@ -205,6 +217,13 @@ function printHuman(data) {
   console.log("Action items:");
   for (const action of data.actionItems) {
     console.log(`- ${action}`);
+  }
+  if (data.sponsor.address) {
+    console.log("");
+    console.log("Sponsor top-up:");
+    console.log(`- address: ${data.sponsor.address}`);
+    console.log(`- required balance: ${data.sponsor.minimumSponsorBalanceMist ?? "unknown"} MIST`);
+    console.log(`- ready: ${data.sponsor.ready ? "yes" : "no"}`);
   }
   console.log("");
   console.log("No-Go if the form requires:");

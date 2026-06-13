@@ -53,6 +53,7 @@ npm run submission:readiness -- --with-sponsor
 
 如果 faucet 返回限流或需要 CAPTCHA，先用 Web faucet 给 `sponsor:bootstrap`
 输出的 `sponsorAddress` 注入 Testnet SUI，再重新跑 `npm run sponsor:readiness`。
+如果脚本输出 `manualTopUpRequired: true`，以 `manualTopUp.address` 为准，不要从浏览器钱包里临时换地址。
 
 如果要刷新链上证据：
 

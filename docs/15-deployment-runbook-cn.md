@@ -64,6 +64,10 @@ npm run sponsor:bootstrap -- --write-env-local --request-faucet --readiness
 npm run sponsor:readiness
 ```
 
+如果 `npm run sponsor:bootstrap -- --request-faucet --readiness` 输出
+`manualTopUpRequired: true`，直接复制 `manualTopUp.address` 去手动领水或转入 Testnet SUI。这个地址必须和后续
+`npm run sponsor:readiness` 输出的 `sponsorAddress` 一致。
+
 只有 readiness 通过后，才能说 sponsor 钱包已准备好。只生成私钥、但没有
 Testnet SUI gas 余额，不算完成真实 sponsor 准备。
 

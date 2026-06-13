@@ -27,21 +27,26 @@ const writeEnvLocal = args.has("--write-env-local");
 const requestFaucet = args.has("--request-faucet");
 const runReadiness = args.has("--readiness");
 const printSecret = args.has("--print-secret");
+const minimumSponsorBalanceMist = process.env.SPONSOR_READINESS_MIN_GAS_MIST ?? "100000000";
 let faucetFailed = false;
 
 const summary = {
   ok: true,
   network,
   sponsorAddress,
+  minimumSponsorBalanceMist,
   reusedExistingKey: Boolean(existingSecret),
   envFile: writeEnvLocal ? envPath : undefined,
   envFileWritten: false,
   faucet: undefined,
   balanceMist: undefined,
+  manualTopUpRequired: false,
+  manualTopUp: undefined,
   readiness: undefined,
   next: [
     "Keep .env.local private. It is gitignored.",
     "Run npm run sponsor:readiness before recording real sponsored browser flow.",
+    `If faucet is limited, manually send Testnet SUI to ${sponsorAddress}.`,
     "Set the same SPONSOR_PRIVATE_KEY in the hosted environment only if you are ready to sponsor Testnet gas.",
   ],
 };
@@ -64,6 +69,17 @@ try {
   }
 
   summary.balanceMist = await getBalanceMist(network, sponsorAddress);
+  summary.manualTopUpRequired = BigInt(summary.balanceMist) < BigInt(minimumSponsorBalanceMist);
+  if (summary.manualTopUpRequired) {
+    summary.manualTopUp = {
+      address: sponsorAddress,
+      network,
+      currentBalanceMist: summary.balanceMist,
+      requiredBalanceMist: minimumSponsorBalanceMist,
+      shortfallMist: (BigInt(minimumSponsorBalanceMist) - BigInt(summary.balanceMist)).toString(),
+      instruction: `Send Testnet SUI to ${sponsorAddress}, then rerun npm run sponsor:readiness.`,
+    };
+  }
 
   if (runReadiness) {
     summary.readiness = runSponsorReadiness(sponsorPrivateKey, network);
