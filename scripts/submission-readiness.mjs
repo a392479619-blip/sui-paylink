@@ -26,6 +26,7 @@ checkPackageScript("smoke:cloudflare-demo");
 checkPackageScript("typecheck");
 checkPackageScript("build");
 checkPackageScript("registration:audit");
+checkPackageScript("public:preflight");
 
 checkFile("Chinese PRD", "docs/11-prd-cn.md");
 checkFile("Demo script", "docs/13-demo-script-cn.md");

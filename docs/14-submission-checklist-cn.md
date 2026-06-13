@@ -30,6 +30,7 @@ npm run smoke:static-demo
 npm run smoke:cloudflare-demo
 npm run submission:readiness
 npm run registration:audit
+npm run public:preflight
 npm run typecheck
 npm run build
 ```

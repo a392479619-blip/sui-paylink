@@ -34,9 +34,10 @@
 
 ```bash
 npm run registration:audit
+npm run public:preflight
 ```
 
-这个命令会检查字段长度、demo/video 是否被误填、GitHub 仓库可见性、以及最低提交 readiness。
+这些命令会检查字段长度、demo/video 是否被误填、GitHub 仓库可见性、最低提交 readiness，以及公开仓库前的 tracked/history 密钥风险。
 
 ### Project name
 
@@ -182,6 +183,7 @@ npm run smoke:cloudflare-demo
 - GitHub Actions 最新 CI 是 success
 - README 的 Testnet explorer 链接能打开
 - `docs/13-demo-script-cn.md` 能支撑 2 分钟视频
+- `npm run public:preflight` 通过
 - 如果填写 repo URL，仓库必须 public 或平台确认可访问 private repo
 - 如果填写 demo URL，URL 必须真实可打开
 - 如果填写 video URL，视频必须公开或 unlisted 可访问

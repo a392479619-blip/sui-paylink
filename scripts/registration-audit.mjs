@@ -17,6 +17,7 @@ checkFieldLengths();
 checkHoldFields();
 checkEvidenceLinks();
 checks.push(readinessMinimumCheck());
+checks.push(publicPreflightCheck());
 checks.push(repositoryVisibilityCheck());
 
 const blockers = checks.filter((check) => check.status === "block");
@@ -118,6 +119,34 @@ function readinessMinimumCheck() {
       name: "Submission readiness minimum",
       status: "block",
       detail: "submission-readiness JSON was not parseable",
+    };
+  }
+}
+
+function publicPreflightCheck() {
+  const result = spawnSync("node", ["scripts/public-preflight.mjs", "--json"], {
+    cwd: rootDir,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    return {
+      name: "Public repository preflight",
+      status: "block",
+      detail: "public preflight failed; do not make the repository public yet",
+    };
+  }
+  try {
+    const parsed = JSON.parse(result.stdout);
+    return {
+      name: "Public repository preflight",
+      status: parsed.okToConsiderPublic ? "ok" : "block",
+      detail: parsed.okToConsiderPublic ? "no high-confidence tracked/history secret findings" : "secret findings need review",
+    };
+  } catch {
+    return {
+      name: "Public repository preflight",
+      status: "block",
+      detail: "public preflight JSON was not parseable",
     };
   }
 }

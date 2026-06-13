@@ -276,5 +276,7 @@ and founder verification checklist.
 Run `npm run registration:audit` before opening the registration form; it checks
 field lengths, held demo/video fields, repository visibility, and minimum
 readiness.
+Run `npm run public:preflight` before making the repository public; it checks
+tracked files and git history for high-confidence private key or token patterns.
 See `docs/12-p0-implementation-checklist-cn.md` for the next implementation
 queue.
