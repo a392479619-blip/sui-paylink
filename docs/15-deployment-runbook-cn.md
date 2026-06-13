@@ -131,6 +131,10 @@ GitHub Pages，所以 workflow 默认只支持手动触发。要使用 Pages URL
 npm run smoke:static-demo
 ```
 
+workflow 会尝试用 GitHub Actions 自动启用 Pages。如果它在 `Configure Pages` 失败并提示
+`Get Pages site failed`，说明仓库还没有启用 Pages 或当前 private repo/账号计划不支持。此时需要在 GitHub
+Settings -> Pages 里启用 `GitHub Actions` source，或先将仓库改为 public 后重跑 workflow。
+
 预期公开地址：
 
 ```text

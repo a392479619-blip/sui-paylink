@@ -280,12 +280,48 @@ function staticPublicDemoCheck() {
       required: false,
     };
   }
+  const pages = githubPagesCheck();
+  if (pages.ok) {
+    return {
+      name: "Static public demo path",
+      status: "ok",
+      detail: `GitHub Pages configured: ${pages.url}pay/demo-ai-workflow`,
+      required: false,
+    };
+  }
   return {
     name: "Static public demo path",
     status: "warn",
-    detail: "Cloudflare workflow exists, but hosted URL is only valid after CLOUDFLARE_* secrets and manual deploy",
+    detail: pages.detail
+      ? `${pages.detail}; Cloudflare workflow also exists but needs CLOUDFLARE_* secrets and manual deploy`
+      : "Cloudflare workflow exists, but hosted URL is only valid after CLOUDFLARE_* secrets and manual deploy",
     required: false,
   };
+}
+
+function githubPagesCheck() {
+  const result = spawnSync("gh", ["api", "repos/a392479619-blip/sui-paylink/pages"], {
+    cwd: rootDir,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    const stderr = result.stderr.trim();
+    const detail = stderr.includes("Not Found")
+      ? "GitHub Pages is not enabled for this repository yet"
+      : "could not read GitHub Pages status";
+    return { ok: false, detail };
+  }
+  try {
+    const pages = JSON.parse(result.stdout);
+    const url = typeof pages.html_url === "string" ? pages.html_url : "";
+    return {
+      ok: Boolean(url),
+      url: url.endsWith("/") ? url : `${url}/`,
+      detail: url ? `GitHub Pages configured at ${url}` : "GitHub Pages has no html_url yet",
+    };
+  } catch {
+    return { ok: false, detail: "GitHub Pages status was not parseable" };
+  }
 }
 
 function realApiDeploymentCheck() {
@@ -374,7 +410,7 @@ function nextActionsFor(allChecks) {
     actions.push("Make the GitHub repository public or confirm the submission platform can access a private repository.");
   }
   if (allChecks.some((check) => check.name === "Static public demo path" && check.status !== "ok")) {
-    actions.push("Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN in GitHub secrets, then run Cloudflare Static Demo.");
+    actions.push("Enable GitHub Pages with GitHub Actions source and run Static Demo Pages, or set CLOUDFLARE_* secrets and run Cloudflare Static Demo.");
   }
   if (allChecks.some((check) => check.name === "Sponsor readiness" && check.status !== "ok")) {
     actions.push("Fund the sponsor address with Testnet SUI, then run npm run submission:readiness -- --with-sponsor.");
