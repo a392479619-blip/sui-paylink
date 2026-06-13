@@ -38,6 +38,7 @@ checkFile("Registration pack", "docs/16-registration-pack-cn.md");
 checkFile("Founder final verification checklist", "docs/17-founder-final-verification-cn.md");
 checkFile("Registration copy sheet", "submission/registration-copy.md");
 checkFile("Registration fields", "submission/registration-fields.json", validateRegistrationFields);
+checkFile("External entry snapshot", "submission/external-entry-snapshot.md", validateExternalEntrySnapshot);
 checkFile("GitHub Pages workflow", ".github/workflows/pages.yml");
 checkFile("Cloudflare workflow", ".github/workflows/cloudflare-pages.yml");
 
@@ -198,6 +199,27 @@ function validateRegistrationFields(raw) {
   return {
     status: "ok",
     detail: `${readyFields.length} ready field(s), ${suggestedAnswers.length} optional answer(s), ${holdFields.length} held field(s)`,
+  };
+}
+
+function validateExternalEntrySnapshot(raw) {
+  const required = [
+    "https://overflow.sui.io/",
+    "https://www.deepsurge.xyz/hackathons/b587dc0c-4cb8-4e63-ada5-519df38103bf",
+    "DeFi & Payments",
+    "No-Go",
+  ];
+  const missing = required.filter((item) => !raw.includes(item));
+  if (missing.length > 0) {
+    return {
+      status: "warn",
+      detail: `missing snapshot marker(s): ${missing.join(", ")}`,
+      required: false,
+    };
+  }
+  return {
+    status: "ok",
+    detail: "official entry source snapshot present",
   };
 }
 

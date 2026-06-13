@@ -12,6 +12,7 @@
 - 官方页面正文显示 `Registration is open!`。
 - 官方 FAQ 同时显示 `Pre-registration is now open`。
 - DeepSurge 公开 HTML 没有暴露表单字段和 required 状态。
+- 本次外部入口快照记录在 `submission/external-entry-snapshot.md`。
 
 结论：可以打开报名/预注册入口填写资料，但不要假设已经进入最终项目提交阶段。Demo URL、Demo video URL、Repository URL 是否强制，必须以你登录后的表单 UI 为准。
 
