@@ -31,6 +31,7 @@
 ```bash
 git pull
 npm ci
+npm run registration:copy -- --write
 npm run founder:verify
 ```
 
@@ -39,6 +40,7 @@ npm run founder:verify
 - `Open registration form: YES`
 - `Final submit without user action: NO` 是正常状态，表示仍有外部动作需要你确认。
 - `Ready fields to copy` 里的字段可以复制到报名表。
+- 如果只想复制字段，直接打开 `submission/registration-copy.md`。
 - `Hold fields` 里的字段不要填，除非你已经完成对应验证。
 
 ## 第 2 步：公开仓库决策

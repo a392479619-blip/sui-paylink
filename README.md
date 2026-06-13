@@ -280,6 +280,8 @@ Run `npm run founder:verify` for a single founder-facing Go/No-Go summary before
 copying fields into the registration form.
 Run `npm run public:preflight` before making the repository public; it checks
 tracked files and git history for high-confidence private key or token patterns.
+Run `npm run registration:copy -- --write` to refresh the field-by-field copy
+sheet at `submission/registration-copy.md`.
 Use `docs/17-founder-final-verification-cn.md` as the final Chinese checklist
 before the founder opens and submits the registration form.
 See `docs/12-p0-implementation-checklist-cn.md` for the next implementation

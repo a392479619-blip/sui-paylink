@@ -35,6 +35,7 @@ checkFile("Submission checklist", "docs/14-submission-checklist-cn.md");
 checkFile("Deployment runbook", "docs/15-deployment-runbook-cn.md");
 checkFile("Registration pack", "docs/16-registration-pack-cn.md");
 checkFile("Founder final verification checklist", "docs/17-founder-final-verification-cn.md");
+checkFile("Registration copy sheet", "submission/registration-copy.md");
 checkFile("Registration fields", "submission/registration-fields.json", validateRegistrationFields);
 checkFile("GitHub Pages workflow", ".github/workflows/pages.yml");
 checkFile("Cloudflare workflow", ".github/workflows/cloudflare-pages.yml");
