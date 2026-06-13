@@ -1,6 +1,6 @@
 # SuiPayLink 报名最低材料包
 
-更新时间：2026-06-13
+更新时间：2026-06-14
 
 目标：先满足 Sui Overflow 2026 报名/最低提交材料，让创始人本人验证后再报名。不要把未完成的真实浏览器钱包 E2E、真实 USDC、公开 API 部署包装成已完成。
 
@@ -11,10 +11,12 @@
 - 官方入口：<https://overflow.sui.io/>
 - 官方报名入口：<https://www.deepsurge.xyz/hackathons/b587dc0c-4cb8-4e63-ada5-519df38103bf>
 - 官方页面显示：Sui Overflow 2026，May - August 2026，Registration is open。
+- 2026-06-14 复核：官方 FAQ 同时写着 `Pre-registration is now open`。这意味着当前入口可能是预注册/资料创建阶段，不要假设已经是最终项目提交表。
+- 2026-06-14 复核：DeepSurge 公开 HTML 没有暴露表单字段和 required 状态。Demo URL、video URL、repo URL 是否必填，必须以你登录后的表单 UI 为准。
 - 官方 FAQ 显示：只能选择一个最能代表项目的 track。
 - 适配 track：DeFi & Payments。官方 track 文案覆盖 financial primitives / payment rails / real-world scenarios，SuiPayLink 是面向跨境数字服务的 gasless escrow payment link。
 
-注意：官网页面里仍混有 2025 timeline 文案，日期以报名平台和官方最新通知为准。当前最低目标是 2026-06-16 前完成可报名材料，不等同于最终获奖级 demo 完成。
+注意：官网页面里仍混有 2025 timeline 文案，且 registration / pre-registration 文案不完全一致。日期和字段要求以报名平台登录后的最新 UI 为准。当前最低目标是 2026-06-16 前完成可报名/预注册材料，不等同于最终获奖级 demo 完成。
 
 ## 当前报名结论
 

@@ -4,6 +4,17 @@
 
 目标：在 2026-06-16 前完成 Sui Overflow 报名最低需求。这个清单只服务报名动作，不把未完成能力包装成已完成。
 
+## 官方入口复核
+
+2026-06-14 已复核：
+
+- 官方页面仍显示 Sui Overflow 2026，May - August 2026，并有 Register 入口。
+- 官方页面正文显示 `Registration is open!`。
+- 官方 FAQ 同时显示 `Pre-registration is now open`。
+- DeepSurge 公开 HTML 没有暴露表单字段和 required 状态。
+
+结论：可以打开报名/预注册入口填写资料，但不要假设已经进入最终项目提交阶段。Demo URL、Demo video URL、Repository URL 是否强制，必须以你登录后的表单 UI 为准。
+
 ## 当前结论
 
 可以打开报名表开始填写已准备字段。
@@ -195,3 +206,18 @@ npm run founder:verify
 - 无 `block`
 
 就可以按报名表要求提交最低材料。
+
+## 登录表单后的判断
+
+如果登录后看到的是预注册表：
+
+- 只填身份、项目方向、track、项目简介等当前可填字段。
+- 不要硬填未验证的 Demo URL 或 Demo video URL。
+- 提交后记录平台给出的下一步要求。
+
+如果登录后看到的是最终项目提交表：
+
+- 先确认 repo 是否必须 public。
+- 先确认 Demo URL 是否必填。
+- 先确认 Demo video 是否必填。
+- 如果任何一项必填但未完成，先 No-Go，不要用占位链接提交。
