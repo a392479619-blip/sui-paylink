@@ -4,6 +4,8 @@
 
 目标：先满足 Sui Overflow 2026 报名/最低提交材料，让创始人本人验证后再报名。不要把未完成的真实浏览器钱包 E2E、真实 USDC、公开 API 部署包装成已完成。
 
+最终报名操作以 `docs/17-founder-final-verification-cn.md` 为准。
+
 ## 官方信息核对
 
 - 官方入口：<https://overflow.sui.io/>

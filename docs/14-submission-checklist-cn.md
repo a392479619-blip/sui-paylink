@@ -87,6 +87,7 @@ npm run submission:readiness -- --with-sponsor
 | 提交就绪度 | `npm run submission:readiness` 输出 | 已有命令，会区分最小可提交和竞争力缺口 |
 | 创始人最终验收 | `npm run founder:verify` 输出 | 已有命令，会列出可复制字段、人工确认字段和 No-Go 条件 |
 | 报名材料包 | `docs/16-registration-pack-cn.md` | 已有，登录报名页后逐项复制 |
+| 创始人最终核验清单 | `docs/17-founder-final-verification-cn.md` | 已有，报名当天按步骤执行 |
 | Sponsor bootstrap | `npm run sponsor:bootstrap` 输出 | 已有命令，不能泄露私钥 |
 | Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥和 Testnet SUI gas 余额 |
 | 浏览器钱包端到端 | 录屏 + `deployments/browser-wallet-sponsored-e2e.json` | 未完成 |
