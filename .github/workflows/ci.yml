@@ -35,3 +35,6 @@ jobs:
 
       - name: Static demo smoke
         run: npm run smoke:static-demo
+
+      - name: Cloudflare static demo smoke
+        run: npm run smoke:cloudflare-demo

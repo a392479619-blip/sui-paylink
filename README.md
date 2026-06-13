@@ -238,16 +238,22 @@ Static public demo:
 
 ```bash
 npm run smoke:static-demo
+npm run smoke:cloudflare-demo
 ```
 
-This builds a GitHub Pages-compatible demo under `/sui-paylink/`, verifies the
-SPA fallback for `/pay/demo-ai-workflow`, and keeps all state in browser local
-storage. It is a public mock demo only: it does not build sponsored transaction
-bytes, spend gas, or submit a new Sui transaction. The repository is currently
-private, so GitHub Pages must be enabled manually after making the repository
-public or using a plan that supports private Pages. After that, run the
-`Static Demo Pages` workflow manually; the expected URL is
-`https://a392479619-blip.github.io/sui-paylink/`.
+`smoke:static-demo` builds a GitHub Pages-compatible demo under `/sui-paylink/`.
+`smoke:cloudflare-demo` builds the same browser-only mock demo for a root-hosted
+Cloudflare Pages project. Both verify the SPA fallback for
+`/pay/demo-ai-workflow`, and both keep all state in browser local storage. They
+do not build sponsored transaction bytes, spend gas, or submit a new Sui
+transaction.
+
+The repository is currently private, so GitHub Pages must be enabled manually
+after making the repository public or using a plan that supports private Pages.
+After that, run the `Static Demo Pages` workflow manually. For Cloudflare Pages,
+set GitHub secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`, then run
+the `Cloudflare Static Demo` workflow manually. The expected Cloudflare URL is
+`https://sui-paylink.pages.dev/pay/demo-ai-workflow`.
 
 See `docs/10-testnet-runbook.md` for the exact completion gate.
 See `docs/11-prd-cn.md` for the detailed Chinese PRD, field dictionary, and P0

@@ -145,10 +145,51 @@ bytes，不能花 gas，也不会提交新的 Sui Testnet 交易。
 提交材料里如果使用 GitHub Pages URL，必须把它标为 `public static mock demo`。真实链上证据仍然引用
 README 里的 Testnet package、smoke digest 和后续浏览器钱包 sponsored E2E 录屏。
 
+## Cloudflare Pages 静态 Demo
+
+Cloudflare Pages 不依赖 GitHub Pages 是否支持 private repo。仓库已经提供手动 workflow：
+
+```text
+.github/workflows/cloudflare-pages.yml
+```
+
+先在 GitHub 仓库设置里添加两个 Secrets：
+
+| Secret | 用途 |
+|---|---|
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account id |
+| `CLOUDFLARE_API_TOKEN` | API token，建议使用 `Edit Cloudflare Workers` 模板或等价 Pages/Workers 部署权限 |
+
+本地先验证 Cloudflare 根路径构建：
+
+```bash
+npm run smoke:cloudflare-demo
+```
+
+然后在 GitHub Actions 手动运行 `Cloudflare Static Demo`。workflow 会执行：
+
+```bash
+npx wrangler@4 whoami
+npm run smoke:cloudflare-demo
+npx wrangler@4 pages deploy apps/web/dist --project-name=sui-paylink --branch=main
+```
+
+预期公开地址：
+
+```text
+https://sui-paylink.pages.dev/
+https://sui-paylink.pages.dev/pay/demo-ai-workflow
+```
+
+这个 Cloudflare URL 仍然是 browser-only static mock demo，不是 Fastify API 公开服务，也不是真实
+sponsored transaction demo。真实 API URL 仍建议用 Render、Railway、Fly、Cloud Run 等能运行 Node/Fastify
+服务的平台部署。
+
 ## 当前边界
 
 - Render 免费实例的 `/tmp` 是临时存储，重启后 Paylink 可能丢失。
 - `DEMO_SEED_ENABLED=true` 会在启动时生成 `/pay/demo-ai-workflow`，用于稳定展示；页面上的 demo mode 只走本地 mock API，不代表真实链上交易。
 - GitHub Pages 静态 demo 没有后端 API，只能展示 browser-only mock flow。
+- Cloudflare Pages 静态 demo 同样没有后端 API，只能展示 browser-only mock flow。
 - 当前 `mUSDC` 是项目 Testnet 测试币，不是真实 USDC。
 - 公开 URL 只能证明 demo 可访问，不能替代真实 browser-wallet sponsored E2E。

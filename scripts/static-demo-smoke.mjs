@@ -8,7 +8,8 @@ const rootDir = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const distDir = resolve(rootDir, "apps", "web", "dist");
 const indexPath = resolve(distDir, "index.html");
 const notFoundPath = resolve(distDir, "404.html");
-const basePath = "/sui-paylink";
+const basePath = normalizeBasePath(process.env.STATIC_DEMO_BASE_PATH ?? "/sui-paylink");
+const assetPrefix = basePath === "/" ? "/" : `${basePath}/`;
 
 if (!isReadableFile(indexPath)) {
   throw new Error(`Missing static demo index at ${indexPath}. Run npm run build:static-demo first.`);
@@ -18,8 +19,8 @@ if (!isReadableFile(notFoundPath)) {
 }
 
 const indexHtml = readFileSync(indexPath, "utf8");
-if (!indexHtml.includes(`${basePath}/assets/`)) {
-  throw new Error(`Static demo assets are not built with ${basePath}/ base path.`);
+if (!indexHtml.includes(`${assetPrefix}assets/`)) {
+  throw new Error(`Static demo assets are not built with ${assetPrefix} base path.`);
 }
 
 const server = createServer((request, response) => {
@@ -36,7 +37,8 @@ try {
   if (!address || typeof address === "string") {
     throw new Error("Could not resolve local smoke server address");
   }
-  const baseUrl = `http://127.0.0.1:${address.port}${basePath}`;
+  const origin = `http://127.0.0.1:${address.port}`;
+  const baseUrl = `${origin}${basePath === "/" ? "" : basePath}`;
 
   const root = await expectOk(`${baseUrl}/`);
   expectIncludes(root, '<div id="root"></div>', "root html");
@@ -44,11 +46,11 @@ try {
   const paylink = await expectOk(`${baseUrl}/pay/demo-ai-workflow`);
   expectIncludes(paylink, '<div id="root"></div>', "paylink fallback html");
 
-  const assetHref = indexHtml.match(/\/sui-paylink\/assets\/[^"]+\.js/)?.[0];
+  const assetHref = indexHtml.match(new RegExp(`${escapeRegExp(assetPrefix)}assets/[^"]+\\.js`))?.[0];
   if (!assetHref) {
     throw new Error("Could not find built JS asset in static demo HTML");
   }
-  await expectOk(`http://127.0.0.1:${address.port}${assetHref}`);
+  await expectOk(`${origin}${assetHref}`);
 
   console.log(JSON.stringify({
     ok: true,
@@ -61,11 +63,26 @@ try {
 
 function pathnameForRequest(rawUrl) {
   const pathname = new URL(rawUrl, "http://localhost").pathname;
+  if (basePath === "/") {
+    return pathname;
+  }
   if (!pathname.startsWith(`${basePath}/`) && pathname !== basePath) {
     return "/";
   }
   const stripped = pathname.slice(basePath.length);
   return stripped || "/";
+}
+
+function normalizeBasePath(value) {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "/") {
+    return "/";
+  }
+  return `/${trimmed.replace(/^\/+|\/+$/g, "")}`;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function assetPathForPathname(pathname) {

@@ -14,7 +14,7 @@
 | Secondary track | Agentic Web, only if展示 AI invoice/payment-agent workflow |
 | Repo | `https://github.com/a392479619-blip/sui-paylink` |
 | Demo video | 2 分钟，按 `docs/13-demo-script-cn.md` 录 |
-| Demo URL | 优先填 Render/API 公开 URL；仓库公开或支持 private Pages 后，可填 GitHub Pages 静态 mock demo：`https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow` |
+| Demo URL | 优先填 Render/API 公开 URL；未完成时可填 Cloudflare 静态 mock demo：`https://sui-paylink.pages.dev/pay/demo-ai-workflow`；仓库公开或支持 private Pages 后也可填 GitHub Pages 静态 mock demo |
 | Contract package | `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340` |
 | Token boundary | Testnet `mUSDC` 是项目测试币，不是真实 USDC |
 
@@ -26,6 +26,7 @@
 npm run smoke:api
 npm run smoke:preview
 npm run smoke:static-demo
+npm run smoke:cloudflare-demo
 npm run typecheck
 npm run build
 ```
@@ -66,6 +67,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 | 本地 API smoke | `npm run smoke:api` 输出 | 已有命令 |
 | 生产预览 smoke | `npm run smoke:preview` 输出 | 已有命令 |
 | GitHub Pages 静态 demo smoke | `npm run smoke:static-demo` 输出 | 已有命令，只证明静态 mock 可访问 |
+| Cloudflare Pages 静态 demo smoke | `npm run smoke:cloudflare-demo` 输出 | 已有命令，只证明静态 mock 可访问 |
 | Sponsor bootstrap | `npm run sponsor:bootstrap` 输出 | 已有命令，不能泄露私钥 |
 | Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥和 Testnet SUI gas 余额 |
 | 浏览器钱包端到端 | 录屏 + digest | 未完成 |
@@ -107,6 +109,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 | mUSDC 不是官方稳定币 | 支付真实性不足 | 明确是 Testnet 测试币，用于证明非 SUI Coin escrow |
 | 未部署公开 URL | 评委试用成本高 | 尽快部署，或给出本地一键命令 |
 | 只有 GitHub Pages 静态 URL | 评委只能看 mock 交互，不能验证 API | 同时附 README Testnet digest 和真实 sponsor 待完成边界 |
+| 只有 Cloudflare Pages 静态 URL | 评委只能看 mock 交互，不能验证 API | 同时附 README Testnet digest 和真实 sponsor 待完成边界 |
 | sponsor 私钥/资金不足 | 不能录真实 gasless demo | 先跑 `sponsor:bootstrap`，注资后再跑 `sponsor:readiness` |
 | 过度包装 | 降低可信度 | 使用“已验证 / 未完成”表述 |
 
@@ -117,6 +120,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 - `npm run smoke:api` 通过。
 - `npm run smoke:preview` 通过。
 - `npm run smoke:static-demo` 通过。
+- `npm run smoke:cloudflare-demo` 通过。
 - `npm run typecheck` 通过。
 - `npm run build` 通过。
 - README 中 Testnet evidence 链接可打开。

@@ -1,0 +1,35 @@
+name: Cloudflare Static Demo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Cloudflare credentials
+        run: npx wrangler@4 whoami
+
+      - name: Build and smoke Cloudflare demo
+        run: npm run smoke:cloudflare-demo
+
+      - name: Deploy Cloudflare Pages
+        run: npx wrangler@4 pages deploy apps/web/dist --project-name=sui-paylink --branch=main
