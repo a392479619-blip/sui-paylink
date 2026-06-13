@@ -135,6 +135,24 @@ GitHub Pages，所以 workflow 默认只支持手动触发。要使用 Pages URL
 npm run smoke:static-demo
 ```
 
+也可以先 dry-run 一次受保护脚本。它默认只检查公开前扫描、仓库状态和预期 Demo URL，不会改变仓库可见性：
+
+```bash
+npm run demo:pages-cutover
+```
+
+只有你明确批准公开仓库后，才运行执行模式：
+
+```bash
+npm run demo:pages-cutover -- --confirm-public-repo
+```
+
+执行模式会先跑公开前扫描，再把 repo 改成 public、启用 GitHub Pages、触发 `Static Demo Pages` workflow、等待 workflow 结束，并验证：
+
+```text
+https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
+```
+
 workflow 会尝试用 GitHub Actions 自动启用 Pages。如果它在 `Configure Pages` 失败并提示
 `Get Pages site failed`，说明仓库还没有启用 Pages 或当前 private repo/账号计划不支持。此时需要在 GitHub
 Settings -> Pages 里启用 `GitHub Actions` source，或先将仓库改为 public 后重跑 workflow。

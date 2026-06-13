@@ -93,6 +93,20 @@ https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
 
 4. 打开成功后再填 Demo URL。
 
+更稳的方式是先 dry-run：
+
+```bash
+npm run demo:pages-cutover
+```
+
+你确认可以公开仓库后，再执行：
+
+```bash
+npm run demo:pages-cutover -- --confirm-public-repo
+```
+
+这个命令会先跑公开前扫描，再公开仓库、启用 GitHub Pages、触发静态 Demo workflow、等待完成并验证 URL。不要在未确认可以公开仓库时运行执行模式。
+
 ### 方案 B：Cloudflare Pages
 
 当前 GitHub secrets 里还没有：
