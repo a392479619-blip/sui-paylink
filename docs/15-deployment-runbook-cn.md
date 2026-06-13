@@ -135,6 +135,9 @@ workflow 会尝试用 GitHub Actions 自动启用 Pages。如果它在 `Configur
 `Get Pages site failed`，说明仓库还没有启用 Pages 或当前 private repo/账号计划不支持。此时需要在 GitHub
 Settings -> Pages 里启用 `GitHub Actions` source，或先将仓库改为 public 后重跑 workflow。
 
+当前已验证：2026-06-13 本仓库在 private 状态下创建 Pages 返回 `Your current plan does not support GitHub
+Pages for this repository`。如果仍保持 private，优先走 Cloudflare Pages；如果要用 GitHub Pages，需要先公开仓库。
+
 预期公开地址：
 
 ```text

@@ -23,6 +23,7 @@
 - GitHub 仓库当前是 private。报名前如果表单要求评委访问代码，必须改成 public，或确认平台支持私有仓库授权。
 - 当前没有真实公开 API demo URL。
 - 当前 Cloudflare Pages workflow 已有，但需要配置 `CLOUDFLARE_ACCOUNT_ID` 和 `CLOUDFLARE_API_TOKEN` 后手动部署。
+- 当前 GitHub Pages 在 private repo 状态下不可用；GitHub 返回当前 plan 不支持该仓库 Pages。要用 GitHub Pages，需要先公开仓库后重跑 `Static Demo Pages` workflow。
 - 当前 sponsor 地址没有 Testnet SUI gas，真实浏览器钱包 sponsored E2E 还不能完成。
 - 当前可提交的链上证据是 Testnet smoke，包括 sponsored MockUSDC 证据；不是浏览器钱包端到端证据。
 

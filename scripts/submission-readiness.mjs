@@ -35,6 +35,7 @@ checkFile("Submission checklist", "docs/14-submission-checklist-cn.md");
 checkFile("Deployment runbook", "docs/15-deployment-runbook-cn.md");
 checkFile("Registration pack", "docs/16-registration-pack-cn.md");
 checkFile("Registration fields", "submission/registration-fields.json", validateRegistrationFields);
+checkFile("GitHub Pages workflow", ".github/workflows/pages.yml");
 checkFile("Cloudflare workflow", ".github/workflows/cloudflare-pages.yml");
 
 addCheck({
@@ -200,7 +201,7 @@ function checkPackageScript(scriptName) {
 }
 
 function latestCiCheck() {
-  const result = spawnSync("gh", ["run", "list", "--limit", "1", "--json", "status,conclusion,displayTitle,databaseId"], {
+  const result = spawnSync("gh", ["run", "list", "--workflow", "ci.yml", "--limit", "1", "--json", "status,conclusion,displayTitle,databaseId"], {
     cwd: rootDir,
     encoding: "utf8",
   });
@@ -271,12 +272,13 @@ function repositoryVisibilityCheck() {
 }
 
 function staticPublicDemoCheck() {
-  const workflowPath = resolve(rootDir, ".github/workflows/cloudflare-pages.yml");
-  if (!existsSync(workflowPath)) {
+  const pagesWorkflowPath = resolve(rootDir, ".github/workflows/pages.yml");
+  const cloudflareWorkflowPath = resolve(rootDir, ".github/workflows/cloudflare-pages.yml");
+  if (!existsSync(pagesWorkflowPath) && !existsSync(cloudflareWorkflowPath)) {
     return {
       name: "Static public demo path",
       status: "block",
-      detail: "Cloudflare workflow missing",
+      detail: "GitHub Pages and Cloudflare demo workflows are missing",
       required: false,
     };
   }
@@ -289,12 +291,11 @@ function staticPublicDemoCheck() {
       required: false,
     };
   }
+  const cloudflare = cloudflareSecretsCheck();
   return {
     name: "Static public demo path",
     status: "warn",
-    detail: pages.detail
-      ? `${pages.detail}; Cloudflare workflow also exists but needs CLOUDFLARE_* secrets and manual deploy`
-      : "Cloudflare workflow exists, but hosted URL is only valid after CLOUDFLARE_* secrets and manual deploy",
+    detail: [pages.detail, cloudflare.detail].filter(Boolean).join("; "),
     required: false,
   };
 }
@@ -322,6 +323,36 @@ function githubPagesCheck() {
   } catch {
     return { ok: false, detail: "GitHub Pages status was not parseable" };
   }
+}
+
+function cloudflareSecretsCheck() {
+  const result = spawnSync("gh", ["secret", "list"], {
+    cwd: rootDir,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    return {
+      ok: false,
+      detail: "could not read GitHub secrets for Cloudflare deployment",
+    };
+  }
+  const names = new Set(
+    result.stdout
+      .split(/\r?\n/)
+      .map((line) => line.trim().split(/\s+/)[0])
+      .filter(Boolean),
+  );
+  const missing = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"].filter((name) => !names.has(name));
+  if (missing.length === 0) {
+    return {
+      ok: true,
+      detail: "Cloudflare secrets are present; run Cloudflare Static Demo workflow and verify the URL",
+    };
+  }
+  return {
+    ok: false,
+    detail: `Cloudflare demo secrets missing: ${missing.join(", ")}`,
+  };
 }
 
 function realApiDeploymentCheck() {
