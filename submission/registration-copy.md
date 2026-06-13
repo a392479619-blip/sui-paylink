@@ -1,7 +1,7 @@
 # SuiPayLink Registration Copy Sheet
 
 Generated from `submission/registration-fields.json`.
-Source updatedAt: 2026-06-13
+Source updatedAt: 2026-06-14
 
 ## Event
 
@@ -92,6 +92,50 @@ Length: 51/300
 
 ```text
 Solo builder. Founder / developer / product: criss.
+```
+
+## Optional Form Answers
+
+Use these only when the live form asks a matching question.
+
+### What makes this useful?
+
+Length: 408/800
+
+```text
+SuiPayLink targets a concrete payment workflow instead of a generic crypto checkout. Service sellers need payment links, buyers need low-friction stablecoin payment, and both sides need escrow state plus a receipt they can verify later. The wedge is cross-border digital service escrow with sponsored gas on Sui: the buyer signs the business action, while the sponsor pays gas in the verified sponsored flow.
+```
+
+### What did you build during the hackathon?
+
+Length: 449/900
+
+```text
+I built a Sui Move escrow package, deployed it on public Sui Testnet, added a project-owned MockUSDC test coin, verified SUI escrow, refund, two-party, MockUSDC, and sponsored MockUSDC flows, built a Fastify API for Paylinks and sponsored transaction build/submit, built a React seller dashboard and public buyer pay page, added receipt sync against Sui digests and Escrow object state, and added smoke/readiness scripts for submission verification.
+```
+
+### Why Sui?
+
+Length: 405/800
+
+```text
+Sui fits this project because sponsored transactions let the app sponsor pay gas while the buyer or seller still signs the business action. Sui objects also map cleanly to escrow state and verifiable receipts. Low fees, fast settlement, and Sui's gasless stablecoin direction make it a strong chain for small cross-border digital service payments where forcing users to acquire gas first kills conversion.
+```
+
+### How can judges verify it?
+
+Length: 409/900
+
+```text
+Judges can inspect the public Sui Testnet package and transactions in Sui Explorer, run the local smoke tests, and open the Paylink buyer flow. The README links the package, publish transaction, sponsored MockUSDC fund/release transactions, and sponsored escrow object. Locally, run npm run smoke:api, npm run smoke:preview, npm run smoke:static-demo, npm run submission:readiness, and npm run founder:verify.
+```
+
+### What is not finished?
+
+Length: 442/900
+
+```text
+This is a hackathon MVP on public Sui Testnet. It does not claim production USDC support, fiat ramps, legal arbitration, full event indexing, or Stripe replacement behavior. The current strongest evidence is the deployed Move package plus Testnet smoke flows, including sponsored MockUSDC where buyer and seller hold 0 SUI while the sponsor pays gas. Public hosting, demo video, and browser-wallet sponsored E2E remain final submission steps.
 ```
 
 ## Needs Founder Verification

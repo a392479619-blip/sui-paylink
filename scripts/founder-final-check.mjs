@@ -17,6 +17,7 @@ const sponsorReadiness = runJson("node", ["scripts/sponsor-readiness.mjs"], { al
 const readyFields = registration.fields.filter((field) => field.status === "ready");
 const userFields = registration.fields.filter((field) => field.status === "needs_user_verification");
 const holdFields = registration.fields.filter((field) => field.status === "hold");
+const suggestedAnswers = Array.isArray(registration.suggestedAnswers) ? registration.suggestedAnswers : [];
 const competitiveGaps = submissionReadiness.data?.competitiveGaps ?? [];
 const actionItems = buildActionItems();
 const noGoIfRequired = buildNoGoConditions();
@@ -45,6 +46,7 @@ const summary = {
     readyFields: readyFields.map((field) => pickField(field)),
     userVerificationFields: userFields.map((field) => pickField(field)),
     holdFields: holdFields.map((field) => pickField(field)),
+    suggestedAnswers: suggestedAnswers.map((field) => pickField(field)),
     evidenceLinks: registration.evidenceLinks,
   },
   checks: {
@@ -193,6 +195,13 @@ function printHuman(data) {
   console.log("Ready fields to copy:");
   for (const field of data.registration.readyFields) {
     console.log(`- ${field.label}: ${field.value}`);
+  }
+  if (data.registration.suggestedAnswers.length > 0) {
+    console.log("");
+    console.log("Optional answers for matching form questions:");
+    for (const field of data.registration.suggestedAnswers) {
+      console.log(`- ${field.label}: ${field.value}`);
+    }
   }
   console.log("");
   console.log("Needs founder verification:");

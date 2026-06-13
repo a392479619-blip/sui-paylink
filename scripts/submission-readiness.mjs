@@ -172,11 +172,20 @@ function validateSponsoredEvidence(raw) {
 function validateRegistrationFields(raw) {
   const data = JSON.parse(raw);
   const fields = Array.isArray(data.fields) ? data.fields : [];
+  const suggestedAnswers = Array.isArray(data.suggestedAnswers) ? data.suggestedAnswers : [];
   const readyFields = fields.filter((field) => field.status === "ready" && String(field.value ?? "").trim());
   const holdFields = fields.filter((field) => field.status === "hold");
   const badHoldFields = holdFields.filter((field) => String(field.value ?? "").trim());
+  const missingSuggestedAnswers = suggestedAnswers.filter((answer) => !String(answer.value ?? "").trim());
   if (readyFields.length < 8) {
     return { status: "block", detail: `only ${readyFields.length} ready registration fields` };
+  }
+  if (missingSuggestedAnswers.length > 0) {
+    return {
+      status: "warn",
+      detail: `suggested answers missing values: ${missingSuggestedAnswers.map((answer) => answer.label).join(", ")}`,
+      required: false,
+    };
   }
   if (badHoldFields.length > 0) {
     return {
@@ -187,7 +196,7 @@ function validateRegistrationFields(raw) {
   }
   return {
     status: "ok",
-    detail: `${readyFields.length} ready field(s), ${holdFields.length} held field(s)`,
+    detail: `${readyFields.length} ready field(s), ${suggestedAnswers.length} optional answer(s), ${holdFields.length} held field(s)`,
   };
 }
 

@@ -12,6 +12,7 @@ const registration = JSON.parse(readFileSync(resolve(rootDir, "submission/regist
 const readyFields = registration.fields.filter((field) => field.status === "ready");
 const userFields = registration.fields.filter((field) => field.status === "needs_user_verification");
 const holdFields = registration.fields.filter((field) => field.status === "hold");
+const suggestedAnswers = Array.isArray(registration.suggestedAnswers) ? registration.suggestedAnswers : [];
 
 const markdown = renderMarkdown();
 
@@ -45,6 +46,15 @@ function renderMarkdown() {
   lines.push("");
   for (const field of readyFields) {
     lines.push(renderField(field));
+  }
+  if (suggestedAnswers.length > 0) {
+    lines.push("## Optional Form Answers");
+    lines.push("");
+    lines.push("Use these only when the live form asks a matching question.");
+    lines.push("");
+    for (const answer of suggestedAnswers) {
+      lines.push(renderField(answer));
+    }
   }
   lines.push("## Needs Founder Verification");
   lines.push("");

@@ -14,6 +14,7 @@ const registration = JSON.parse(readFileSync(fieldsPath, "utf8"));
 
 checkBasicShape();
 checkFieldLengths();
+checkSuggestedAnswerLengths();
 checkHoldFields();
 checkEvidenceLinks();
 checks.push(readinessMinimumCheck());
@@ -25,6 +26,7 @@ const warnings = checks.filter((check) => check.status === "warn");
 const readyFields = registration.fields.filter((field) => field.status === "ready");
 const needsUserFields = registration.fields.filter((field) => field.status === "needs_user_verification");
 const holdFields = registration.fields.filter((field) => field.status === "hold");
+const suggestedAnswers = Array.isArray(registration.suggestedAnswers) ? registration.suggestedAnswers : [];
 
 const summary = {
   okForFounderReview: blockers.length === 0,
@@ -34,6 +36,7 @@ const summary = {
     readyFields: readyFields.length,
     needsUserVerification: needsUserFields.length,
     holdFields: holdFields.length,
+    suggestedAnswers: suggestedAnswers.length,
     warnings: warnings.length,
     blockers: blockers.length,
   },
@@ -69,6 +72,28 @@ function checkFieldLengths() {
       length <= field.maxLength,
       `${length}/${field.maxLength}`,
       length <= field.maxLength ? "ok" : "block",
+    );
+  }
+}
+
+function checkSuggestedAnswerLengths() {
+  if (!Array.isArray(registration.suggestedAnswers)) {
+    addCheck("Suggested answers", true, "none", "warn");
+    return;
+  }
+  addCheck("Suggested answers", registration.suggestedAnswers.length > 0, `${registration.suggestedAnswers.length} answer(s)`, "ok");
+  for (const answer of registration.suggestedAnswers) {
+    const hasValue = Boolean(String(answer.value ?? "").trim());
+    addCheck(`${answer.label} answer`, hasValue, hasValue ? "ready" : "missing", hasValue ? "ok" : "block");
+    if (!answer.maxLength) {
+      continue;
+    }
+    const length = [...String(answer.value ?? "")].length;
+    addCheck(
+      `${answer.label} length`,
+      length <= answer.maxLength,
+      `${length}/${answer.maxLength}`,
+      length <= answer.maxLength ? "ok" : "block",
     );
   }
 }
@@ -213,7 +238,7 @@ function printHuman(summary) {
   console.log(`Founder review: ${summary.okForFounderReview ? "READY" : "BLOCKED"}`);
   console.log(`Immediate final submission: ${summary.okForImmediateFinalSubmission ? "READY" : "NEEDS USER ACTION"}`);
   console.log(
-    `Fields: ready=${summary.counts.readyFields}, user=${summary.counts.needsUserVerification}, hold=${summary.counts.holdFields}`,
+    `Fields: ready=${summary.counts.readyFields}, optional=${summary.counts.suggestedAnswers}, user=${summary.counts.needsUserVerification}, hold=${summary.counts.holdFields}`,
   );
   console.log(`Checks: warn=${summary.counts.warnings}, block=${summary.counts.blockers}`);
   console.log("");
