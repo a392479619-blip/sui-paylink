@@ -34,10 +34,11 @@
 
 ```bash
 npm run registration:audit
+npm run founder:verify
 npm run public:preflight
 ```
 
-这些命令会检查字段长度、demo/video 是否被误填、GitHub 仓库可见性、最低提交 readiness，以及公开仓库前的 tracked/history 密钥风险。
+这些命令会检查字段长度、demo/video 是否被误填、GitHub 仓库可见性、最低提交 readiness、创始人 Go/No-Go 条件，以及公开仓库前的 tracked/history 密钥风险。
 
 ### Project name
 
@@ -175,6 +176,7 @@ npm run smoke:api
 npm run smoke:preview
 npm run smoke:static-demo
 npm run smoke:cloudflare-demo
+npm run founder:verify
 ```
 
 通过标准：

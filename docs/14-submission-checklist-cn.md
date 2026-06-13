@@ -30,6 +30,7 @@ npm run smoke:static-demo
 npm run smoke:cloudflare-demo
 npm run submission:readiness
 npm run registration:audit
+npm run founder:verify
 npm run public:preflight
 npm run typecheck
 npm run build
@@ -83,6 +84,7 @@ npm run submission:readiness -- --with-sponsor
 | GitHub Pages 静态 demo smoke | `npm run smoke:static-demo` 输出 | 已有命令，只证明静态 mock 可访问 |
 | Cloudflare Pages 静态 demo smoke | `npm run smoke:cloudflare-demo` 输出 | 已有命令，只证明静态 mock 可访问 |
 | 提交就绪度 | `npm run submission:readiness` 输出 | 已有命令，会区分最小可提交和竞争力缺口 |
+| 创始人最终验收 | `npm run founder:verify` 输出 | 已有命令，会列出可复制字段、人工确认字段和 No-Go 条件 |
 | 报名材料包 | `docs/16-registration-pack-cn.md` | 已有，登录报名页后逐项复制 |
 | Sponsor bootstrap | `npm run sponsor:bootstrap` 输出 | 已有命令，不能泄露私钥 |
 | Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥和 Testnet SUI gas 余额 |

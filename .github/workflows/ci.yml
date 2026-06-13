@@ -41,3 +41,6 @@ jobs:
 
       - name: Submission readiness
         run: npm run submission:readiness -- --json
+
+      - name: Founder final check
+        run: npm run founder:verify -- --json
