@@ -222,6 +222,112 @@ textarea {
   gap: 12px;
 }
 
+.submission-panel {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 20px;
+  padding: 22px;
+  border: 1px solid #cad8e2;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgb(36 52 70 / 6%);
+}
+
+.submission-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.submission-heading h2 {
+  margin: 0;
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.evidence-item {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dde6ed;
+  border-radius: 8px;
+  color: #17202a;
+  background: #f9fbfd;
+  text-decoration: none;
+}
+
+.evidence-item span {
+  display: block;
+  margin-bottom: 6px;
+  color: #687789;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.evidence-item strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.boundary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.boundary-item {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dde6ed;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.boundary-item span {
+  display: inline-flex;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #176b87;
+  background: #e1f3f7;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.boundary-item.verified span {
+  color: #23663f;
+  background: #edf8f1;
+}
+
+.boundary-item.demo span {
+  color: #66592f;
+  background: #fff2c4;
+}
+
+.boundary-item.open span {
+  color: #8a3030;
+  background: #fff4f4;
+}
+
+.boundary-item strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.boundary-item p {
+  margin: 0;
+  color: #526070;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .panel,
 .paylink,
 .public-paylink {
@@ -680,6 +786,8 @@ button:disabled {
   .chain-facts,
   .chain-digests,
   .chain-actions,
+  .evidence-grid,
+  .boundary-grid,
   .sponsor-facts,
   .sponsor-grid,
   .sponsor-result,
@@ -690,7 +798,8 @@ button:disabled {
   }
 
   .chain-heading,
-  .sponsor-heading {
+  .sponsor-heading,
+  .submission-heading {
     align-items: stretch;
     flex-direction: column;
   }

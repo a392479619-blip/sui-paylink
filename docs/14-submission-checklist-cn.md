@@ -27,6 +27,7 @@ npm run smoke:api
 npm run smoke:preview
 npm run smoke:static-demo
 npm run smoke:cloudflare-demo
+npm run submission:readiness
 npm run typecheck
 npm run build
 ```
@@ -43,6 +44,7 @@ npm run chain:test
 ```bash
 npm run sponsor:bootstrap -- --write-env-local --request-faucet --readiness
 SPONSOR_PRIVATE_KEY=<sui-private-key> npm run sponsor:readiness
+npm run submission:readiness -- --with-sponsor
 ```
 
 如果 faucet 返回限流或需要 CAPTCHA，先用 Web faucet 给 `sponsor:bootstrap`
@@ -68,6 +70,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 | 生产预览 smoke | `npm run smoke:preview` 输出 | 已有命令 |
 | GitHub Pages 静态 demo smoke | `npm run smoke:static-demo` 输出 | 已有命令，只证明静态 mock 可访问 |
 | Cloudflare Pages 静态 demo smoke | `npm run smoke:cloudflare-demo` 输出 | 已有命令，只证明静态 mock 可访问 |
+| 提交就绪度 | `npm run submission:readiness` 输出 | 已有命令，会区分最小可提交和竞争力缺口 |
 | Sponsor bootstrap | `npm run sponsor:bootstrap` 输出 | 已有命令，不能泄露私钥 |
 | Sponsor readiness | `npm run sponsor:readiness` 输出 | 需要真实私钥和 Testnet SUI gas 余额 |
 | 浏览器钱包端到端 | 录屏 + digest | 未完成 |
@@ -121,6 +124,7 @@ npm run chain:smoke:sponsored-mock-usdc:testnet
 - `npm run smoke:preview` 通过。
 - `npm run smoke:static-demo` 通过。
 - `npm run smoke:cloudflare-demo` 通过。
+- `npm run submission:readiness` 的最小提交状态为 `PASS`。
 - `npm run typecheck` 通过。
 - `npm run build` 通过。
 - README 中 Testnet evidence 链接可打开。

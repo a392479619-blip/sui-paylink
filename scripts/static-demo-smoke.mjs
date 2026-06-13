@@ -50,12 +50,14 @@ try {
   if (!assetHref) {
     throw new Error("Could not find built JS asset in static demo HTML");
   }
-  await expectOk(`${origin}${assetHref}`);
+  const assetText = await expectOk(`${origin}${assetHref}`);
+  expectIncludes(assetText, "Submission evidence", "submission evidence bundle");
+  expectIncludes(assetText, "Browser-wallet E2E", "submission boundary bundle");
 
   console.log(JSON.stringify({
     ok: true,
     baseUrl,
-    checked: ["index", "paylink-fallback", "asset-base-path", "github-pages-404"],
+    checked: ["index", "paylink-fallback", "asset-base-path", "github-pages-404", "submission-evidence-bundle"],
   }, null, 2));
 } finally {
   await close(server);

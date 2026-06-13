@@ -38,3 +38,6 @@ jobs:
 
       - name: Cloudflare static demo smoke
         run: npm run smoke:cloudflare-demo
+
+      - name: Submission readiness
+        run: npm run submission:readiness -- --json

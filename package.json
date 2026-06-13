@@ -21,6 +21,7 @@
     "smoke:preview": "node scripts/production-preview-smoke.mjs",
     "smoke:static-demo": "npm run build:static-demo && node scripts/static-demo-smoke.mjs",
     "smoke:cloudflare-demo": "npm run build:cloudflare-demo && STATIC_DEMO_BASE_PATH=/ node scripts/static-demo-smoke.mjs",
+    "submission:readiness": "node scripts/submission-readiness.mjs",
     "sponsor:bootstrap": "node scripts/sponsor-bootstrap.mjs",
     "sponsor:readiness": "node scripts/sponsor-readiness.mjs",
     "chain:build": "sui move build --path contracts --build-env testnet",

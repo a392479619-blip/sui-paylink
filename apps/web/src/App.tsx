@@ -39,6 +39,60 @@ const initialForm: CreatePaylinkInput = {
   feeBps: 100,
 };
 
+const TESTNET_PACKAGE_ID = "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340";
+const SPONSORED_ESCROW_OBJECT_ID = "0xfa140db34391e6d7af3968c8cca37725028a7d4c97b3346fc6c4fda2a97ca0dc";
+
+const submissionEvidence = [
+  {
+    label: "Package",
+    value: TESTNET_PACKAGE_ID,
+    href: explorerObjectUrl(TESTNET_PACKAGE_ID, "testnet"),
+  },
+  {
+    label: "Publish",
+    value: "ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3",
+    href: explorerUrl("ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3", "testnet"),
+  },
+  {
+    label: "Sponsored fund",
+    value: "ADJcJgnyaC5K8q7tUyygehMqYKYPJ9V2VYbTRUGqK7Nm",
+    href: explorerUrl("ADJcJgnyaC5K8q7tUyygehMqYKYPJ9V2VYbTRUGqK7Nm", "testnet"),
+  },
+  {
+    label: "Sponsored release",
+    value: "FHpRgU1UBvaHVQBNQMh9ReUKmr2jHWgaGZWxQHCkqAeQ",
+    href: explorerUrl("FHpRgU1UBvaHVQBNQMh9ReUKmr2jHWgaGZWxQHCkqAeQ", "testnet"),
+  },
+  {
+    label: "Sponsored escrow",
+    value: SPONSORED_ESCROW_OBJECT_ID,
+    href: explorerObjectUrl(SPONSORED_ESCROW_OBJECT_ID, "testnet"),
+  },
+];
+
+const submissionBoundaries = [
+  {
+    status: "Verified",
+    title: "Move escrow state machine",
+    detail: "Published on Sui Testnet with SUI escrow, refund, two-party, MockUSDC, and sponsored MockUSDC smoke evidence.",
+  },
+  {
+    status: "Verified",
+    title: "Gasless escrow proof",
+    detail: "Sponsored MockUSDC flow proves buyer and seller can stay at 0 SUI while sponsor pays gas.",
+  },
+  {
+    status: "Demo",
+    title: "Static public demo",
+    detail: "Browser-local Paylink demo for reviewers. It does not build transaction bytes, spend gas, or submit new Sui transactions.",
+  },
+  {
+    status: "Open",
+    title: "Browser-wallet E2E",
+    detail: "Needs funded sponsor gas and one real wallet-signed sponsored flow before claiming full hosted gasless UX.",
+  },
+];
+
 export function App() {
   const [initialPath] = useState(() => window.location.pathname);
   const publicPaylinkId = parsePublicPaylinkId(initialPath);
@@ -149,6 +203,8 @@ function DashboardPage() {
       <ChainDemo />
 
       <SponsoredDemo config={config} />
+
+      <SubmissionEvidencePanel />
 
       <div className="layout">
         <section className="panel">
@@ -372,6 +428,41 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
         <SponsoredHistory records={sponsoredRecords} network={config?.network ?? "testnet"} />
       )}
     </main>
+  );
+}
+
+function SubmissionEvidencePanel() {
+  return (
+    <section className="submission-panel">
+      <div className="submission-heading">
+        <div>
+          <p className="eyebrow">Submission evidence</p>
+          <h2>Testnet proof and demo boundary</h2>
+        </div>
+        <a className="button-link" href={demoPaylinkHref()}>
+          Open demo Paylink
+        </a>
+      </div>
+
+      <div className="evidence-grid">
+        {submissionEvidence.map((item) => (
+          <a key={item.label} className="evidence-item" href={item.href} target="_blank" rel="noreferrer">
+            <span>{item.label}</span>
+            <strong>{shortId(item.value)}</strong>
+          </a>
+        ))}
+      </div>
+
+      <div className="boundary-grid">
+        {submissionBoundaries.map((item) => (
+          <div key={item.title} className={`boundary-item ${item.status.toLowerCase()}`}>
+            <span>{item.status}</span>
+            <strong>{item.title}</strong>
+            <p>{item.detail}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -900,6 +991,14 @@ function sameSuiAddress(left: string, right: string): boolean {
 
 function explorerUrl(digest: string, network: AppConfig["network"]): string {
   return `https://suiexplorer.com/txblock/${digest}?network=${network}`;
+}
+
+function explorerObjectUrl(objectId: string, network: AppConfig["network"]): string {
+  return `https://suiexplorer.com/object/${objectId}?network=${network}`;
+}
+
+function demoPaylinkHref(): string {
+  return new URL("pay/demo-ai-workflow", new URL(import.meta.env.BASE_URL, window.location.origin)).toString();
 }
 
 function errorText(error: unknown): string {

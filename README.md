@@ -121,6 +121,7 @@ Local verification:
 ```bash
 npm run smoke:api
 npm run smoke:preview
+npm run submission:readiness
 ```
 
 `smoke:api` starts the API on an isolated local port with temporary stores and
@@ -129,6 +130,10 @@ verifies Paylink creation, mock escrow state transitions, receipt math,
 `smoke:preview` starts the production single-service preview and verifies
 `/health`, `/api/config`, Paylink creation, web fallback routes, built assets,
 and unknown API 404 behavior.
+`submission:readiness` checks the local Testnet evidence files, required smoke
+scripts, submission docs, latest CI status when `gh` is available, and the
+remaining demo blockers. It does not print private keys. Add `-- --with-sponsor`
+after funding the sponsor address to include live sponsor gas readiness.
 
 Sponsor readiness before browser-wallet E2E:
 
