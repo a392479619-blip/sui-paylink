@@ -195,7 +195,31 @@ Cloudflare Pages 不依赖 GitHub Pages 是否支持 private repo。仓库已经
 npm run smoke:cloudflare-demo
 ```
 
-然后在 GitHub Actions 手动运行 `Cloudflare Static Demo`。workflow 会执行：
+也可以先 dry-run 一次受保护脚本。它默认检查 repo、workflow、GitHub secrets 和本地 Cloudflare 静态 smoke；不会触发部署：
+
+```bash
+npm run demo:cloudflare-cutover
+```
+
+如果只想快速检查 secrets/workflow，不想本地重新 build，可以跑：
+
+```bash
+npm run demo:cloudflare-cutover -- --skip-local-smoke
+```
+
+添加 GitHub secrets 后，运行执行模式：
+
+```bash
+npm run demo:cloudflare-cutover -- --confirm-cloudflare-deploy
+```
+
+执行模式会触发 `Cloudflare Static Demo` workflow、等待 workflow 完成，并验证：
+
+```text
+https://sui-paylink.pages.dev/pay/demo-ai-workflow
+```
+
+也可以在 GitHub Actions 手动运行 `Cloudflare Static Demo`。workflow 会执行：
 
 ```bash
 npx wrangler@4 whoami

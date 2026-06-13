@@ -120,14 +120,27 @@ CLOUDFLARE_API_TOKEN
 要走 Cloudflare：
 
 1. 在 GitHub repo secrets 添加这两个值。
-2. 手动运行 `Cloudflare Static Demo` workflow。
-3. 打开：
+2. 先 dry-run：
+
+```bash
+npm run demo:cloudflare-cutover -- --skip-local-smoke
+```
+
+3. 确认 secrets 已存在后执行：
+
+```bash
+npm run demo:cloudflare-cutover -- --confirm-cloudflare-deploy
+```
+
+也可以不跑脚本，直接在 GitHub Actions 手动运行 `Cloudflare Static Demo` workflow。
+
+4. 打开：
 
 ```text
 https://sui-paylink.pages.dev/pay/demo-ai-workflow
 ```
 
-4. 打开成功后再填 Demo URL。
+5. 打开成功后再填 Demo URL。
 
 No-Go：
 

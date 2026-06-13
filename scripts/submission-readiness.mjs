@@ -29,6 +29,7 @@ checkPackageScript("registration:audit");
 checkPackageScript("founder:verify");
 checkPackageScript("public:preflight");
 checkPackageScript("demo:pages-cutover");
+checkPackageScript("demo:cloudflare-cutover");
 
 checkFile("Chinese PRD", "docs/11-prd-cn.md");
 checkFile("Demo script", "docs/13-demo-script-cn.md");
@@ -475,7 +476,7 @@ function nextActionsFor(allChecks) {
     actions.push("Make the GitHub repository public or confirm the submission platform can access a private repository.");
   }
   if (allChecks.some((check) => check.name === "Static public demo path" && check.status !== "ok")) {
-    actions.push("After approving a public repo, run npm run demo:pages-cutover -- --confirm-public-repo; otherwise set CLOUDFLARE_* secrets and run Cloudflare Static Demo.");
+    actions.push("After approving a public repo, run npm run demo:pages-cutover -- --confirm-public-repo; otherwise set CLOUDFLARE_* secrets and run npm run demo:cloudflare-cutover -- --confirm-cloudflare-deploy.");
   }
   if (allChecks.some((check) => check.name === "Sponsor readiness" && check.status !== "ok")) {
     actions.push("Fund the sponsor address with Testnet SUI, then run npm run submission:readiness -- --with-sponsor.");

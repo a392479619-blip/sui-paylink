@@ -27,6 +27,7 @@
     "founder:verify": "node scripts/founder-final-check.mjs",
     "public:preflight": "node scripts/public-preflight.mjs",
     "demo:pages-cutover": "node scripts/github-pages-cutover.mjs",
+    "demo:cloudflare-cutover": "node scripts/cloudflare-pages-cutover.mjs",
     "evidence:browser-wallet": "node scripts/export-browser-wallet-e2e.mjs",
     "sponsor:bootstrap": "node scripts/sponsor-bootstrap.mjs",
     "sponsor:readiness": "node scripts/sponsor-readiness.mjs",
