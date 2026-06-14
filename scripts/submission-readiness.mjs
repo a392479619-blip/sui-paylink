@@ -25,6 +25,7 @@ checkPackageScript("smoke:static-demo");
 checkPackageScript("smoke:cloudflare-demo");
 checkPackageScript("typecheck");
 checkPackageScript("build");
+checkPackageScript("submission:pack");
 checkPackageScript("registration:audit");
 checkPackageScript("founder:verify");
 checkPackageScript("public:preflight");
@@ -38,6 +39,7 @@ checkFile("Deployment runbook", "docs/15-deployment-runbook-cn.md");
 checkFile("Registration pack", "docs/16-registration-pack-cn.md");
 checkFile("Founder final verification checklist", "docs/17-founder-final-verification-cn.md");
 checkFile("Registration copy sheet", "submission/registration-copy.md");
+checkOptionalFile("Founder submission pack", "submission/founder-submission-pack.md", validateFounderSubmissionPack);
 checkFile("Registration fields", "submission/registration-fields.json", validateRegistrationFields);
 checkFile("External entry snapshot", "submission/external-entry-snapshot.md", validateExternalEntrySnapshot);
 checkFile("GitHub Pages workflow", ".github/workflows/pages.yml");
@@ -132,6 +134,35 @@ function checkFile(name, relativePath, validator = () => ({ status: "ok", detail
   }
 }
 
+function checkOptionalFile(name, relativePath, validator = () => ({ status: "ok", detail: "present" })) {
+  const path = resolve(rootDir, relativePath);
+  if (!existsSync(path)) {
+    addCheck({
+      name,
+      status: "warn",
+      detail: `${relativePath} is missing; run npm run submission:pack -- --write`,
+      required: false,
+    });
+    return;
+  }
+  try {
+    const result = validator(readFileSync(path, "utf8"), relativePath);
+    addCheck({
+      name,
+      status: result.status,
+      detail: result.detail,
+      required: result.required ?? false,
+    });
+  } catch (error) {
+    addCheck({
+      name,
+      status: "warn",
+      detail: `${relativePath}: ${errorMessage(error)}`,
+      required: false,
+    });
+  }
+}
+
 function validatePackageEvidence(raw) {
   const data = JSON.parse(raw);
   const missing = ["network", "packageId", "publishDigest", "mockUsdc"].filter((key) => !data[key]);
@@ -200,6 +231,28 @@ function validateRegistrationFields(raw) {
   return {
     status: "ok",
     detail: `${readyFields.length} ready field(s), ${suggestedAnswers.length} optional answer(s), ${holdFields.length} held field(s)`,
+  };
+}
+
+function validateFounderSubmissionPack(raw) {
+  const required = [
+    "Open registration form",
+    "Minimum submission",
+    "Copy These Fields",
+    "Leave Blank Until Verified",
+    "External Entry Snapshot",
+  ];
+  const missing = required.filter((item) => !raw.includes(item));
+  if (missing.length > 0) {
+    return {
+      status: "warn",
+      detail: `missing pack marker(s): ${missing.join(", ")}`,
+      required: false,
+    };
+  }
+  return {
+    status: "ok",
+    detail: "single-file founder submission pack present",
   };
 }
 

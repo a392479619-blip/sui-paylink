@@ -22,6 +22,7 @@
     "smoke:static-demo": "npm run build:static-demo && node scripts/static-demo-smoke.mjs",
     "smoke:cloudflare-demo": "npm run build:cloudflare-demo && STATIC_DEMO_BASE_PATH=/ node scripts/static-demo-smoke.mjs",
     "submission:readiness": "node scripts/submission-readiness.mjs",
+    "submission:pack": "node scripts/generate-founder-submission-pack.mjs",
     "registration:audit": "node scripts/registration-audit.mjs",
     "registration:copy": "node scripts/generate-registration-copy.mjs",
     "founder:verify": "node scripts/founder-final-check.mjs",
