@@ -44,6 +44,7 @@ npm run founder:verify
 - `Ready fields to copy` 里的字段可以复制到报名表。
 - 如果只想复制字段，打开 `submission/registration-copy.md`。
 - 如果想看字段、证据、外部入口快照、Go/No-Go 和下一步动作的完整单文件版本，打开 `submission/founder-submission-pack.md`。
+- 登录 DeepSurge 后，用 `submission/live-form-verification-template.md` 记录实际看到的 required 字段，不要凭猜测提交。
 - `Hold fields` 里的字段不要填，除非你已经完成对应验证。
 
 ## 第 2 步：公开仓库决策

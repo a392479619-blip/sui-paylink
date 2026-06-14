@@ -40,6 +40,7 @@ checkFile("Registration pack", "docs/16-registration-pack-cn.md");
 checkFile("Founder final verification checklist", "docs/17-founder-final-verification-cn.md");
 checkFile("Registration copy sheet", "submission/registration-copy.md");
 checkOptionalFile("Founder submission pack", "submission/founder-submission-pack.md", validateFounderSubmissionPack);
+checkFile("Live form verification template", "submission/live-form-verification-template.md", validateLiveFormVerificationTemplate);
 checkFile("Registration fields", "submission/registration-fields.json", validateRegistrationFields);
 checkFile("External entry snapshot", "submission/external-entry-snapshot.md", validateExternalEntrySnapshot);
 checkFile("GitHub Pages workflow", ".github/workflows/pages.yml");
@@ -253,6 +254,30 @@ function validateFounderSubmissionPack(raw) {
   return {
     status: "ok",
     detail: "single-file founder submission pack present",
+  };
+}
+
+function validateLiveFormVerificationTemplate(raw) {
+  const required = [
+    "Form type",
+    "Required Fields Seen In The Live Form",
+    "Repository URL",
+    "Demo URL",
+    "Demo video URL",
+    "Go / No-Go Before Clicking Submit",
+    "Submitted State",
+  ];
+  const missing = required.filter((item) => !raw.includes(item));
+  if (missing.length > 0) {
+    return {
+      status: "warn",
+      detail: `missing live-form marker(s): ${missing.join(", ")}`,
+      required: false,
+    };
+  }
+  return {
+    status: "ok",
+    detail: "founder live-form verification template present",
   };
 }
 
