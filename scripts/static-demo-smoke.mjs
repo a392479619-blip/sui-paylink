@@ -8,6 +8,7 @@ const rootDir = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const distDir = resolve(rootDir, "apps", "web", "dist");
 const indexPath = resolve(distDir, "index.html");
 const notFoundPath = resolve(distDir, "404.html");
+const demoRouteIndexPath = resolve(distDir, "pay", "demo-ai-workflow", "index.html");
 const basePath = normalizeBasePath(process.env.STATIC_DEMO_BASE_PATH ?? "/sui-paylink");
 const assetPrefix = basePath === "/" ? "/" : `${basePath}/`;
 
@@ -16,6 +17,9 @@ if (!isReadableFile(indexPath)) {
 }
 if (!isReadableFile(notFoundPath)) {
   throw new Error(`Missing GitHub Pages fallback at ${notFoundPath}.`);
+}
+if (!isReadableFile(demoRouteIndexPath)) {
+  throw new Error(`Missing GitHub Pages paylink route index at ${demoRouteIndexPath}.`);
 }
 
 const indexHtml = readFileSync(indexPath, "utf8");
@@ -57,7 +61,14 @@ try {
   console.log(JSON.stringify({
     ok: true,
     baseUrl,
-    checked: ["index", "paylink-fallback", "asset-base-path", "github-pages-404", "submission-evidence-bundle"],
+    checked: [
+      "index",
+      "paylink-fallback",
+      "asset-base-path",
+      "github-pages-404",
+      "github-pages-paylink-route",
+      "submission-evidence-bundle",
+    ],
   }, null, 2));
 } finally {
   await close(server);

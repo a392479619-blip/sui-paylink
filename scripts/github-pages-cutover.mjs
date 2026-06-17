@@ -81,6 +81,8 @@ async function main() {
   }
 
   if (triggerWorkflow) {
+    result.triggeredAt = new Date().toISOString();
+    result.targetHeadSha = currentHeadSha();
     const workflow = run("gh", ["workflow", "run", workflowFile, "--ref", defaultBranch]);
     if (workflow.status !== 0) {
       addStep("Trigger Static Demo Pages workflow", "block", workflow.stderr.trim() || "gh workflow run failed");
@@ -91,7 +93,10 @@ async function main() {
   }
 
   if (waitForWorkflow) {
-    const latestRun = await waitForLatestWorkflowRun(defaultBranch);
+    const latestRun = await waitForLatestWorkflowRun(defaultBranch, {
+      createdAfter: result.triggeredAt,
+      headSha: result.targetHeadSha,
+    });
     if (!latestRun) {
       finish(1);
       return;
@@ -147,7 +152,7 @@ function enablePages() {
   return true;
 }
 
-async function waitForLatestWorkflowRun(defaultBranch) {
+async function waitForLatestWorkflowRun(defaultBranch, options = {}) {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const runs = run("gh", [
       "run",
@@ -157,7 +162,7 @@ async function waitForLatestWorkflowRun(defaultBranch) {
       "--branch",
       defaultBranch,
       "--limit",
-      "1",
+      "20",
       "--json",
       "databaseId,status,conclusion,headSha,createdAt",
     ]);
@@ -166,7 +171,7 @@ async function waitForLatestWorkflowRun(defaultBranch) {
       return null;
     }
     const parsed = safeJson(runs.stdout);
-    const [latestRun] = Array.isArray(parsed) ? parsed : [];
+    const latestRun = matchingRun(Array.isArray(parsed) ? parsed : [], options);
     if (latestRun?.databaseId) {
       addStep("Find Static Demo Pages workflow", "ok", `watching run #${latestRun.databaseId}`);
       return latestRun;
@@ -175,6 +180,22 @@ async function waitForLatestWorkflowRun(defaultBranch) {
   }
   addStep("Find Static Demo Pages workflow", "block", "no workflow run found after trigger");
   return null;
+}
+
+function matchingRun(runs, options) {
+  const createdAfterMs = options.createdAfter ? Date.parse(options.createdAfter) - 5000 : 0;
+  return runs.find((run) => {
+    if (!run?.databaseId) {
+      return false;
+    }
+    if (options.headSha && run.headSha !== options.headSha) {
+      return false;
+    }
+    if (createdAfterMs && Date.parse(run.createdAt) < createdAfterMs) {
+      return false;
+    }
+    return true;
+  });
 }
 
 async function waitForDemoUrl() {
@@ -199,6 +220,11 @@ async function waitForDemoUrl() {
 function currentBranch() {
   const branch = run("git", ["rev-parse", "--abbrev-ref", "HEAD"]);
   return branch.status === 0 ? branch.stdout.trim() : "main";
+}
+
+function currentHeadSha() {
+  const sha = run("git", ["rev-parse", "HEAD"]);
+  return sha.status === 0 ? sha.stdout.trim() : undefined;
 }
 
 function run(command, commandArgs, options = {}) {
