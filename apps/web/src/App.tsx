@@ -421,24 +421,25 @@ function PublicPaylinkPage({ paylinkId, role }: { paylinkId: string; role: Payli
       {paylink && (
         <>
         <RoleSwitch paylink={paylink} role={role} />
-        <section className="public-paylink">
-          <div className="public-summary">
-            <div>
-              <p className="eyebrow">Escrow request</p>
-              <h2>{paylink.amount} {paylink.token}</h2>
-            </div>
-            <StatusPill status={paylink.status} />
-            <p>{paylink.memo}</p>
-            <PaylinkFacts paylink={paylink} />
-          </div>
-          <SponsoredPaylinkActions
-            config={config}
-            sponsorReadiness={sponsorReadiness}
-            paylink={paylink}
-            role={role}
-            onError={setError}
-            onRefresh={refresh}
-          />
+        <section className={`public-paylink ${role}`}>
+          {role === "overview" ? (
+            <>
+              <PaylinkSummary paylink={paylink} />
+              <OverviewFlowPanel paylink={paylink} sponsorReadiness={sponsorReadiness} records={sponsoredRecords} />
+            </>
+          ) : (
+            <>
+              <SponsoredPaylinkActions
+                config={config}
+                sponsorReadiness={sponsorReadiness}
+                paylink={paylink}
+                role={role}
+                onError={setError}
+                onRefresh={refresh}
+              />
+              <PaylinkSummary paylink={paylink} compact />
+            </>
+          )}
         </section>
         </>
       )}
@@ -524,6 +525,88 @@ function RoleSwitch({ paylink, role }: { paylink: Paylink; role: PaylinkPageRole
           <span>{item.detail}</span>
         </a>
       ))}
+    </section>
+  );
+}
+
+function PaylinkSummary({ paylink, compact = false }: { paylink: Paylink; compact?: boolean }) {
+  return (
+    <div className={`public-summary ${compact ? "compact-summary" : ""}`}>
+      <div>
+        <p className="eyebrow">Escrow request</p>
+        <h2>{paylink.amount} {paylink.token}</h2>
+      </div>
+      <StatusPill status={paylink.status} />
+      <p>{paylink.memo}</p>
+      <PaylinkFacts paylink={paylink} compact={compact} />
+    </div>
+  );
+}
+
+function OverviewFlowPanel({
+  paylink,
+  sponsorReadiness,
+  records,
+}: {
+  paylink: Paylink;
+  sponsorReadiness: SponsorReadiness | null;
+  records: SponsoredTransactionRecord[];
+}) {
+  const currentAction = currentWalletAction(paylink.status);
+  const nextRole = currentAction ? signerRoleForAction(currentAction) : undefined;
+
+  return (
+    <section className="overview-flow-panel">
+      <div className="overview-flow-heading">
+        <div>
+          <p className="eyebrow">Workflow overview</p>
+          <h2>{currentAction ? `${capitalize(nextRole ?? "next")} action next` : "Escrow flow complete"}</h2>
+        </div>
+        <StatusPill status={paylink.status} />
+      </div>
+
+      <div className="overview-actions">
+        <a className="button-link" href={paylinkHref(paylink.id, "buyer")}>
+          Open Buyer page
+        </a>
+        <a className="button-link" href={paylinkHref(paylink.id, "seller")}>
+          Open Seller page
+        </a>
+      </div>
+
+      <div className="overview-steps">
+        {walletE2ESteps.map((step) => {
+          const expected = signerAddressForAction(step.action, paylink);
+          const state = walletE2EStepState(paylink.status, step.action);
+          return (
+            <div key={step.action} className={`overview-step ${state}`}>
+              <span>{step.role}</span>
+              <strong>{step.title}</strong>
+              <p>{step.detail}</p>
+              <em>{shortId(expected) || "missing signer"}</em>
+            </div>
+          );
+        })}
+      </div>
+
+      <dl className="facts overview-facts">
+        <div>
+          <dt>Sponsor</dt>
+          <dd>{sponsorReadiness?.ready ? "ready" : "not ready"}</dd>
+        </div>
+        <div>
+          <dt>Escrow object</dt>
+          <dd>{paylink.escrowObjectId ? shortId(paylink.escrowObjectId) : "pending"}</dd>
+        </div>
+        <div>
+          <dt>Sponsored records</dt>
+          <dd>{records.length}</dd>
+        </div>
+        <div>
+          <dt>Next role</dt>
+          <dd>{nextRole ?? "none"}</dd>
+        </div>
+      </dl>
     </section>
   );
 }
@@ -983,9 +1066,9 @@ function SponsoredHistory({
   );
 }
 
-function PaylinkFacts({ paylink }: { paylink: Paylink }) {
+function PaylinkFacts({ paylink, compact = false }: { paylink: Paylink; compact?: boolean }) {
   return (
-    <dl className="facts">
+    <dl className={`facts ${compact ? "summary-facts" : ""}`}>
       <div>
         <dt>Seller</dt>
         <dd>{paylink.sellerName}</dd>
@@ -1337,6 +1420,10 @@ function roleLabel(role: PaylinkPageRole): string {
   if (role === "buyer") return "Buyer flow";
   if (role === "seller") return "Seller flow";
   return "Full flow";
+}
+
+function capitalize(value: string): string {
+  return value ? `${value.slice(0, 1).toUpperCase()}${value.slice(1)}` : value;
 }
 
 function walletChecklistTitle(

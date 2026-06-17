@@ -381,7 +381,9 @@ textarea {
 
 .panel,
 .paylink,
-.public-paylink {
+.public-summary,
+.sponsored-actions,
+.overview-flow-panel {
   padding: 22px;
   border: 1px solid #dce5ed;
   border-radius: 8px;
@@ -391,7 +393,8 @@ textarea {
 
 .panel h2,
 .paylink h2,
-.public-paylink h2 {
+.public-summary h2,
+.overview-flow-panel h2 {
   margin: 0 0 18px;
 }
 
@@ -553,17 +556,35 @@ button:disabled {
 
 .public-paylink {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 430px);
+  align-items: start;
   gap: 24px;
+}
+
+.public-paylink.buyer,
+.public-paylink.seller {
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+}
+
+.public-paylink.overview {
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
 }
 
 .public-summary {
   min-width: 0;
 }
 
+.compact-summary {
+  position: sticky;
+  top: 18px;
+}
+
 .public-summary h2 {
   font-size: 42px;
   line-height: 1;
+}
+
+.compact-summary h2 {
+  font-size: 32px;
 }
 
 .facts {
@@ -600,6 +621,14 @@ button:disabled {
 .facts.compact {
   grid-template-columns: 1fr;
   margin-top: 14px;
+}
+
+.summary-facts {
+  grid-template-columns: 1fr;
+}
+
+.summary-facts > div {
+  padding: 10px;
 }
 
 .signer-list {
@@ -658,6 +687,89 @@ button:disabled {
 .sponsored-actions-heading h3 {
   margin: 0;
   font-size: 20px;
+}
+
+.overview-flow-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.overview-flow-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.overview-flow-heading h2 {
+  margin-bottom: 0;
+}
+
+.overview-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.overview-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.overview-step {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #d7e2ea;
+  border-radius: 8px;
+  background: #fbfcff;
+}
+
+.overview-step span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #176b87;
+  background: #e9f5f8;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.overview-step p,
+.overview-step em {
+  margin: 0;
+  color: #5d6875;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.overview-step em {
+  overflow: hidden;
+  font-style: normal;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview-step.complete {
+  border-color: #47a06b;
+  background: #edf8f1;
+}
+
+.overview-step.complete span {
+  color: #23663f;
+  background: #d8efdf;
+}
+
+.overview-step.current {
+  border-color: #176b87;
+  box-shadow: inset 0 0 0 1px #176b87;
+}
+
+.overview-facts {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 0;
 }
 
 .wallet-e2e-card,
@@ -1013,6 +1125,9 @@ button:disabled {
   .static-demo-banner,
   .role-switch,
   .public-paylink,
+  .overview-actions,
+  .overview-steps,
+  .overview-facts,
   .facts,
   .history-row,
   .chain-facts,
@@ -1028,6 +1143,10 @@ button:disabled {
   .receipt-grid,
   .timeline {
     grid-template-columns: 1fr;
+  }
+
+  .compact-summary {
+    position: static;
   }
 
   .chain-heading,
