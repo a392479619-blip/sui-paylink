@@ -53,6 +53,14 @@ export const mutatePaylinkSchema = z.object({
 
 export type MutatePaylinkInput = z.infer<typeof mutatePaylinkSchema>;
 
+export const claimPaylinkRoleSchema = z.object({
+  role: z.enum(["seller", "buyer"]),
+  address: z.string().min(1),
+  name: z.string().min(1).max(120).optional(),
+});
+
+export type ClaimPaylinkRoleInput = z.infer<typeof claimPaylinkRoleSchema>;
+
 export const buildSponsoredTransactionSchema = z.object({
   action: z.enum(sponsoredTransactionActions),
   senderAddress: z.string().min(1),

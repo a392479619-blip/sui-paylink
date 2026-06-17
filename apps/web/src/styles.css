@@ -827,6 +827,33 @@ button:disabled {
   background: #fbfcf7;
 }
 
+.role-claim-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #b9d8c5;
+  border-radius: 8px;
+  background: #f2fbf5;
+}
+
+.role-claim-card h3 {
+  margin: 0;
+  color: #162130;
+}
+
+.role-claim-card p {
+  margin: 4px 0 0;
+  color: #5d6875;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.role-claim-card button {
+  min-width: 168px;
+}
+
 .wallet-e2e-steps,
 .readiness-checks {
   display: grid;

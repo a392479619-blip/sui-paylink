@@ -72,6 +72,7 @@ export const webDistDir = process.env.WEB_DIST_DIR
 export const serveWebApp = (process.env.SERVE_WEB_APP ?? "auto").toLowerCase();
 export const demoSeedEnabled = process.env.DEMO_SEED_ENABLED === "true";
 export const demoSeedPaylinkId = process.env.DEMO_SEED_PAYLINK_ID ?? "demo-ai-workflow";
+export const demoSeedFlexibleRoles = process.env.DEMO_SEED_FLEXIBLE_ROLES !== "false";
 export const demoSeedSellerName = process.env.DEMO_SEED_SELLER_NAME ?? "Alice AI Automation Studio";
 export const demoSeedSellerAddress =
   process.env.DEMO_SEED_SELLER_ADDRESS ??

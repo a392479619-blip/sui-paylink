@@ -12,6 +12,7 @@ import type {
 } from "@suipaylink/shared";
 import {
   buildSponsoredTransaction,
+  claimPaylinkRole,
   createPaylink,
   getConfig,
   getPaylink,
@@ -350,18 +351,19 @@ function PublicPaylinkPage({ paylinkId, role }: { paylinkId: string; role: Payli
   const [error, setError] = useState<string>("");
 
   async function refresh() {
-    const [nextConfig, nextSponsorReadiness, nextPaylink, nextReceipt, nextSponsoredRecords] = await Promise.all([
+    const [nextConfig, nextPaylink, nextReceipt, nextSponsoredRecords] = await Promise.all([
       getConfig(),
-      getSponsorReadiness().catch(() => null),
       getPaylink(paylinkId),
       getReceipt(paylinkId),
       listSponsoredTransactions(paylinkId),
     ]);
     setConfig(nextConfig);
-    setSponsorReadiness(nextSponsorReadiness);
     setPaylink(nextPaylink);
     setReceipt(nextReceipt);
     setSponsoredRecords(nextSponsoredRecords);
+    getSponsorReadiness()
+      .then(setSponsorReadiness)
+      .catch(() => setSponsorReadiness(null));
   }
 
   useEffect(() => {
@@ -576,14 +578,13 @@ function OverviewFlowPanel({
 
       <div className="overview-steps">
         {walletE2ESteps.map((step) => {
-          const expected = signerAddressForAction(step.action, paylink);
           const state = walletE2EStepState(paylink.status, step.action);
           return (
             <div key={step.action} className={`overview-step ${state}`}>
               <span>{step.role}</span>
               <strong>{step.title}</strong>
               <p>{step.detail}</p>
-              <em>{shortId(expected) || "missing signer"}</em>
+              <em>{signerExpectationLabel(step.action, paylink)}</em>
             </div>
           );
         })}
@@ -633,8 +634,31 @@ function SponsoredPaylinkActions({
   const expectedAmountUnits = token ? amountToBaseUnits(paylink.amount, token.decimals) : "";
   const [paymentCoinId, setPaymentCoinId] = useState("");
   const [coinLookup, setCoinLookup] = useState("");
-  const [pendingAction, setPendingAction] = useState<SponsoredTransactionAction | "find-coin" | "mint-test-coin" | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    SponsoredTransactionAction | "find-coin" | "mint-test-coin" | "claim-seller" | "claim-buyer" | null
+  >(null);
   const [lastRecord, setLastRecord] = useState<SponsoredTransactionRecord | null>(null);
+
+  async function claimRole(roleToClaim: "seller" | "buyer") {
+    if (!account) {
+      onError("Connect a Sui wallet first");
+      return;
+    }
+    onError("");
+    setPendingAction(roleToClaim === "seller" ? "claim-seller" : "claim-buyer");
+    try {
+      await claimPaylinkRole(paylink.id, {
+        role: roleToClaim,
+        address: account.address,
+        name: roleToClaim === "seller" ? paylink.sellerName : paylink.buyerName,
+      });
+      await onRefresh();
+    } catch (err) {
+      onError(errorText(err));
+    } finally {
+      setPendingAction(null);
+    }
+  }
 
   async function mintTestCoin() {
     if (!account || !expectedAmountUnits) return;
@@ -698,6 +722,10 @@ function SponsoredPaylinkActions({
       onError("Select or paste a payment coin object before funding");
       return;
     }
+    if (action === "fund-mock-usdc" && !paylink.sellerAddress) {
+      onError("Open the Seller page and claim the seller role before buyer funding");
+      return;
+    }
     if (action !== "fund-mock-usdc" && !paylink.escrowObjectId) {
       onError("This Paylink has no escrow object yet");
       return;
@@ -717,7 +745,7 @@ function SponsoredPaylinkActions({
         senderAddress: account.address,
         paylinkId: paylink.id,
         paymentCoinId: action === "fund-mock-usdc" ? paymentCoinId : undefined,
-        sellerAddress: action === "fund-mock-usdc" ? paylink.sellerAddress : undefined,
+        sellerAddress: action === "fund-mock-usdc" ? paylink.sellerAddress || undefined : undefined,
         expectedAmountUnits: action === "fund-mock-usdc" ? expectedAmountUnits : undefined,
         feeBps: action === "fund-mock-usdc" ? paylink.feeBps : undefined,
         escrowObjectId: action === "fund-mock-usdc" ? undefined : paylink.escrowObjectId,
@@ -754,7 +782,9 @@ function SponsoredPaylinkActions({
       : "Sponsor not configured";
   const connectedAddress = account?.address;
   const buyerConnected = Boolean(
-    connectedAddress && paylink.buyerAddress && sameSuiAddress(connectedAddress, paylink.buyerAddress),
+    connectedAddress &&
+      (!paylink.buyerAddress || sameSuiAddress(connectedAddress, paylink.buyerAddress)) &&
+      (!paylink.sellerAddress || !sameSuiAddress(connectedAddress, paylink.sellerAddress)),
   );
   const sellerConnected = Boolean(
     connectedAddress && paylink.sellerAddress && sameSuiAddress(connectedAddress, paylink.sellerAddress),
@@ -771,9 +801,26 @@ function SponsoredPaylinkActions({
   const canFund = Boolean(
     sponsorReady &&
       buyerConnected &&
+      paylink.sellerAddress &&
       paymentCoinId.trim() &&
       paylink.status === "created" &&
       pendingAction !== "fund-mock-usdc",
+  );
+  const canClaimSeller = Boolean(
+    role === "seller" &&
+      connectedAddress &&
+      !paylink.sellerAddress &&
+      paylink.status === "created" &&
+      (!paylink.buyerAddress || !sameSuiAddress(connectedAddress, paylink.buyerAddress)) &&
+      pendingAction !== "claim-seller",
+  );
+  const canClaimBuyer = Boolean(
+    role === "buyer" &&
+      connectedAddress &&
+      !paylink.buyerAddress &&
+      paylink.status === "created" &&
+      (!paylink.sellerAddress || !sameSuiAddress(connectedAddress, paylink.sellerAddress)) &&
+      pendingAction !== "claim-buyer",
   );
   const canDeliver = Boolean(
     sponsorReady &&
@@ -798,7 +845,7 @@ function SponsoredPaylinkActions({
   );
   const showBuyerControls = role !== "seller";
   const showSellerControls = role !== "buyer";
-  const roleInstruction = actionInstructionForRole(role, paylink.status);
+  const roleInstruction = actionInstructionForRole(role, paylink);
   const actionSigners: Array<{ label: string; action: SponsoredTransactionAction }> = [
     { label: "Fund", action: "fund-mock-usdc" },
     { label: "Deliver", action: "mark-delivered" },
@@ -822,6 +869,32 @@ function SponsoredPaylinkActions({
         <p>{roleInstruction.detail}</p>
       </div>
 
+      {role === "seller" && !paylink.sellerAddress && paylink.status === "created" && (
+        <section className="role-claim-card">
+          <div>
+            <p className="eyebrow">Seller role</p>
+            <h3>Use your connected wallet as Seller</h3>
+            <p>The demo link is not bound to a test seller account. Claim this role before Buyer funds escrow.</p>
+          </div>
+          <button onClick={() => claimRole("seller")} disabled={!canClaimSeller || pending}>
+            {pendingAction === "claim-seller" ? "Claiming..." : "Claim seller role"}
+          </button>
+        </section>
+      )}
+
+      {role === "buyer" && !paylink.buyerAddress && paylink.status === "created" && (
+        <section className="role-claim-card">
+          <div>
+            <p className="eyebrow">Buyer role</p>
+            <h3>Use your connected wallet as Buyer</h3>
+            <p>The buyer role is open. Claim it now, or it will be recorded automatically after funding succeeds.</p>
+          </div>
+          <button onClick={() => claimRole("buyer")} disabled={!canClaimBuyer || pending}>
+            {pendingAction === "claim-buyer" ? "Claiming..." : "Claim buyer role"}
+          </button>
+        </section>
+      )}
+
       <WalletE2EChecklist paylink={paylink} accountAddress={account?.address} role={role} />
       <SponsorReadinessCard readiness={sponsorReadiness} />
 
@@ -835,7 +908,7 @@ function SponsoredPaylinkActions({
           <dd className="signer-list">
             {actionSigners.map((item) => (
               <span key={item.action}>
-                {item.label}: {signerRoleForAction(item.action)} {shortId(signerAddressForAction(item.action, paylink)) || "missing"}
+                {item.label}: {signerRoleForAction(item.action)} {signerExpectationLabel(item.action, paylink)}
               </span>
             ))}
           </dd>
@@ -956,14 +1029,17 @@ function WalletE2EChecklist({
         {visibleSteps.map((step) => {
           const expected = signerAddressForAction(step.action, paylink);
           const state = walletE2EStepState(paylink.status, step.action);
-          const connected = accountAddress && expected ? sameSuiAddress(accountAddress, expected) : false;
+          const roleMatchesPage = role === signerRoleForAction(step.action);
+          const connected = Boolean(
+            accountAddress && (expected ? sameSuiAddress(accountAddress, expected) : roleMatchesPage),
+          );
           return (
             <div key={step.action} className={`wallet-e2e-step ${state}`}>
               <span>{step.role}</span>
               <strong>{step.title}</strong>
               <p>{step.detail}</p>
               <em>
-                Expected: {shortId(expected) || "missing"}
+                Expected: {signerExpectationLabel(step.action, paylink)}
                 {state === "current" ? ` / ${connected ? "connected" : "connect this wallet"}` : ""}
               </em>
             </div>
@@ -1075,7 +1151,7 @@ function PaylinkFacts({ paylink, compact = false }: { paylink: Paylink; compact?
       </div>
       <div>
         <dt>Seller address</dt>
-        <dd>{paylink.sellerAddress}</dd>
+        <dd>{paylink.sellerAddress || "open - claim on Seller page"}</dd>
       </div>
       <div>
         <dt>Buyer</dt>
@@ -1083,7 +1159,7 @@ function PaylinkFacts({ paylink, compact = false }: { paylink: Paylink; compact?
       </div>
       <div>
         <dt>Buyer address</dt>
-        <dd>{paylink.buyerAddress ?? "not specified"}</dd>
+        <dd>{paylink.buyerAddress || "open - connected Buyer wallet"}</dd>
       </div>
       <div>
         <dt>Fee</dt>
@@ -1406,6 +1482,14 @@ function signerAddressForAction(action: SponsoredTransactionAction, paylink: Pay
   return (signerRoleForAction(action) === "seller" ? paylink.sellerAddress : paylink.buyerAddress) ?? "";
 }
 
+function signerExpectationLabel(action: SponsoredTransactionAction, paylink: Paylink): string {
+  const address = signerAddressForAction(action, paylink);
+  if (address) {
+    return shortId(address);
+  }
+  return `open ${signerRoleForAction(action)} wallet`;
+}
+
 function sameSuiAddress(left: string, right: string): boolean {
   return left.toLowerCase() === right.toLowerCase();
 }
@@ -1438,10 +1522,17 @@ function walletChecklistTitle(
 
 function actionInstructionForRole(
   role: PaylinkPageRole,
-  status: Paylink["status"],
+  paylink: Paylink,
 ): { title: string; detail: string } {
+  const status = paylink.status;
   if (role === "buyer") {
     if (status === "created") {
+      if (!paylink.sellerAddress) {
+        return {
+          title: "Waiting for Seller to claim the receiving wallet.",
+          detail: "Open the Seller page first. The buyer can mint test mUSDC, but funding needs a seller address.",
+        };
+      }
       return {
         title: "Connect Buyer wallet, mint test mUSDC, then fund escrow.",
         detail: "The buyer signs the business transaction. Sponsor pays the SUI gas.",
@@ -1466,6 +1557,12 @@ function actionInstructionForRole(
   }
   if (role === "seller") {
     if (status === "created") {
+      if (!paylink.sellerAddress) {
+        return {
+          title: "Claim Seller role with your wallet.",
+          detail: "This demo link is open. The connected wallet becomes the seller before Buyer funds escrow.",
+        };
+      }
       return {
         title: "Seller is waiting for Buyer funding.",
         detail: "Open the Buyer page first and complete fund escrow before delivery.",
