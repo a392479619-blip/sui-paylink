@@ -105,6 +105,14 @@ https://<demo-host>/pay/demo-ai-workflow
 - payment coin object
 - sponsored action buttons
 
+如果已配置 `MOCK_USDC_MINTER_PRIVATE_KEY`，展示 `Mint 100 test mUSDC`：
+
+> 为了让评委不需要跑 CLI，测试环境可以由后端 minter 给连接的 Buyer 钱包发测试 mUSDC，并自动选择 payment coin object。这个 mUSDC 是 Testnet MockUSDC，不是真实 USDC。
+
+如果没有配置网页 mint，必须展示 CLI fallback，并说明：
+
+> 当前环境没有配置 MockUSDC minter 私钥，所以网页不会伪造测试币领取能力。买家测试币仍可用本地 CLI mint，真实托管签名和 sponsor gas 流程不变。
+
 ### 1:05 - 1:30 托管状态流
 
 画面：展示已经验证过的 Testnet evidence 或本地 mock 状态流。

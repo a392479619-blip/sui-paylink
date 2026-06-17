@@ -24,7 +24,10 @@ import type {
   BuildSponsoredTransactionInput,
   ChainReceiptSummary,
   ChainVerificationStatus,
+  MintTestMockUsdcInput,
+  MintTestMockUsdcResult,
   Paylink,
+  SponsorReadiness,
   SponsoredTransactionAction,
   SponsoredTransactionRecord,
   SubmitSponsoredTransactionInput,
@@ -34,8 +37,14 @@ import {
   defaultSponsorGasBudgetMist,
   feeReceiverAddress,
   maxSponsorGasBudgetMist,
+  mockUsdcMintAmountUnits,
+  mockUsdcMintGasBudgetMist,
+  mockUsdcMinterKeySecret,
+  mockUsdcMintMaxUnits,
   mockUsdcCoinType,
+  mockUsdcTreasuryCapId,
   packageId,
+  sponsorReadinessMinGasMist,
   sponsoredTransactionStorePath,
   sponsoredTransactionTtlMs,
   sponsorKeySecret,
@@ -80,6 +89,99 @@ export function getSponsorAddress(): string | undefined {
     return undefined;
   }
   return getSponsorSigner().toSuiAddress();
+}
+
+export function getMockUsdcMinterAddress(): string | undefined {
+  if (!mockUsdcMinterKeySecret) {
+    return undefined;
+  }
+  return getSignerFromSecret(mockUsdcMinterKeySecret, "mock_usdc_minter").toSuiAddress();
+}
+
+export async function getSponsorReadiness(): Promise<SponsorReadiness> {
+  const checks: SponsorReadiness["checks"] = [];
+  const addCheck = (name: string, ok: boolean, detail: string) => {
+    checks.push({ name, ok, detail });
+  };
+
+  if (!sponsorKeySecret) {
+    addCheck("SPONSOR_PRIVATE_KEY", false, "Sponsor private key is not configured");
+    addCheck("Sponsor SUI balance", false, `missing; required >= ${sponsorReadinessMinGasMist} MIST`);
+    return {
+      ready: false,
+      network: appConfig.network,
+      sponsorEnabled: false,
+      requiredBalanceMist: sponsorReadinessMinGasMist,
+      packageId,
+      mockUsdcCoinType,
+      checks,
+    };
+  }
+
+  let sponsorAddress: string | undefined;
+  try {
+    sponsorAddress = getSponsorSigner().toSuiAddress();
+    addCheck("SPONSOR_PRIVATE_KEY", true, "Sponsor private key is configured and decodable");
+  } catch (error) {
+    addCheck("SPONSOR_PRIVATE_KEY", false, errorMessage(error));
+    return {
+      ready: false,
+      network: appConfig.network,
+      sponsorEnabled: false,
+      requiredBalanceMist: sponsorReadinessMinGasMist,
+      packageId,
+      mockUsdcCoinType,
+      checks,
+    };
+  }
+
+  addCheck("Sponsor address", true, sponsorAddress);
+  addCheck("SUI network", appConfig.network === "testnet", `network=${appConfig.network}`);
+
+  let balanceMist: string | undefined;
+  let referenceGasPriceMist: string | undefined;
+  try {
+    const [sponsorBalance, packageObject, coinMetadata, referenceGasPrice] = await Promise.all([
+      client.getBalance({ owner: sponsorAddress, coinType: "0x2::sui::SUI" }),
+      client.getObject({ id: packageId, options: { showType: true } }),
+      client.getCoinMetadata({ coinType: mockUsdcCoinType }),
+      client.getReferenceGasPrice(),
+    ]);
+
+    balanceMist = sponsorBalance.totalBalance;
+    referenceGasPriceMist = referenceGasPrice.toString();
+    addCheck(
+      "Sponsor SUI balance",
+      BigInt(balanceMist) >= BigInt(sponsorReadinessMinGasMist),
+      `${balanceMist} MIST; required >= ${sponsorReadinessMinGasMist} MIST`,
+    );
+    addCheck(
+      "Package object",
+      Boolean(packageObject.data && !packageObject.error),
+      packageObject.error ? JSON.stringify(packageObject.error) : packageObject.data?.type ?? "found",
+    );
+    addCheck(
+      "MockUSDC metadata",
+      Boolean(coinMetadata),
+      coinMetadata ? `${coinMetadata.symbol} decimals=${coinMetadata.decimals}` : "not found",
+    );
+    addCheck("Reference gas price", referenceGasPrice > 0n, `${referenceGasPriceMist} MIST`);
+  } catch (error) {
+    addCheck("Sui RPC readiness", false, errorMessage(error));
+  }
+
+  return {
+    ready: checks.every((check) => check.ok),
+    network: appConfig.network,
+    sponsorEnabled: true,
+    sponsorAddress,
+    balanceMist,
+    requiredBalanceMist: sponsorReadinessMinGasMist,
+    packageId,
+    mockUsdcCoinType,
+    referenceGasPriceMist,
+    checks,
+  };
 }
 
 export async function buildSponsoredTransaction(
@@ -230,6 +332,61 @@ export async function buildSponsoredTransaction(
 export function listSponsoredTransactions(paylinkId?: string): SponsoredTransactionRecord[] {
   const values = [...records.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return paylinkId ? values.filter((record) => record.paylinkId === paylinkId) : values;
+}
+
+export async function mintTestMockUsdc(input: MintTestMockUsdcInput): Promise<MintTestMockUsdcResult> {
+  const minter = requireMockUsdcMinterSigner();
+  const minterAddress = minter.toSuiAddress();
+  const recipientAddress = normalizeAddressInput(input.recipientAddress, "recipientAddress");
+  const amountUnits = parseMintAmount(input.amountUnits);
+
+  await assertTreasuryCapOwnedBy(minterAddress);
+
+  const transaction = new Transaction();
+  transaction.setSender(minterAddress);
+  transaction.setGasBudget(parsePositiveMist(mockUsdcMintGasBudgetMist, "MOCK_USDC_MINT_GAS_BUDGET_MIST"));
+  transaction.moveCall({
+    target: `${packageId}::mock_usdc::mint`,
+    arguments: [
+      transaction.object(mockUsdcTreasuryCapId),
+      transaction.pure.u64(amountUnits),
+      transaction.pure.address(recipientAddress),
+    ],
+  });
+
+  const bytes = await transaction.build({ client });
+  const transactionBytes = Buffer.from(bytes).toString("base64");
+  await assertDryRunSuccess(transactionBytes);
+  const signature = await minter.signTransaction(bytes);
+
+  const response = await client.executeTransactionBlock({
+    transactionBlock: transactionBytes,
+    signature: [signature.signature],
+    options: {
+      showBalanceChanges: true,
+      showEffects: true,
+      showObjectChanges: true,
+    },
+  });
+  const status = response.effects?.status.status;
+  if (status !== "success") {
+    throw new SponsorError(
+      502,
+      "mock_usdc_mint_failed",
+      response.effects?.status.error ?? "MockUSDC mint transaction failed",
+    );
+  }
+
+  return {
+    recipientAddress,
+    amountUnits,
+    coinType: normalizeStructTag(mockUsdcCoinType),
+    coinObjectId: extractCreatedCoinObjectId(response, mockUsdcCoinType),
+    digest: response.digest,
+    minterAddress,
+    gasCostMist: actualGasCostMist(response),
+    createdAt: new Date().toISOString(),
+  };
 }
 
 export function getSponsoredTransaction(id: string): SponsoredTransactionRecord {
@@ -734,11 +891,26 @@ function requireSponsorSigner(): Signer {
   return getSponsorSigner();
 }
 
+function requireMockUsdcMinterSigner(): Signer {
+  if (!mockUsdcMinterKeySecret) {
+    throw new SponsorError(
+      503,
+      "mock_usdc_minter_not_configured",
+      "MOCK_USDC_MINTER_PRIVATE_KEY is not configured; webpage test mUSDC minting is disabled",
+    );
+  }
+  return getSignerFromSecret(mockUsdcMinterKeySecret, "mock_usdc_minter");
+}
+
 function getSponsorSigner(): Signer {
   if (!sponsorKeySecret) {
     throw new SponsorError(503, "sponsor_not_configured", "SPONSOR_PRIVATE_KEY is not configured");
   }
-  const decoded = decodeSuiPrivateKey(sponsorKeySecret);
+  return getSignerFromSecret(sponsorKeySecret, "sponsor");
+}
+
+function getSignerFromSecret(secret: string, label: string): Signer {
+  const decoded = decodeSuiPrivateKey(secret);
   if (decoded.scheme === "ED25519") {
     return Ed25519Keypair.fromSecretKey(decoded.secretKey);
   }
@@ -748,7 +920,7 @@ function getSponsorSigner(): Signer {
   if (decoded.scheme === "Secp256r1") {
     return Secp256r1Keypair.fromSecretKey(decoded.secretKey);
   }
-  throw new SponsorError(500, "unsupported_sponsor_key_scheme", `Unsupported sponsor key scheme ${decoded.scheme}`);
+  throw new SponsorError(500, `unsupported_${label}_key_scheme`, `Unsupported ${label} key scheme ${decoded.scheme}`);
 }
 
 async function assertOwnedCoin(input: {
@@ -837,6 +1009,25 @@ async function assertDryRunSuccess(transactionBytes: string) {
   }
 }
 
+async function assertTreasuryCapOwnedBy(owner: string) {
+  const object = await getObject(mockUsdcTreasuryCapId);
+  const data = requireObjectData(object, mockUsdcTreasuryCapId);
+  if (!data.type) {
+    throw new SponsorError(500, "mock_usdc_treasury_cap_invalid", "Configured MockUSDC TreasuryCap object is invalid");
+  }
+  const parsed = parseStructTag(data.type);
+  const actualCoinType = parsed.typeParams[0] ? normalizeTypeParam(parsed.typeParams[0]) : "";
+  if (
+    parsed.address !== normalizeSuiAddress("0x2") ||
+    parsed.module !== "coin" ||
+    parsed.name !== "TreasuryCap" ||
+    actualCoinType !== normalizeStructTag(mockUsdcCoinType)
+  ) {
+    throw new SponsorError(500, "mock_usdc_treasury_cap_invalid", "Configured MockUSDC TreasuryCap object is invalid");
+  }
+  assertAddressEquals(ownerAddress(data.owner), owner, "MOCK_USDC_MINTER_PRIVATE_KEY does not own MockUSDC TreasuryCap");
+}
+
 async function getObject(objectId: string): Promise<SuiObjectResponse> {
   return client.getObject({
     id: objectId,
@@ -906,6 +1097,30 @@ function parseGasBudget(value?: string): string {
   return gasBudget.toString();
 }
 
+function parsePositiveMist(value: string, field: string): string {
+  const amount = BigInt(value);
+  if (amount <= 0n) {
+    throw new SponsorError(400, "invalid_mist_amount", `${field} must be positive`);
+  }
+  return amount.toString();
+}
+
+function parseMintAmount(value?: string): string {
+  const amount = BigInt(value ?? mockUsdcMintAmountUnits);
+  const max = BigInt(mockUsdcMintMaxUnits);
+  if (amount <= 0n) {
+    throw new SponsorError(400, "invalid_mock_usdc_mint_amount", "amountUnits must be positive");
+  }
+  if (amount > max) {
+    throw new SponsorError(
+      400,
+      "mock_usdc_mint_amount_too_high",
+      `amountUnits exceeds configured max ${mockUsdcMintMaxUnits}`,
+    );
+  }
+  return amount.toString();
+}
+
 function normalizeAddressInput(value: string | undefined, field: string): string {
   if (!value) {
     throw new SponsorError(400, "missing_address", `${field} is required`);
@@ -927,6 +1142,31 @@ function normalizeTypeParam(typeParam: string | ReturnType<typeof parseStructTag
 
 function contractTarget(functionName: string): `${string}::${string}::${string}` {
   return `${packageId}::escrow::${functionName}`;
+}
+
+function extractCreatedCoinObjectId(
+  response: SuiTransactionBlockResponse,
+  coinType: string,
+): string | undefined {
+  const normalizedCoinType = normalizeStructTag(coinType);
+  const createdCoin = response.objectChanges?.find((change) => {
+    if (
+      change.type !== "created" ||
+      !("objectType" in change) ||
+      typeof change.objectType !== "string"
+    ) {
+      return false;
+    }
+    const parsed = parseStructTag(change.objectType);
+    const actualCoinType = parsed.typeParams[0] ? normalizeTypeParam(parsed.typeParams[0]) : "";
+    return (
+      parsed.address === normalizeSuiAddress("0x2") &&
+      parsed.module === "coin" &&
+      parsed.name === "Coin" &&
+      actualCoinType === normalizedCoinType
+    );
+  });
+  return createdCoin && "objectId" in createdCoin ? createdCoin.objectId : undefined;
 }
 
 function isExpired(record: SponsoredTransactionRecord): boolean {

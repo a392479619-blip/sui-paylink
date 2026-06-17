@@ -6,6 +6,7 @@ import type {
   CreatePaylinkInput,
   Paylink,
   ReceiptSummary,
+  SponsorReadiness,
   SponsoredTransactionAction,
   SponsoredTransactionRecord,
 } from "@suipaylink/shared";
@@ -15,8 +16,10 @@ import {
   getConfig,
   getPaylink,
   getReceipt,
+  getSponsorReadiness,
   listPaylinks,
   listSponsoredTransactions,
+  mintTestMockUsdc,
   mutatePaylink,
   syncPaylinkChain,
   submitSponsoredTransaction,
@@ -192,10 +195,6 @@ function DashboardPage() {
             Gasless stablecoin escrow links for cross-border digital service work.
           </p>
         </div>
-        <div className="network-pill">
-          <span>Mock API · {config?.network ?? "testnet"}</span>
-          <strong>{config?.sponsorEnabled ? "sponsor enabled" : "sponsor not configured"}</strong>
-        </div>
       </section>
 
       {error && <div className="error">{error}</div>}
@@ -327,19 +326,22 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [paylink, setPaylink] = useState<Paylink | null>(null);
   const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
+  const [sponsorReadiness, setSponsorReadiness] = useState<SponsorReadiness | null>(null);
   const [sponsoredRecords, setSponsoredRecords] = useState<SponsoredTransactionRecord[]>([]);
   const [syncingChain, setSyncingChain] = useState(false);
   const [runningMockDemo, setRunningMockDemo] = useState(false);
   const [error, setError] = useState<string>("");
 
   async function refresh() {
-    const [nextConfig, nextPaylink, nextReceipt, nextSponsoredRecords] = await Promise.all([
+    const [nextConfig, nextSponsorReadiness, nextPaylink, nextReceipt, nextSponsoredRecords] = await Promise.all([
       getConfig(),
+      getSponsorReadiness().catch(() => null),
       getPaylink(paylinkId),
       getReceipt(paylinkId),
       listSponsoredTransactions(paylinkId),
     ]);
     setConfig(nextConfig);
+    setSponsorReadiness(nextSponsorReadiness);
     setPaylink(nextPaylink);
     setReceipt(nextReceipt);
     setSponsoredRecords(nextSponsoredRecords);
@@ -368,9 +370,9 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
     setError("");
     setRunningMockDemo(true);
     try {
-      const remainingActions = mockDemoActionsForStatus(paylink.status);
-      for (const action of remainingActions) {
-        await runPaylinkAction(paylink.id, action);
+      const nextAction = mockDemoActionsForStatus(paylink.status)[0];
+      if (nextAction) {
+        await runPaylinkAction(paylink.id, nextAction);
       }
       await refresh();
     } catch (err) {
@@ -412,6 +414,7 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
           </div>
           <SponsoredPaylinkActions
             config={config}
+            sponsorReadiness={sponsorReadiness}
             paylink={paylink}
             onError={setError}
             onRefresh={refresh}
@@ -483,11 +486,13 @@ function StaticDemoBanner() {
 
 function SponsoredPaylinkActions({
   config,
+  sponsorReadiness,
   paylink,
   onError,
   onRefresh,
 }: {
   config: AppConfig | null;
+  sponsorReadiness: SponsorReadiness | null;
   paylink: Paylink;
   onError: (message: string) => void;
   onRefresh: () => Promise<void>;
@@ -499,8 +504,32 @@ function SponsoredPaylinkActions({
   const expectedAmountUnits = token ? amountToBaseUnits(paylink.amount, token.decimals) : "";
   const [paymentCoinId, setPaymentCoinId] = useState("");
   const [coinLookup, setCoinLookup] = useState("");
-  const [pendingAction, setPendingAction] = useState<SponsoredTransactionAction | "find-coin" | null>(null);
+  const [pendingAction, setPendingAction] = useState<SponsoredTransactionAction | "find-coin" | "mint-test-coin" | null>(null);
   const [lastRecord, setLastRecord] = useState<SponsoredTransactionRecord | null>(null);
+
+  async function mintTestCoin() {
+    if (!account || !expectedAmountUnits) return;
+    onError("");
+    setCoinLookup("");
+    setPendingAction("mint-test-coin");
+    try {
+      const minted = await mintTestMockUsdc({
+        recipientAddress: account.address,
+        amountUnits: expectedAmountUnits,
+        paylinkId: paylink.id,
+      });
+      if (minted.coinObjectId) {
+        setPaymentCoinId(minted.coinObjectId);
+        setCoinLookup(`Minted and selected ${shortId(minted.coinObjectId)} (${shortId(minted.digest)})`);
+        return;
+      }
+      setCoinLookup(`Minted ${paylink.amount} ${paylink.token}; click Find exact coin to select it`);
+    } catch (err) {
+      onError(errorText(err));
+    } finally {
+      setPendingAction(null);
+    }
+  }
 
   async function findExactCoin() {
     if (!account || !token) return;
@@ -588,7 +617,56 @@ function SponsoredPaylinkActions({
     }
   }
 
-  const sponsorReady = Boolean(config?.sponsorEnabled);
+  const sponsorReady = Boolean(config?.sponsorEnabled && sponsorReadiness?.ready);
+  const sponsorTitle = sponsorReady
+    ? "Sponsor ready"
+    : config?.sponsorEnabled
+      ? "Sponsor not funded"
+      : "Sponsor not configured";
+  const connectedAddress = account?.address;
+  const buyerConnected = Boolean(
+    connectedAddress && paylink.buyerAddress && sameSuiAddress(connectedAddress, paylink.buyerAddress),
+  );
+  const sellerConnected = Boolean(
+    connectedAddress && paylink.sellerAddress && sameSuiAddress(connectedAddress, paylink.sellerAddress),
+  );
+  const pending = Boolean(pendingAction);
+  const canMintTestCoin = Boolean(
+    config?.mockUsdcMintEnabled &&
+      buyerConnected &&
+      expectedAmountUnits &&
+      paylink.status === "created" &&
+      pendingAction !== "mint-test-coin",
+  );
+  const canFindExactCoin = Boolean(buyerConnected && token && pendingAction !== "find-coin");
+  const canFund = Boolean(
+    sponsorReady &&
+      buyerConnected &&
+      paymentCoinId.trim() &&
+      paylink.status === "created" &&
+      pendingAction !== "fund-mock-usdc",
+  );
+  const canDeliver = Boolean(
+    sponsorReady &&
+      sellerConnected &&
+      paylink.escrowObjectId &&
+      paylink.status === "funded" &&
+      pendingAction !== "mark-delivered",
+  );
+  const canRelease = Boolean(
+    sponsorReady &&
+      buyerConnected &&
+      paylink.escrowObjectId &&
+      paylink.status === "delivered" &&
+      pendingAction !== "release",
+  );
+  const canRefund = Boolean(
+    sponsorReady &&
+      buyerConnected &&
+      paylink.escrowObjectId &&
+      ["funded", "delivered"].includes(paylink.status) &&
+      pendingAction !== "refund",
+  );
   const actionSigners: Array<{ label: string; action: SponsoredTransactionAction }> = [
     { label: "Fund", action: "fund-mock-usdc" },
     { label: "Deliver", action: "mark-delivered" },
@@ -601,10 +679,13 @@ function SponsoredPaylinkActions({
       <div className="sponsored-actions-heading">
         <div>
           <p className="eyebrow">Sponsored escrow</p>
-          <h3>{sponsorReady ? "Sponsor ready" : "Sponsor not configured"}</h3>
+          <h3>{sponsorTitle}</h3>
         </div>
         <ConnectButton connectText="Connect wallet" />
       </div>
+
+      <WalletE2EChecklist paylink={paylink} accountAddress={account?.address} />
+      <SponsorReadinessCard readiness={sponsorReadiness} />
 
       <dl className="facts compact">
         <div>
@@ -633,11 +714,30 @@ function SponsoredPaylinkActions({
 
       {paylink.status === "created" && (
         <div className="coin-picker">
+          <div>
+            <p className="eyebrow">Buyer test coin</p>
+            <p className="muted">
+              Buyer needs one exact {paylink.amount} {paylink.token} coin object before funding escrow.
+            </p>
+            {config?.mockUsdcMintEnabled ? (
+              <p className="muted">
+                Judge Test Mode can mint test mUSDC to the connected Buyer and auto-select the new coin object.
+              </p>
+            ) : (
+              <p className="muted">
+                Web mint is not configured. Use the CLI fallback command below, then paste or find the coin object.
+              </p>
+            )}
+            <code className="mint-command">{mintMockUsdcCommand(config, paylink)}</code>
+          </div>
           <label>
             Payment coin object
             <input value={paymentCoinId} onChange={(event) => setPaymentCoinId(event.target.value)} />
           </label>
-          <button onClick={findExactCoin} disabled={!account || !token || pendingAction === "find-coin"}>
+          <button onClick={mintTestCoin} disabled={!canMintTestCoin || pending}>
+            {pendingAction === "mint-test-coin" ? "Minting..." : `Mint ${paylink.amount} test ${paylink.token}`}
+          </button>
+          <button onClick={findExactCoin} disabled={!canFindExactCoin || pending}>
             {pendingAction === "find-coin" ? "Finding..." : "Find exact coin"}
           </button>
           {coinLookup && <p className="muted">{coinLookup}</p>}
@@ -647,25 +747,25 @@ function SponsoredPaylinkActions({
       <div className="actions">
         <button
           onClick={() => executeSponsoredAction("fund-mock-usdc")}
-          disabled={!sponsorReady || paylink.status !== "created" || pendingAction === "fund-mock-usdc"}
+          disabled={!canFund || pending}
         >
-          {pendingAction === "fund-mock-usdc" ? "Funding..." : "Fund with sponsor"}
+          {pendingAction === "fund-mock-usdc" ? "Funding..." : "Buyer signs fund escrow"}
         </button>
         <button
           onClick={() => executeSponsoredAction("mark-delivered")}
-          disabled={!sponsorReady || paylink.status !== "funded" || pendingAction === "mark-delivered"}
+          disabled={!canDeliver || pending}
         >
-          {pendingAction === "mark-delivered" ? "Marking..." : "Mark delivered"}
+          {pendingAction === "mark-delivered" ? "Marking..." : "Seller signs delivery"}
         </button>
         <button
           onClick={() => executeSponsoredAction("release")}
-          disabled={!sponsorReady || paylink.status !== "delivered" || pendingAction === "release"}
+          disabled={!canRelease || pending}
         >
-          {pendingAction === "release" ? "Releasing..." : "Release with sponsor"}
+          {pendingAction === "release" ? "Releasing..." : "Buyer signs release"}
         </button>
         <button
           onClick={() => executeSponsoredAction("refund")}
-          disabled={!sponsorReady || !["funded", "delivered"].includes(paylink.status) || pendingAction === "refund"}
+          disabled={!canRefund || pending}
         >
           {pendingAction === "refund" ? "Refunding..." : "Refund with sponsor"}
         </button>
@@ -686,6 +786,66 @@ function SponsoredPaylinkActions({
   );
 }
 
+function WalletE2EChecklist({
+  paylink,
+  accountAddress,
+}: {
+  paylink: Paylink;
+  accountAddress?: string;
+}) {
+  const currentAction = currentWalletAction(paylink.status);
+
+  return (
+    <section className="wallet-e2e-card">
+      <div>
+        <p className="eyebrow">Browser-wallet E2E</p>
+        <h3>{currentAction ? "Next wallet signature required" : "Wallet flow complete"}</h3>
+      </div>
+      <div className="wallet-e2e-steps">
+        {walletE2ESteps.map((step) => {
+          const expected = signerAddressForAction(step.action, paylink);
+          const state = walletE2EStepState(paylink.status, step.action);
+          const connected = accountAddress && expected ? sameSuiAddress(accountAddress, expected) : false;
+          return (
+            <div key={step.action} className={`wallet-e2e-step ${state}`}>
+              <span>{step.role}</span>
+              <strong>{step.title}</strong>
+              <p>{step.detail}</p>
+              <em>
+                Expected: {shortId(expected) || "missing"}
+                {state === "current" ? ` / ${connected ? "connected" : "connect this wallet"}` : ""}
+              </em>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function SponsorReadinessCard({ readiness }: { readiness: SponsorReadiness | null }) {
+  return (
+    <section className="sponsor-readiness-card">
+      <div className="sponsor-readiness-heading">
+        <div>
+          <p className="eyebrow">Sponsor readiness</p>
+          <h3>{readiness?.ready ? "Ready for sponsored gas" : "Not ready for sponsored gas"}</h3>
+        </div>
+        <strong>{readiness?.balanceMist ?? "0"} MIST</strong>
+      </div>
+      <div className="readiness-checks">
+        {(readiness?.checks ?? []).map((check) => (
+          <div key={check.name} className={check.ok ? "ok" : "warn"}>
+            <span>{check.ok ? "OK" : "TODO"}</span>
+            <strong>{check.name}</strong>
+            <p>{check.detail}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function DemoSeedPanel({
   paylink,
   running,
@@ -696,20 +856,30 @@ function DemoSeedPanel({
   onRun: () => void;
 }) {
   const remainingActions = mockDemoActionsForStatus(paylink.status);
+  const nextAction = remainingActions[0];
   const complete = remainingActions.length === 0 && paylink.status === "released";
 
   return (
     <section className="demo-panel">
       <div>
         <p className="eyebrow">Demo mode</p>
-        <h2>{complete ? "Mock escrow released" : "Run local mock escrow"}</h2>
+        <h2>{complete ? "Two-party escrow released" : "Two-party escrow walkthrough"}</h2>
         <p>
-          This hosted seed uses the local demo API only. It does not create a wallet signature, spend gas,
-          or submit a new Sui transaction.
+          This local demo separates buyer funding, seller delivery, and buyer release. It does not create a wallet
+          signature, spend gas, or submit a new Sui transaction.
         </p>
       </div>
+      <div className="demo-steps">
+        {demoFlowSteps.map((step) => (
+          <div key={step.action} className={`demo-step ${demoStepState(paylink.status, step.action)}`}>
+            <span>{step.role}</span>
+            <strong>{step.title}</strong>
+            <p>{step.detail}</p>
+          </div>
+        ))}
+      </div>
       <button className="primary" onClick={onRun} disabled={running || remainingActions.length === 0}>
-        {running ? "Running demo..." : complete ? "Demo complete" : `Run ${remainingActions.join(" -> ")}`}
+        {running ? "Running step..." : complete ? "Demo complete" : demoActionLabel(nextAction)}
       </button>
     </section>
   );
@@ -953,6 +1123,102 @@ function mockDemoActionsForStatus(status: Paylink["status"]): PaylinkAction[] {
   return [];
 }
 
+const demoFlowSteps: Array<{
+  action: PaylinkAction;
+  role: "Buyer" | "Seller";
+  title: string;
+  detail: string;
+}> = [
+  {
+    action: "fund",
+    role: "Buyer",
+    title: "Buyer funds escrow",
+    detail: "Bob locks 100 mUSDC into escrow before Alice starts delivery.",
+  },
+  {
+    action: "deliver",
+    role: "Seller",
+    title: "Seller marks delivered",
+    detail: "Alice submits delivery proof after finishing the service work.",
+  },
+  {
+    action: "release",
+    role: "Buyer",
+    title: "Buyer releases funds",
+    detail: "Bob confirms delivery and releases funds to Alice plus platform fee.",
+  },
+];
+
+const walletE2ESteps: Array<{
+  action: SponsoredTransactionAction;
+  role: "Buyer" | "Seller";
+  title: string;
+  detail: string;
+}> = [
+  {
+    action: "fund-mock-usdc",
+    role: "Buyer",
+    title: "Buyer signs fund escrow",
+    detail: "Buyer signs the business transaction with a 100 mUSDC coin. Sponsor pays SUI gas.",
+  },
+  {
+    action: "mark-delivered",
+    role: "Seller",
+    title: "Seller signs delivery",
+    detail: "Seller wallet marks the escrow delivered with a proof URI.",
+  },
+  {
+    action: "release",
+    role: "Buyer",
+    title: "Buyer signs release",
+    detail: "Buyer confirms delivery and releases escrow funds.",
+  },
+];
+
+function demoActionLabel(action?: PaylinkAction): string {
+  if (action === "fund") return "Buyer funds escrow";
+  if (action === "deliver") return "Seller marks delivered";
+  if (action === "release") return "Buyer releases funds";
+  return "No demo action";
+}
+
+function demoStepState(status: Paylink["status"], action: PaylinkAction): "complete" | "current" | "pending" {
+  const completed = completedDemoActions(status);
+  if (completed.includes(action)) return "complete";
+  if (mockDemoActionsForStatus(status)[0] === action) return "current";
+  return "pending";
+}
+
+function completedDemoActions(status: Paylink["status"]): PaylinkAction[] {
+  if (status === "released") return ["fund", "deliver", "release"];
+  if (status === "delivered") return ["fund", "deliver"];
+  if (status === "funded") return ["fund"];
+  return [];
+}
+
+function currentWalletAction(status: Paylink["status"]): SponsoredTransactionAction | undefined {
+  if (status === "created") return "fund-mock-usdc";
+  if (status === "funded") return "mark-delivered";
+  if (status === "delivered") return "release";
+  return undefined;
+}
+
+function walletE2EStepState(
+  status: Paylink["status"],
+  action: SponsoredTransactionAction,
+): "complete" | "current" | "pending" {
+  if (walletE2ECompletedActions(status).includes(action)) return "complete";
+  if (currentWalletAction(status) === action) return "current";
+  return "pending";
+}
+
+function walletE2ECompletedActions(status: Paylink["status"]): SponsoredTransactionAction[] {
+  if (status === "released") return ["fund-mock-usdc", "mark-delivered", "release"];
+  if (status === "delivered") return ["fund-mock-usdc", "mark-delivered"];
+  if (status === "funded") return ["fund-mock-usdc"];
+  return [];
+}
+
 function parsePublicPaylinkId(pathname: string): string | null {
   const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   const appPath = base && pathname.startsWith(base) ? pathname.slice(base.length) || "/" : pathname;
@@ -987,6 +1253,15 @@ function signerAddressForAction(action: SponsoredTransactionAction, paylink: Pay
 
 function sameSuiAddress(left: string, right: string): boolean {
   return left.toLowerCase() === right.toLowerCase();
+}
+
+function mintMockUsdcCommand(config: AppConfig | null, paylink: Paylink): string {
+  const token = config?.supportedTokens.find((item) => item.symbol === paylink.token) ?? config?.supportedTokens[0];
+  const units = token ? amountToBaseUnits(paylink.amount, token.decimals) : "100000000";
+  const packageValue = config?.packageId ?? "<package-id>";
+  const treasuryCap = config?.mockUsdcTreasuryCapId ?? "<mock-usdc-treasury-cap-id>";
+  const buyer = paylink.buyerAddress ?? "<buyer-address>";
+  return `sui client call --package ${packageValue} --module mock_usdc --function mint --args ${treasuryCap} ${units} ${buyer} --gas-budget 10000000 --json`;
 }
 
 function explorerUrl(digest: string, network: AppConfig["network"]): string {

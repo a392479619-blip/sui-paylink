@@ -1,7 +1,7 @@
 # SuiPayLink Founder Submission Pack
 
 Generated from local submission checks.
-Source updatedAt: 2026-06-14
+Source updatedAt: 2026-06-17
 
 ## Current Decision
 
@@ -88,6 +88,12 @@ Length: 161/500
 Sui Move, Sui TypeScript SDK, React, Vite, Fastify, Node.js 22, GitHub Actions, Cloudflare Pages workflow, file-backed JSON stores for hackathon MVP persistence.
 ```
 
+### Repository URL
+
+```text
+https://github.com/a392479619-blip/sui-paylink
+```
+
 ### Contract package
 
 ```text
@@ -132,10 +138,10 @@ Sui fits this project because sponsored transactions let the app sponsor pay gas
 
 ### How can judges verify it?
 
-Length: 409/900
+Length: 509/900
 
 ```text
-Judges can inspect the public Sui Testnet package and transactions in Sui Explorer, run the local smoke tests, and open the Paylink buyer flow. The README links the package, publish transaction, sponsored MockUSDC fund/release transactions, and sponsored escrow object. Locally, run npm run smoke:api, npm run smoke:preview, npm run smoke:static-demo, npm run submission:readiness, and npm run founder:verify.
+Judges can inspect the public Sui Testnet package and transactions in Sui Explorer, run the local smoke tests, and open the Paylink buyer flow. The README links the package, publish transaction, sponsored MockUSDC fund/release transactions, and sponsored escrow object. The API includes Judge Test Mode for minting Testnet mUSDC when a private minter key is configured. Locally, run npm run smoke:api, npm run smoke:preview, npm run smoke:static-demo, npm run submission:readiness, and npm run founder:verify.
 ```
 
 ### What is not finished?
@@ -148,8 +154,7 @@ This is a hackathon MVP on public Sui Testnet. It does not claim production USDC
 
 ## Verify Before Pasting
 
-- Repository URL: https://github.com/a392479619-blip/sui-paylink
-  Decision: The repository is currently private. Make it public before final submission, or confirm the platform can access a private repository.
+- none
 
 ## Leave Blank Until Verified
 
@@ -166,19 +171,15 @@ This is a hackathon MVP on public Sui Testnet. It does not claim production USDC
 
 ## Current Gaps
 
-- Repository visibility
 - Static public demo path
 - Real API hosted demo
 - Browser wallet sponsored E2E
-- Sponsor readiness
 
 ## Next Actions
 
-- Make the GitHub repository public, or confirm the submission platform can access the private repository before entering the Repository URL.
 - Leave Demo URL blank unless a public URL has been deployed and opened successfully in a browser.
 - Leave Demo video URL blank unless a public or unlisted video has been uploaded and opened successfully.
 - If the form requires Demo URL, deploy Cloudflare/GitHub Pages static demo or a hosted API demo first, then rerun npm run founder:verify.
-- Fund the sponsor address 0xfc6a4a759d785757841ff831d48c96bbe5113b5c52912ef0cceab97047fb0f4b with Testnet SUI to at least 100000000 MIST, then rerun npm run sponsor:readiness and npm run founder:verify.
 - For a stronger demo, record one browser-wallet sponsored flow and export evidence with npm run evidence:browser-wallet.
 
 ## Pre-Submit Commands
@@ -193,7 +194,7 @@ npm run submission:readiness -- --with-sponsor
 
 ## External Entry Snapshot
 
-Observed at: 2026-06-14 Asia/Shanghai
+Observed at: 2026-06-17 Asia/Shanghai
 
 Purpose: keep the founder submission decision tied to the live public entry pages, not to memory or stale planning notes.
 
@@ -218,7 +219,7 @@ Purpose: keep the founder submission decision tied to the live public entry page
 - Select only one track: DeFi & Payments.
 - Do not fill Demo URL unless the public URL opens successfully in a browser.
 - Do not fill Demo video URL unless the uploaded video opens publicly or unlisted.
-- Do not rely on private repository access unless DeepSurge explicitly supports it.
+- Repository URL can be used because the GitHub repository is public.
 
 ## Current Local Go / No-Go
 
@@ -230,7 +231,6 @@ Go:
 
 No-Go:
 
-- The live form requires a public repository, but the repo is still private.
 - The live form requires Demo URL, but GitHub Pages/Cloudflare/hosted API has not been deployed and browser-verified.
 - The live form requires Demo video URL, but no public or unlisted video has been uploaded.
 - The live form requires production payment claims, real USDC, or legal arbitration claims beyond the current Testnet mUSDC MVP.

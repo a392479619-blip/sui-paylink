@@ -76,6 +76,25 @@ export const submitSponsoredTransactionSchema = z.object({
 
 export type SubmitSponsoredTransactionInput = z.infer<typeof submitSponsoredTransactionSchema>;
 
+export const mintTestMockUsdcSchema = z.object({
+  recipientAddress: z.string().min(1),
+  amountUnits: z.string().regex(/^\d+$/).optional(),
+  paylinkId: z.string().min(1).optional(),
+});
+
+export type MintTestMockUsdcInput = z.infer<typeof mintTestMockUsdcSchema>;
+
+export type MintTestMockUsdcResult = {
+  recipientAddress: string;
+  amountUnits: string;
+  coinType: string;
+  coinObjectId?: string;
+  digest: string;
+  minterAddress: string;
+  gasCostMist?: string;
+  createdAt: string;
+};
+
 export type SponsoredTransactionStatus =
   | "built"
   | "submitted"
@@ -180,12 +199,35 @@ export type ReceiptSummary = {
   }>;
 };
 
+export type SponsorReadinessCheck = {
+  name: string;
+  ok: boolean;
+  detail: string;
+};
+
+export type SponsorReadiness = {
+  ready: boolean;
+  network: AppConfig["network"];
+  sponsorEnabled: boolean;
+  sponsorAddress?: string;
+  balanceMist?: string;
+  requiredBalanceMist: string;
+  packageId?: string;
+  mockUsdcCoinType?: string;
+  referenceGasPriceMist?: string;
+  checks: SponsorReadinessCheck[];
+};
+
 export type AppConfig = {
   network: "localnet" | "devnet" | "testnet" | "mainnet";
   publicBaseUrl: string;
   supportedTokens: SupportedToken[];
   sponsorMode: "mock" | "self-sponsored" | "provider";
   packageId?: string;
+  mockUsdcTreasuryCapId?: string;
+  mockUsdcMintEnabled?: boolean;
+  mockUsdcMintAmountUnits?: string;
+  mockUsdcMinterAddress?: string;
   feeReceiverAddress?: string;
   sponsorAddress?: string;
   sponsorEnabled?: boolean;

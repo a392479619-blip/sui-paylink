@@ -1,6 +1,6 @@
 # SuiPayLink 报名最低材料包
 
-更新时间：2026-06-14
+更新时间：2026-06-17
 
 目标：先满足 Sui Overflow 2026 报名/最低提交材料，让创始人本人验证后再报名。不要把未完成的真实浏览器钱包 E2E、真实 USDC、公开 API 部署包装成已完成。
 
@@ -13,6 +13,7 @@
 - 官方页面显示：Sui Overflow 2026，May - August 2026，Registration is open。
 - 2026-06-14 复核：官方 FAQ 同时写着 `Pre-registration is now open`。这意味着当前入口可能是预注册/资料创建阶段，不要假设已经是最终项目提交表。
 - 2026-06-14 复核：DeepSurge 公开 HTML 没有暴露表单字段和 required 状态。Demo URL、video URL、repo URL 是否必填，必须以你登录后的表单 UI 为准。
+- 2026-06-17 复核：GitHub 仓库已 public；Sponsor ready；本地 Judge Test Mode 已启用网页 mint 测试 mUSDC。
 - 官方 FAQ 显示：只能选择一个最能代表项目的 track。
 - 适配 track：DeFi & Payments。官方 track 文案覆盖 financial primitives / payment rails / real-world scenarios，SuiPayLink 是面向跨境数字服务的 gasless escrow payment link。
 
@@ -24,11 +25,11 @@
 
 当前硬边界：
 
-- GitHub 仓库当前是 private。报名前如果表单要求评委访问代码，必须改成 public，或确认平台支持私有仓库授权。
+- GitHub 仓库已 public，可以填写 Repository URL。
 - 当前没有真实公开 API demo URL。
 - 当前 Cloudflare Pages workflow 已有，但需要配置 `CLOUDFLARE_ACCOUNT_ID` 和 `CLOUDFLARE_API_TOKEN` 后手动部署。
-- 当前 GitHub Pages 在 private repo 状态下不可用；GitHub 返回当前 plan 不支持该仓库 Pages。要用 GitHub Pages，需要先公开仓库后重跑 `Static Demo Pages` workflow。
-- 当前 sponsor 地址没有 Testnet SUI gas，真实浏览器钱包 sponsored E2E 还不能完成。
+- 当前 GitHub Pages 需要启用 Pages 并重跑 `Static Demo Pages` workflow。
+- 当前 sponsor 地址已有 Testnet SUI gas，本地真实浏览器钱包 sponsored E2E 可以开始测试。
 - 当前可提交的链上证据是 Testnet smoke，包括 sponsored MockUSDC 证据；不是浏览器钱包端到端证据。
 
 ## 可复制报名字段
@@ -191,7 +192,7 @@ npm run founder:verify
 - README 的 Testnet explorer 链接能打开
 - `docs/13-demo-script-cn.md` 能支撑 2 分钟视频
 - `npm run public:preflight` 通过
-- 如果填写 repo URL，仓库必须 public 或平台确认可访问 private repo
+- 如果填写 repo URL，仓库必须 public。当前仓库已 public。
 - 如果填写 demo URL，URL 必须真实可打开
 - 如果填写 video URL，视频必须公开或 unlisted 可访问
 
@@ -206,5 +207,4 @@ No-Go：
 
 - 表单强制要求 public demo URL，但 Cloudflare/GitHub Pages 还没部署。
 - 表单强制要求 demo video，但视频还没上传。
-- 表单强制要求公开 repo，但仓库仍是 private。
 - 表单要求声称生产支付能力。当前只能说 Testnet/mUSDC/hackathon MVP。

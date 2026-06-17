@@ -5,6 +5,7 @@ import { extname, isAbsolute, relative, resolve } from "node:path";
 import {
   buildSponsoredTransactionSchema,
   createPaylinkSchema,
+  mintTestMockUsdcSchema,
   mutatePaylinkSchema,
   submitSponsoredTransactionSchema,
 } from "@suipaylink/shared";
@@ -12,9 +13,12 @@ import { appConfig, host, port, serveWebApp, webDistDir } from "./config.js";
 import {
   SponsorError,
   buildSponsoredTransaction,
+  getMockUsdcMinterAddress,
   getSponsorAddress,
+  getSponsorReadiness,
   getSponsoredTransaction,
   listSponsoredTransactions,
+  mintTestMockUsdc,
   syncPaylinkChainState,
   submitSponsoredTransaction,
 } from "./sponsor.js";
@@ -45,7 +49,10 @@ app.get("/health", async () => ({
 app.get("/api/config", async () => ({
   ...appConfig,
   sponsorAddress: safeSponsorAddress(),
+  mockUsdcMinterAddress: safeMockUsdcMinterAddress(),
 }));
+
+app.get("/api/sponsor/readiness", async () => getSponsorReadiness());
 
 app.get("/api/paylinks", async () => listPaylinks());
 
@@ -151,6 +158,18 @@ app.post("/api/sponsored-transactions/build", async (request, reply) => {
   }
 });
 
+app.post("/api/mock-usdc/mint", async (request, reply) => {
+  const parsed = mintTestMockUsdcSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return reply.code(400).send({ error: parsed.error.flatten() });
+  }
+  try {
+    return await mintTestMockUsdc(parsed.data);
+  } catch (error) {
+    return sendSponsorError(reply, error);
+  }
+});
+
 app.get<{ Querystring: { paylinkId?: string } }>("/api/sponsored-transactions", async (request) => {
   return listSponsoredTransactions(request.query.paylinkId);
 });
@@ -203,6 +222,14 @@ function sendSponsorError(reply: FastifyReply, error: unknown) {
 function safeSponsorAddress(): string | undefined {
   try {
     return getSponsorAddress();
+  } catch {
+    return undefined;
+  }
+}
+
+function safeMockUsdcMinterAddress(): string | undefined {
+  try {
+    return getMockUsdcMinterAddress();
   } catch {
     return undefined;
   }

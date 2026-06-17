@@ -95,6 +95,18 @@ Testnet SUI gas 余额，不算完成真实 sponsor 准备。
 
 不要把 `SPONSOR_PRIVATE_KEY` 写进代码、README、截图或视频。
 
+如果要让评委不跑 CLI、直接在网页领取测试币，再设置：
+
+| 环境变量 | 值 |
+|---|---|
+| `MOCK_USDC_MINTER_PRIVATE_KEY` | 持有 MockUSDC TreasuryCap 的 Sui Testnet 私钥 |
+| `MOCK_USDC_MINT_AMOUNT_UNITS` | 默认 `100000000`，即 `100 mUSDC` |
+| `MOCK_USDC_MINT_GAS_BUDGET_MIST` | 默认 `5000000` |
+
+只有 `MOCK_USDC_MINTER_PRIVATE_KEY` 对应地址持有 TreasuryCap 时，`/pay/<id>` 的
+`Mint 100 test mUSDC` 按钮才会真正可用。不要把这个私钥写进代码、README、
+截图或视频；线上环境用平台 secret 配置。
+
 ## 部署后检查
 
 部署成功后检查：
@@ -123,11 +135,9 @@ curl https://<service>.onrender.com/api/config
 
 ## GitHub Pages 静态 Demo
 
-仓库也提供 `.github/workflows/pages.yml`。当前仓库是 private，当前 GitHub plan 不支持为这个仓库启用
-GitHub Pages，所以 workflow 默认只支持手动触发。要使用 Pages URL，需要先满足其中一个条件：
-
-- 将仓库改为 public。
-- 或使用支持 private repository Pages 的 GitHub plan。
+仓库也提供 `.github/workflows/pages.yml`。当前仓库已经是 public，可以使用 GitHub Pages。要使用 Pages
+URL，需要在仓库 Settings -> Pages 里选择 GitHub Actions 作为 source，或直接运行受保护的 cutover
+脚本自动处理。
 
 然后在 GitHub Actions 里手动运行 `Static Demo Pages` workflow。运行前可本地验证：
 
@@ -141,24 +151,24 @@ npm run smoke:static-demo
 npm run demo:pages-cutover
 ```
 
-只有你明确批准公开仓库后，才运行执行模式：
+只有你确认要启用 GitHub Pages 后，才运行执行模式：
 
 ```bash
 npm run demo:pages-cutover -- --confirm-public-repo
 ```
 
-执行模式会先跑公开前扫描，再把 repo 改成 public、启用 GitHub Pages、触发 `Static Demo Pages` workflow、等待 workflow 结束，并验证：
+执行模式会先跑公开前扫描，确认 repo 是 public，启用 GitHub Pages、触发 `Static Demo Pages` workflow、等待 workflow 结束，并验证：
 
 ```text
 https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
 ```
 
 workflow 会尝试用 GitHub Actions 自动启用 Pages。如果它在 `Configure Pages` 失败并提示
-`Get Pages site failed`，说明仓库还没有启用 Pages 或当前 private repo/账号计划不支持。此时需要在 GitHub
-Settings -> Pages 里启用 `GitHub Actions` source，或先将仓库改为 public 后重跑 workflow。
+`Get Pages site failed`，说明仓库还没有启用 Pages。此时需要在 GitHub Settings -> Pages 里启用
+`GitHub Actions` source，然后重跑 workflow。
 
-当前已验证：2026-06-13 本仓库在 private 状态下创建 Pages 返回 `Your current plan does not support GitHub
-Pages for this repository`。如果仍保持 private，优先走 Cloudflare Pages；如果要用 GitHub Pages，需要先公开仓库。
+历史记录：2026-06-13 本仓库在 private 状态下创建 Pages 返回 `Your current plan does not support GitHub
+Pages for this repository`。当前仓库已 public，这个 private plan 限制不再是主要阻塞。
 
 预期公开地址：
 

@@ -157,6 +157,15 @@ faucet, then run `npm run sponsor:readiness`.
 `sponsor:readiness` validates the sponsor key without printing it, derives the
 sponsor address, checks Testnet SUI gas balance, verifies the deployed package
 object, reads MockUSDC metadata, and checks gas budget configuration.
+
+Judge-friendly test mUSDC minting is optional. Configure
+`MOCK_USDC_MINTER_PRIVATE_KEY` only in a private local or hosted environment
+when that key owns the deployed MockUSDC TreasuryCap. When configured,
+`/pay/<id>` shows a `Mint 100 test mUSDC` button for the connected Buyer wallet,
+calls `POST /api/mock-usdc/mint`, and auto-selects the returned payment coin
+object. Without this key, the page keeps the CLI fallback command visible and
+disables web minting instead of pretending that a faucet exists.
+
 After a real browser-wallet sponsored flow succeeds, `evidence:browser-wallet`
 reads the local Paylink and sponsored transaction stores, verifies the executed
 digests on Sui Testnet, checks that gas owner is the sponsor, and writes
@@ -175,6 +184,7 @@ npm run chain:test
 
 Sponsored API endpoints:
 
+- `POST /api/mock-usdc/mint`
 - `POST /api/sponsored-transactions/build`
 - `GET /api/sponsored-transactions`
 - `GET /api/sponsored-transactions/:id`
@@ -261,9 +271,9 @@ Cloudflare Pages project. Both verify the SPA fallback for
 do not build sponsored transaction bytes, spend gas, or submit a new Sui
 transaction.
 
-The repository is currently private, so GitHub Pages must be enabled manually
-after making the repository public or using a plan that supports private Pages.
-After that, run the `Static Demo Pages` workflow manually. For Cloudflare Pages,
+The repository is public. GitHub Pages can be enabled through the protected
+cutover script or manually in repository settings with GitHub Actions as the
+source. After that, run the `Static Demo Pages` workflow manually. For Cloudflare Pages,
 set GitHub secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`, then run
 the `Cloudflare Static Demo` workflow manually. The expected Cloudflare URL is
 `https://sui-paylink.pages.dev/pay/demo-ai-workflow`.

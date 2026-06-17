@@ -2,8 +2,11 @@ import type {
   AppConfig,
   BuildSponsoredTransactionInput,
   CreatePaylinkInput,
+  MintTestMockUsdcInput,
+  MintTestMockUsdcResult,
   Paylink,
   ReceiptSummary,
+  SponsorReadiness,
   SponsoredTransactionRecord,
 } from "@suipaylink/shared";
 
@@ -18,6 +21,27 @@ export async function getConfig(): Promise<AppConfig> {
     return staticConfig();
   }
   return request("/api/config");
+}
+
+export async function getSponsorReadiness(): Promise<SponsorReadiness> {
+  if (STATIC_DEMO_ENABLED) {
+    return {
+      ready: false,
+      network: "testnet",
+      sponsorEnabled: false,
+      requiredBalanceMist: "100000000",
+      packageId: PACKAGE_ID,
+      mockUsdcCoinType: MOCK_USDC_COIN_TYPE,
+      checks: [
+        {
+          name: "Static demo",
+          ok: false,
+          detail: "Static demo cannot sign or submit sponsored transactions",
+        },
+      ],
+    };
+  }
+  return request("/api/sponsor/readiness");
 }
 
 export async function listPaylinks(): Promise<Paylink[]> {
@@ -143,6 +167,16 @@ export async function submitSponsoredTransaction(
   });
 }
 
+export async function mintTestMockUsdc(input: MintTestMockUsdcInput): Promise<MintTestMockUsdcResult> {
+  if (STATIC_DEMO_ENABLED) {
+    throw new Error("Static demo mode cannot mint test mUSDC; run the API with MOCK_USDC_MINTER_PRIVATE_KEY.");
+  }
+  return request("/api/mock-usdc/mint", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
@@ -166,6 +200,9 @@ function staticConfig(): AppConfig {
     sponsorMode: "mock",
     sponsorEnabled: false,
     packageId: PACKAGE_ID,
+    mockUsdcTreasuryCapId: "0xbd9979321bfae7f3becb1114e92ae6208c316dcfd26852adef50fce1c8c17fae",
+    mockUsdcMintEnabled: false,
+    mockUsdcMintAmountUnits: "100000000",
     feeReceiverAddress: "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef",
     sponsoredActions: ["fund-mock-usdc", "mark-delivered", "release", "refund"],
     supportedTokens: [

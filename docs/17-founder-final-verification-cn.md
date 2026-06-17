@@ -1,6 +1,6 @@
 # SuiPayLink 创始人最终核验清单
 
-更新时间：2026-06-14
+更新时间：2026-06-17
 
 目标：在 2026-06-16 前完成 Sui Overflow 报名最低需求。这个清单只服务报名动作，不把未完成能力包装成已完成。
 
@@ -14,6 +14,13 @@
 - DeepSurge 公开 HTML 没有暴露表单字段和 required 状态。
 - 本次外部入口快照记录在 `submission/external-entry-snapshot.md`。
 
+2026-06-17 已复核：
+
+- GitHub 仓库已 public。
+- Sponsor 地址已 ready。
+- 本地 Judge Test Mode 已启用网页 mint 测试 mUSDC。
+- 仍缺公开 Demo URL、公开视频 URL、浏览器钱包 E2E evidence。
+
 结论：可以打开报名/预注册入口填写资料，但不要假设已经进入最终项目提交阶段。Demo URL、Demo video URL、Repository URL 是否强制，必须以你登录后的表单 UI 为准。
 
 ## 当前结论
@@ -22,10 +29,9 @@
 
 不能无条件最终提交。最终提交前仍需要你亲自处理：
 
-- GitHub 仓库当前仍是 private。
 - Demo URL 当前没有可填的公开验证 URL。
 - Demo video URL 当前没有可填的公开或 unlisted 视频 URL。
-- Sponsor 地址当前没有 Testnet SUI gas，真实 browser-wallet sponsored E2E 还不能录。
+- 真实 browser-wallet sponsored E2E 还需要你用两个钱包走完并导出 evidence。
 
 ## 第 1 步：拉最新代码并跑最终验收
 
@@ -47,7 +53,7 @@ npm run founder:verify
 - 登录 DeepSurge 后，用 `submission/live-form-verification-template.md` 记录实际看到的 required 字段，不要凭猜测提交。
 - `Hold fields` 里的字段不要填，除非你已经完成对应验证。
 
-## 第 2 步：公开仓库决策
+## 第 2 步：仓库状态确认
 
 当前 repo：
 
@@ -55,16 +61,13 @@ npm run founder:verify
 https://github.com/a392479619-blip/sui-paylink
 ```
 
-如果报名表要求评委访问代码：
-
-1. 先跑：
+仓库已 public。提交前仍建议跑：
 
 ```bash
 npm run public:preflight
 ```
 
-2. 只有输出 `Public-ready check: PASS`，才考虑把 GitHub repo 改成 public。
-3. 改 public 后再跑：
+然后再跑：
 
 ```bash
 npm run registration:audit
@@ -74,8 +77,6 @@ npm run founder:verify
 No-Go：
 
 - `public:preflight` 不通过。
-- 你不接受 repo 公开。
-- 表单强制 public repo，但 repo 仍 private。
 
 ## 第 3 步：Demo URL 决策
 
@@ -83,12 +84,17 @@ No-Go：
 
 ### 方案 A：GitHub Pages
 
-GitHub Pages 当前在 private repo 状态下不可用，GitHub 返回当前 plan 不支持该仓库 Pages。
+当前仓库已 public，可以启用 GitHub Pages。
 
 要走 GitHub Pages：
 
-1. 先把 repo 改 public。
-2. 在 GitHub Actions 手动运行 `Static Demo Pages`。
+1. 运行：
+
+```bash
+npm run demo:pages-cutover -- --confirm-public-repo
+```
+
+2. 或在 GitHub Actions 手动运行 `Static Demo Pages`。
 3. 打开：
 
 ```text
@@ -222,7 +228,7 @@ No-Go：
 
 谨慎填写：
 
-- Repository URL：只有 repo public 或平台明确能访问 private repo 时填写。
+- Repository URL：当前仓库已 public，可以填写。
 - Demo URL：只有公开 URL 浏览器验证后填写。
 - Demo video URL：只有公开视频或 unlisted 视频验证后填写。
 

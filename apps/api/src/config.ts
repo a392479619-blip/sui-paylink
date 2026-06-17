@@ -12,19 +12,28 @@ loadIfExists(resolve(projectRoot, "apps", "api", ".env"));
 
 const network = (process.env.SUI_NETWORK ?? "testnet") as AppConfig["network"];
 const sponsorPrivateKey = process.env.SPONSOR_PRIVATE_KEY;
+const mockUsdcMinterPrivateKey = process.env.MOCK_USDC_MINTER_PRIVATE_KEY;
 
 export const packageId =
   process.env.SUI_PACKAGE_ID ??
   "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340";
 export const mockUsdcCoinType =
   process.env.MOCK_USDC_COIN_TYPE ?? `${packageId}::mock_usdc::MOCK_USDC`;
+export const mockUsdcTreasuryCapId =
+  process.env.MOCK_USDC_TREASURY_CAP_ID ??
+  "0xbd9979321bfae7f3becb1114e92ae6208c316dcfd26852adef50fce1c8c17fae";
 export const feeReceiverAddress =
   process.env.FEE_RECEIVER_ADDRESS ??
   "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef";
 export const defaultSponsorGasBudgetMist = process.env.SPONSOR_GAS_BUDGET_MIST ?? "50000000";
 export const maxSponsorGasBudgetMist = process.env.MAX_SPONSOR_GAS_BUDGET_MIST ?? "200000000";
+export const sponsorReadinessMinGasMist = process.env.SPONSOR_READINESS_MIN_GAS_MIST ?? "100000000";
+export const mockUsdcMintGasBudgetMist = process.env.MOCK_USDC_MINT_GAS_BUDGET_MIST ?? "5000000";
+export const mockUsdcMintAmountUnits = process.env.MOCK_USDC_MINT_AMOUNT_UNITS ?? "100000000";
+export const mockUsdcMintMaxUnits = process.env.MOCK_USDC_MINT_MAX_UNITS ?? mockUsdcMintAmountUnits;
 export const sponsoredTransactionTtlMs = Number(process.env.SPONSORED_TX_TTL_MS ?? 10 * 60 * 1000);
 export const sponsorKeySecret = sponsorPrivateKey;
+export const mockUsdcMinterKeySecret = mockUsdcMinterPrivateKey;
 export const paylinkStorePath = process.env.PAYLINK_STORE_PATH
   ? resolveProjectPath(process.env.PAYLINK_STORE_PATH)
   : resolve(projectRoot, ".data", "paylinks.json");
@@ -37,6 +46,9 @@ export const appConfig: AppConfig = {
   publicBaseUrl: process.env.PUBLIC_BASE_URL ?? "http://127.0.0.1:5174",
   sponsorMode: (process.env.SPONSOR_MODE ?? (sponsorPrivateKey ? "self-sponsored" : "mock")) as AppConfig["sponsorMode"],
   packageId,
+  mockUsdcTreasuryCapId,
+  mockUsdcMintEnabled: Boolean(mockUsdcMinterPrivateKey),
+  mockUsdcMintAmountUnits,
   feeReceiverAddress,
   sponsorEnabled: Boolean(sponsorPrivateKey),
   sponsoredActions: ["fund-mock-usdc", "mark-delivered", "release", "refund"],

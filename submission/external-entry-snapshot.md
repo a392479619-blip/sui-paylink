@@ -1,6 +1,6 @@
 # Sui Overflow Entry Snapshot
 
-Observed at: 2026-06-14 Asia/Shanghai
+Observed at: 2026-06-17 Asia/Shanghai
 
 Purpose: keep the founder submission decision tied to the live public entry pages, not to memory or stale planning notes.
 
@@ -25,7 +25,7 @@ Purpose: keep the founder submission decision tied to the live public entry page
 - Select only one track: DeFi & Payments.
 - Do not fill Demo URL unless the public URL opens successfully in a browser.
 - Do not fill Demo video URL unless the uploaded video opens publicly or unlisted.
-- Do not rely on private repository access unless DeepSurge explicitly supports it.
+- Repository URL can be used because the GitHub repository is public.
 
 ## Current Local Go / No-Go
 
@@ -37,7 +37,6 @@ Go:
 
 No-Go:
 
-- The live form requires a public repository, but the repo is still private.
 - The live form requires Demo URL, but GitHub Pages/Cloudflare/hosted API has not been deployed and browser-verified.
 - The live form requires Demo video URL, but no public or unlisted video has been uploaded.
 - The live form requires production payment claims, real USDC, or legal arbitration claims beyond the current Testnet mUSDC MVP.

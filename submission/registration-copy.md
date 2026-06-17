@@ -1,7 +1,7 @@
 # SuiPayLink Registration Copy Sheet
 
 Generated from `submission/registration-fields.json`.
-Source updatedAt: 2026-06-14
+Source updatedAt: 2026-06-17
 
 ## Event
 
@@ -80,6 +80,12 @@ Length: 161/500
 Sui Move, Sui TypeScript SDK, React, Vite, Fastify, Node.js 22, GitHub Actions, Cloudflare Pages workflow, file-backed JSON stores for hackathon MVP persistence.
 ```
 
+### Repository URL
+
+```text
+https://github.com/a392479619-blip/sui-paylink
+```
+
 ### Contract package
 
 ```text
@@ -124,10 +130,10 @@ Sui fits this project because sponsored transactions let the app sponsor pay gas
 
 ### How can judges verify it?
 
-Length: 409/900
+Length: 509/900
 
 ```text
-Judges can inspect the public Sui Testnet package and transactions in Sui Explorer, run the local smoke tests, and open the Paylink buyer flow. The README links the package, publish transaction, sponsored MockUSDC fund/release transactions, and sponsored escrow object. Locally, run npm run smoke:api, npm run smoke:preview, npm run smoke:static-demo, npm run submission:readiness, and npm run founder:verify.
+Judges can inspect the public Sui Testnet package and transactions in Sui Explorer, run the local smoke tests, and open the Paylink buyer flow. The README links the package, publish transaction, sponsored MockUSDC fund/release transactions, and sponsored escrow object. The API includes Judge Test Mode for minting Testnet mUSDC when a private minter key is configured. Locally, run npm run smoke:api, npm run smoke:preview, npm run smoke:static-demo, npm run submission:readiness, and npm run founder:verify.
 ```
 
 ### What is not finished?
@@ -141,14 +147,6 @@ This is a hackathon MVP on public Sui Testnet. It does not claim production USDC
 ## Needs Founder Verification
 
 Do not paste these until the condition is true in the live form.
-
-### Repository URL
-
-```text
-https://github.com/a392479619-blip/sui-paylink
-```
-
-Decision: The repository is currently private. Make it public before final submission, or confirm the platform can access a private repository.
 
 ## Hold Fields
 
@@ -178,13 +176,12 @@ Value to submit now: leave blank
 
 - The form accepts project basics, track, repository URL, and written description.
 - The form allows demo URL and demo video URL to be omitted or added later.
-- The repository is made public or the platform can access a private repository.
+- The public repository URL is accepted by the submission form.
 
 ## No-Go Conditions
 
 - The form requires a public demo URL before submission.
 - The form requires a public or unlisted demo video before submission.
-- The form requires a public repository and the repository is still private.
 - The form requires production payment claims beyond current Testnet mUSDC evidence.
 
 ## Pre-Submit Commands

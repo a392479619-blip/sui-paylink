@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-14",
+  "updatedAt": "2026-06-17",
   "event": {
     "name": "Sui Overflow 2026",
     "officialUrl": "https://overflow.sui.io/",
@@ -62,8 +62,8 @@
     {
       "label": "Repository URL",
       "value": "https://github.com/a392479619-blip/sui-paylink",
-      "status": "needs_user_verification",
-      "reason": "The repository is currently private. Make it public before final submission, or confirm the platform can access a private repository."
+      "status": "ready",
+      "reason": "Repository is public and can be shared with judges."
     },
     {
       "label": "Demo URL",
@@ -137,7 +137,7 @@
     },
     {
       "label": "How can judges verify it?",
-      "value": "Judges can inspect the public Sui Testnet package and transactions in Sui Explorer, run the local smoke tests, and open the Paylink buyer flow. The README links the package, publish transaction, sponsored MockUSDC fund/release transactions, and sponsored escrow object. Locally, run npm run smoke:api, npm run smoke:preview, npm run smoke:static-demo, npm run submission:readiness, and npm run founder:verify.",
+      "value": "Judges can inspect the public Sui Testnet package and transactions in Sui Explorer, run the local smoke tests, and open the Paylink buyer flow. The README links the package, publish transaction, sponsored MockUSDC fund/release transactions, and sponsored escrow object. The API includes Judge Test Mode for minting Testnet mUSDC when a private minter key is configured. Locally, run npm run smoke:api, npm run smoke:preview, npm run smoke:static-demo, npm run submission:readiness, and npm run founder:verify.",
       "status": "ready",
       "maxLength": 900
     },
@@ -152,12 +152,11 @@
     "go": [
       "The form accepts project basics, track, repository URL, and written description.",
       "The form allows demo URL and demo video URL to be omitted or added later.",
-      "The repository is made public or the platform can access a private repository."
+      "The public repository URL is accepted by the submission form."
     ],
     "noGo": [
       "The form requires a public demo URL before submission.",
       "The form requires a public or unlisted demo video before submission.",
-      "The form requires a public repository and the repository is still private.",
       "The form requires production payment claims beyond current Testnet mUSDC evidence."
     ]
   }
