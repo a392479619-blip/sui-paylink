@@ -29,6 +29,12 @@ import { ChainDemo } from "./ChainDemo";
 import { SponsoredDemo } from "./SponsoredDemo";
 
 type PaylinkAction = "fund" | "deliver" | "release" | "refund";
+type PaylinkPageRole = "overview" | "buyer" | "seller";
+
+type PaylinkRoute = {
+  id: string;
+  role: PaylinkPageRole;
+};
 
 const initialForm: CreatePaylinkInput = {
   mode: "escrow",
@@ -98,10 +104,10 @@ const submissionBoundaries = [
 
 export function App() {
   const [initialPath] = useState(() => window.location.pathname);
-  const publicPaylinkId = parsePublicPaylinkId(initialPath);
+  const paylinkRoute = parsePaylinkRoute(initialPath);
 
-  if (publicPaylinkId) {
-    return <PublicPaylinkPage paylinkId={publicPaylinkId} />;
+  if (paylinkRoute) {
+    return <PublicPaylinkPage paylinkId={paylinkRoute.id} role={paylinkRoute.role} />;
   }
 
   return <DashboardPage />;
@@ -312,6 +318,17 @@ function DashboardPage() {
             <p className="muted">
               Share URL: <a href={selected.publicUrl}>{selected.publicUrl}</a>
             </p>
+            <div className="role-links">
+              <a className="button-link" href={paylinkHref(selected.id, "buyer")} target="_blank" rel="noreferrer">
+                Open Buyer page
+              </a>
+              <a className="button-link" href={paylinkHref(selected.id, "seller")} target="_blank" rel="noreferrer">
+                Open Seller page
+              </a>
+              <a className="button-link" href={paylinkHref(selected.id, "overview")} target="_blank" rel="noreferrer">
+                Open overview
+              </a>
+            </div>
           </div>
           <PaylinkActions paylink={selected} onAction={handleAction} />
         </section>
@@ -322,7 +339,7 @@ function DashboardPage() {
   );
 }
 
-function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
+function PublicPaylinkPage({ paylinkId, role }: { paylinkId: string; role: PaylinkPageRole }) {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [paylink, setPaylink] = useState<Paylink | null>(null);
   const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
@@ -387,7 +404,7 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
       {STATIC_DEMO_ENABLED && <StaticDemoBanner />}
       <section className="hero">
         <div>
-          <p className="eyebrow">Buyer payment link</p>
+          <p className="eyebrow">{roleEyebrow(role)}</p>
           <h1>SuiPayLink</h1>
           <p className="hero-copy">{paylink?.memo ?? "Loading paylink..."}</p>
         </div>
@@ -402,6 +419,8 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
       {!paylink && !error && <section className="panel">Loading paylink...</section>}
 
       {paylink && (
+        <>
+        <RoleSwitch paylink={paylink} role={role} />
         <section className="public-paylink">
           <div className="public-summary">
             <div>
@@ -416,10 +435,12 @@ function PublicPaylinkPage({ paylinkId }: { paylinkId: string }) {
             config={config}
             sponsorReadiness={sponsorReadiness}
             paylink={paylink}
+            role={role}
             onError={setError}
             onRefresh={refresh}
           />
         </section>
+        </>
       )}
 
       {paylink?.demoSeed && !config?.sponsorEnabled && (
@@ -484,16 +505,41 @@ function StaticDemoBanner() {
   );
 }
 
+function RoleSwitch({ paylink, role }: { paylink: Paylink; role: PaylinkPageRole }) {
+  const links: Array<{ label: string; role: PaylinkPageRole; detail: string }> = [
+    { label: "Buyer page", role: "buyer", detail: "mint test mUSDC, fund escrow, release or refund" },
+    { label: "Seller page", role: "seller", detail: "mark delivered after buyer funds escrow" },
+    { label: "Overview", role: "overview", detail: "see both sides and transaction history" },
+  ];
+
+  return (
+    <section className="role-switch">
+      {links.map((item) => (
+        <a
+          key={item.role}
+          className={item.role === role ? "active" : ""}
+          href={paylinkHref(paylink.id, item.role)}
+        >
+          <strong>{item.label}</strong>
+          <span>{item.detail}</span>
+        </a>
+      ))}
+    </section>
+  );
+}
+
 function SponsoredPaylinkActions({
   config,
   sponsorReadiness,
   paylink,
+  role,
   onError,
   onRefresh,
 }: {
   config: AppConfig | null;
   sponsorReadiness: SponsorReadiness | null;
   paylink: Paylink;
+  role: PaylinkPageRole;
   onError: (message: string) => void;
   onRefresh: () => Promise<void>;
 }) {
@@ -667,6 +713,9 @@ function SponsoredPaylinkActions({
       ["funded", "delivered"].includes(paylink.status) &&
       pendingAction !== "refund",
   );
+  const showBuyerControls = role !== "seller";
+  const showSellerControls = role !== "buyer";
+  const roleInstruction = actionInstructionForRole(role, paylink.status);
   const actionSigners: Array<{ label: string; action: SponsoredTransactionAction }> = [
     { label: "Fund", action: "fund-mock-usdc" },
     { label: "Deliver", action: "mark-delivered" },
@@ -684,7 +733,13 @@ function SponsoredPaylinkActions({
         <ConnectButton connectText="Connect wallet" />
       </div>
 
-      <WalletE2EChecklist paylink={paylink} accountAddress={account?.address} />
+      <div className={`role-focus-panel ${role}`}>
+        <span>{roleLabel(role)}</span>
+        <strong>{roleInstruction.title}</strong>
+        <p>{roleInstruction.detail}</p>
+      </div>
+
+      <WalletE2EChecklist paylink={paylink} accountAddress={account?.address} role={role} />
       <SponsorReadinessCard readiness={sponsorReadiness} />
 
       <dl className="facts compact">
@@ -712,7 +767,7 @@ function SponsoredPaylinkActions({
         </div>
       </dl>
 
-      {paylink.status === "created" && (
+      {showBuyerControls && paylink.status === "created" && (
         <div className="coin-picker">
           <div>
             <p className="eyebrow">Buyer test coin</p>
@@ -745,30 +800,36 @@ function SponsoredPaylinkActions({
       )}
 
       <div className="actions">
-        <button
-          onClick={() => executeSponsoredAction("fund-mock-usdc")}
-          disabled={!canFund || pending}
-        >
-          {pendingAction === "fund-mock-usdc" ? "Funding..." : "Buyer signs fund escrow"}
-        </button>
-        <button
-          onClick={() => executeSponsoredAction("mark-delivered")}
-          disabled={!canDeliver || pending}
-        >
-          {pendingAction === "mark-delivered" ? "Marking..." : "Seller signs delivery"}
-        </button>
-        <button
-          onClick={() => executeSponsoredAction("release")}
-          disabled={!canRelease || pending}
-        >
-          {pendingAction === "release" ? "Releasing..." : "Buyer signs release"}
-        </button>
-        <button
-          onClick={() => executeSponsoredAction("refund")}
-          disabled={!canRefund || pending}
-        >
-          {pendingAction === "refund" ? "Refunding..." : "Refund with sponsor"}
-        </button>
+        {showBuyerControls && (
+          <>
+            <button
+              onClick={() => executeSponsoredAction("fund-mock-usdc")}
+              disabled={!canFund || pending}
+            >
+              {pendingAction === "fund-mock-usdc" ? "Funding..." : "Buyer signs fund escrow"}
+            </button>
+            <button
+              onClick={() => executeSponsoredAction("release")}
+              disabled={!canRelease || pending}
+            >
+              {pendingAction === "release" ? "Releasing..." : "Buyer signs release"}
+            </button>
+            <button
+              onClick={() => executeSponsoredAction("refund")}
+              disabled={!canRefund || pending}
+            >
+              {pendingAction === "refund" ? "Refunding..." : "Refund with sponsor"}
+            </button>
+          </>
+        )}
+        {showSellerControls && (
+          <button
+            onClick={() => executeSponsoredAction("mark-delivered")}
+            disabled={!canDeliver || pending}
+          >
+            {pendingAction === "mark-delivered" ? "Marking..." : "Seller signs delivery"}
+          </button>
+        )}
       </div>
 
       {lastRecord && (
@@ -789,20 +850,27 @@ function SponsoredPaylinkActions({
 function WalletE2EChecklist({
   paylink,
   accountAddress,
+  role,
 }: {
   paylink: Paylink;
   accountAddress?: string;
+  role: PaylinkPageRole;
 }) {
   const currentAction = currentWalletAction(paylink.status);
+  const visibleSteps = walletE2ESteps.filter((step) => {
+    if (role === "buyer") return step.role === "Buyer";
+    if (role === "seller") return step.role === "Seller";
+    return true;
+  });
 
   return (
     <section className="wallet-e2e-card">
       <div>
         <p className="eyebrow">Browser-wallet E2E</p>
-        <h3>{currentAction ? "Next wallet signature required" : "Wallet flow complete"}</h3>
+        <h3>{walletChecklistTitle(role, currentAction)}</h3>
       </div>
       <div className="wallet-e2e-steps">
-        {walletE2ESteps.map((step) => {
+        {visibleSteps.map((step) => {
           const expected = signerAddressForAction(step.action, paylink);
           const state = walletE2EStepState(paylink.status, step.action);
           const connected = accountAddress && expected ? sameSuiAddress(accountAddress, expected) : false;
@@ -1219,11 +1287,15 @@ function walletE2ECompletedActions(status: Paylink["status"]): SponsoredTransact
   return [];
 }
 
-function parsePublicPaylinkId(pathname: string): string | null {
+function parsePaylinkRoute(pathname: string): PaylinkRoute | null {
   const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   const appPath = base && pathname.startsWith(base) ? pathname.slice(base.length) || "/" : pathname;
-  const match = appPath.match(/^\/pay\/([^/]+)\/?$/);
-  return match?.[1] ? decodeURIComponent(match[1]) : null;
+  const match = appPath.match(/^\/(pay|buyer|seller)\/([^/]+)\/?$/);
+  if (!match?.[1] || !match[2]) {
+    return null;
+  }
+  const role = match[1] === "buyer" || match[1] === "seller" ? match[1] : "overview";
+  return { role, id: decodeURIComponent(match[2]) };
 }
 
 function formatDate(value: string): string {
@@ -1255,6 +1327,86 @@ function sameSuiAddress(left: string, right: string): boolean {
   return left.toLowerCase() === right.toLowerCase();
 }
 
+function roleEyebrow(role: PaylinkPageRole): string {
+  if (role === "buyer") return "Buyer payment page";
+  if (role === "seller") return "Seller delivery page";
+  return "Escrow overview";
+}
+
+function roleLabel(role: PaylinkPageRole): string {
+  if (role === "buyer") return "Buyer flow";
+  if (role === "seller") return "Seller flow";
+  return "Full flow";
+}
+
+function walletChecklistTitle(
+  role: PaylinkPageRole,
+  currentAction: SponsoredTransactionAction | undefined,
+): string {
+  if (!currentAction) return "Wallet flow complete";
+  if (role === "buyer") return signerRoleForAction(currentAction) === "buyer" ? "Buyer action required" : "Waiting for seller";
+  if (role === "seller") return signerRoleForAction(currentAction) === "seller" ? "Seller action required" : "Waiting for buyer";
+  return "Next wallet signature required";
+}
+
+function actionInstructionForRole(
+  role: PaylinkPageRole,
+  status: Paylink["status"],
+): { title: string; detail: string } {
+  if (role === "buyer") {
+    if (status === "created") {
+      return {
+        title: "Connect Buyer wallet, mint test mUSDC, then fund escrow.",
+        detail: "The buyer signs the business transaction. Sponsor pays the SUI gas.",
+      };
+    }
+    if (status === "funded") {
+      return {
+        title: "Buyer is waiting for Seller delivery.",
+        detail: "Keep this page open, then switch back after Seller signs delivery.",
+      };
+    }
+    if (status === "delivered") {
+      return {
+        title: "Buyer can release funds or refund.",
+        detail: "For the demo, release is the main path after checking delivery.",
+      };
+    }
+    return {
+      title: "Buyer flow is complete.",
+      detail: "Use Receipt and Sponsored requests below as evidence.",
+    };
+  }
+  if (role === "seller") {
+    if (status === "created") {
+      return {
+        title: "Seller is waiting for Buyer funding.",
+        detail: "Open the Buyer page first and complete fund escrow before delivery.",
+      };
+    }
+    if (status === "funded") {
+      return {
+        title: "Connect Seller wallet and sign delivery.",
+        detail: "This marks the escrow delivered with a proof URI. Sponsor pays gas.",
+      };
+    }
+    if (status === "delivered") {
+      return {
+        title: "Seller delivery is complete.",
+        detail: "Switch to Buyer page so the buyer can release funds.",
+      };
+    }
+    return {
+      title: "Seller flow is complete.",
+      detail: "Use Receipt and Sponsored requests below as evidence.",
+    };
+  }
+  return {
+    title: "Overview shows both parties.",
+    detail: "Use Buyer and Seller pages for clean recording, and keep this page for receipt/history.",
+  };
+}
+
 function mintMockUsdcCommand(config: AppConfig | null, paylink: Paylink): string {
   const token = config?.supportedTokens.find((item) => item.symbol === paylink.token) ?? config?.supportedTokens[0];
   const units = token ? amountToBaseUnits(paylink.amount, token.decimals) : "100000000";
@@ -1274,6 +1426,11 @@ function explorerObjectUrl(objectId: string, network: AppConfig["network"]): str
 
 function demoPaylinkHref(): string {
   return new URL("pay/demo-ai-workflow", new URL(import.meta.env.BASE_URL, window.location.origin)).toString();
+}
+
+function paylinkHref(id: string, role: PaylinkPageRole): string {
+  const segment = role === "buyer" ? "buyer" : role === "seller" ? "seller" : "pay";
+  return new URL(`${segment}/${encodeURIComponent(id)}`, new URL(import.meta.env.BASE_URL, window.location.origin)).toString();
 }
 
 function errorText(error: unknown): string {

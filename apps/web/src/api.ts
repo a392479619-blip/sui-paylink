@@ -178,19 +178,44 @@ export async function mintTestMockUsdc(input: MintTestMockUsdcInput): Promise<Mi
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "content-type": "application/json",
-      ...init?.headers,
-    },
-    ...init,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      headers: {
+        "content-type": "application/json",
+        ...init?.headers,
+      },
+      ...init,
+    });
+  } catch (error) {
+    throw new Error(friendlyNetworkError(path, error));
+  }
 
-  const data = await response.json();
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error ? JSON.stringify(data.error) : "Request failed");
+    throw new Error(friendlyApiError(path, response.status, data));
   }
   return data as T;
+}
+
+function friendlyApiError(path: string, status: number, data: unknown): string {
+  const payload = data as { code?: string; error?: unknown };
+  const rawError = typeof payload.error === "string" ? payload.error : payload.error ? JSON.stringify(payload.error) : "";
+  if (path === "/api/mock-usdc/mint" && (payload.code === "sui_rpc_error" || /fetch failed/i.test(rawError))) {
+    return "Testnet mUSDC mint failed because the Sui RPC request failed. Retry once; if it still fails, use the CLI fallback command shown on the page.";
+  }
+  if (payload.code === "sui_rpc_error" || /fetch failed/i.test(rawError)) {
+    return "Sui Testnet RPC request failed. Retry after a few seconds; if it repeats, keep the page open and use the latest receipt/history after the network recovers.";
+  }
+  return rawError || `Request failed with HTTP ${status}`;
+}
+
+function friendlyNetworkError(path: string, error: unknown): string {
+  const detail = error instanceof Error ? error.message : String(error);
+  if (path === "/api/mock-usdc/mint") {
+    return `Could not reach the local API while minting test mUSDC: ${detail}`;
+  }
+  return `Could not reach the local API: ${detail}`;
 }
 
 function staticConfig(): AppConfig {

@@ -463,6 +463,17 @@ button:disabled {
   text-decoration: none;
 }
 
+.role-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.role-links .button-link {
+  min-height: 36px;
+}
+
 .table {
   display: grid;
   gap: 10px;
@@ -509,9 +520,40 @@ button:disabled {
   font-size: 36px;
 }
 
+.role-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.role-switch a {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #dce5ed;
+  border-radius: 8px;
+  color: #17202a;
+  background: #fff;
+  text-decoration: none;
+}
+
+.role-switch a.active {
+  border-color: #176b87;
+  box-shadow: inset 0 0 0 1px #176b87;
+  background: #eef8fb;
+}
+
+.role-switch span {
+  color: #687789;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 .public-paylink {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 430px);
   gap: 24px;
 }
 
@@ -605,7 +647,7 @@ button:disabled {
   display: grid;
   align-content: start;
   gap: 14px;
-  min-width: 260px;
+  min-width: 0;
 }
 
 .sponsored-actions-heading {
@@ -631,6 +673,46 @@ button:disabled {
 .wallet-e2e-card h3,
 .sponsor-readiness-card h3 {
   margin: 0;
+}
+
+.role-focus-panel {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #d7e2ea;
+  border-radius: 8px;
+  background: #f8fbfd;
+}
+
+.role-focus-panel span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #176b87;
+  background: #e9f5f8;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.role-focus-panel strong {
+  color: #162130;
+}
+
+.role-focus-panel p {
+  margin: 0;
+  color: #5d6875;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.role-focus-panel.buyer {
+  border-color: #9fcbd6;
+  background: #f1f9fb;
+}
+
+.role-focus-panel.seller {
+  border-color: #d4dcc4;
+  background: #fbfcf7;
 }
 
 .wallet-e2e-steps,
@@ -929,6 +1011,7 @@ button:disabled {
   .layout,
   .grid,
   .static-demo-banner,
+  .role-switch,
   .public-paylink,
   .facts,
   .history-row,

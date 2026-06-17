@@ -8,7 +8,11 @@ const rootDir = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const distDir = resolve(rootDir, "apps", "web", "dist");
 const indexPath = resolve(distDir, "index.html");
 const notFoundPath = resolve(distDir, "404.html");
-const demoRouteIndexPath = resolve(distDir, "pay", "demo-ai-workflow", "index.html");
+const demoRouteIndexPaths = [
+  resolve(distDir, "pay", "demo-ai-workflow", "index.html"),
+  resolve(distDir, "buyer", "demo-ai-workflow", "index.html"),
+  resolve(distDir, "seller", "demo-ai-workflow", "index.html"),
+];
 const basePath = normalizeBasePath(process.env.STATIC_DEMO_BASE_PATH ?? "/sui-paylink");
 const assetPrefix = basePath === "/" ? "/" : `${basePath}/`;
 
@@ -18,8 +22,10 @@ if (!isReadableFile(indexPath)) {
 if (!isReadableFile(notFoundPath)) {
   throw new Error(`Missing GitHub Pages fallback at ${notFoundPath}.`);
 }
-if (!isReadableFile(demoRouteIndexPath)) {
-  throw new Error(`Missing GitHub Pages paylink route index at ${demoRouteIndexPath}.`);
+for (const demoRouteIndexPath of demoRouteIndexPaths) {
+  if (!isReadableFile(demoRouteIndexPath)) {
+    throw new Error(`Missing GitHub Pages paylink route index at ${demoRouteIndexPath}.`);
+  }
 }
 
 const indexHtml = readFileSync(indexPath, "utf8");
@@ -49,6 +55,10 @@ try {
 
   const paylink = await expectOk(`${baseUrl}/pay/demo-ai-workflow`);
   expectIncludes(paylink, '<div id="root"></div>', "paylink fallback html");
+  const buyer = await expectOk(`${baseUrl}/buyer/demo-ai-workflow`);
+  expectIncludes(buyer, '<div id="root"></div>', "buyer fallback html");
+  const seller = await expectOk(`${baseUrl}/seller/demo-ai-workflow`);
+  expectIncludes(seller, '<div id="root"></div>', "seller fallback html");
 
   const assetHref = indexHtml.match(new RegExp(`${escapeRegExp(assetPrefix)}assets/[^"]+\\.js`))?.[0];
   if (!assetHref) {
@@ -67,6 +77,8 @@ try {
       "asset-base-path",
       "github-pages-404",
       "github-pages-paylink-route",
+      "github-pages-buyer-route",
+      "github-pages-seller-route",
       "submission-evidence-bundle",
     ],
   }, null, 2));

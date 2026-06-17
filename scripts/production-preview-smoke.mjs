@@ -81,6 +81,12 @@ try {
   const paylinkHtml = await getText(`${baseUrl}/pay/${created.id}`);
   assert(paylinkHtml.includes("<title>SuiPayLink</title>"), "paylink route did not return the web app");
 
+  const buyerHtml = await getText(`${baseUrl}/buyer/${created.id}`);
+  assert(buyerHtml.includes("<title>SuiPayLink</title>"), "buyer route did not return the web app");
+
+  const sellerHtml = await getText(`${baseUrl}/seller/${created.id}`);
+  assert(sellerHtml.includes("<title>SuiPayLink</title>"), "seller route did not return the web app");
+
   const seededPaylinkHtml = await getText(`${baseUrl}/pay/demo-preview`);
   assert(seededPaylinkHtml.includes("<title>SuiPayLink</title>"), "demo seed route did not return the web app");
 
@@ -109,6 +115,8 @@ try {
           "create-paylink",
           "root-web",
           "paylink-web",
+          "buyer-web",
+          "seller-web",
           "demo-seed-web",
           "asset",
           "api-404",
