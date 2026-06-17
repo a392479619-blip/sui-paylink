@@ -67,9 +67,9 @@
     },
     {
       "label": "Demo URL",
-      "value": "",
-      "status": "hold",
-      "reason": "Do not submit a demo URL until Cloudflare or another public host is actually deployed and browser-verified."
+      "value": "https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow",
+      "status": "ready",
+      "reason": "GitHub Pages static demo is deployed and browser-verified. It is a static mock demo, not a hosted API demo."
     },
     {
       "label": "Demo video URL",
@@ -143,7 +143,7 @@
     },
     {
       "label": "What is not finished?",
-      "value": "This is a hackathon MVP on public Sui Testnet. It does not claim production USDC support, fiat ramps, legal arbitration, full event indexing, or Stripe replacement behavior. The current strongest evidence is the deployed Move package plus Testnet smoke flows, including sponsored MockUSDC where buyer and seller hold 0 SUI while the sponsor pays gas. Public hosting, demo video, and browser-wallet sponsored E2E remain final submission steps.",
+      "value": "This is a hackathon MVP on public Sui Testnet. It does not claim production USDC support, fiat ramps, legal arbitration, full event indexing, or Stripe replacement behavior. The current strongest evidence is the deployed Move package plus Testnet smoke flows, including sponsored MockUSDC where buyer and seller hold 0 SUI while the sponsor pays gas. The public demo is a static mock demo; demo video and browser-wallet sponsored E2E remain final submission steps.",
       "status": "ready",
       "maxLength": 900
     }
@@ -151,12 +151,13 @@
   "minimumGoNoGo": {
     "go": [
       "The form accepts project basics, track, repository URL, and written description.",
-      "The form allows demo URL and demo video URL to be omitted or added later.",
+      "The form accepts the public GitHub Pages static Demo URL.",
+      "The form allows demo video URL to be omitted or added later.",
       "The public repository URL is accepted by the submission form."
     ],
     "noGo": [
-      "The form requires a public demo URL before submission.",
       "The form requires a public or unlisted demo video before submission.",
+      "The form rejects a static demo and requires a hosted API demo or browser-wallet E2E demo URL.",
       "The form requires production payment claims beyond current Testnet mUSDC evidence."
     ]
   }

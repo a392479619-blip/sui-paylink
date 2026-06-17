@@ -94,6 +94,12 @@ Sui Move, Sui TypeScript SDK, React, Vite, Fastify, Node.js 22, GitHub Actions, 
 https://github.com/a392479619-blip/sui-paylink
 ```
 
+### Demo URL
+
+```text
+https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
+```
+
 ### Contract package
 
 ```text
@@ -146,10 +152,10 @@ Judges can inspect the public Sui Testnet package and transactions in Sui Explor
 
 ### What is not finished?
 
-Length: 442/900
+Length: 464/900
 
 ```text
-This is a hackathon MVP on public Sui Testnet. It does not claim production USDC support, fiat ramps, legal arbitration, full event indexing, or Stripe replacement behavior. The current strongest evidence is the deployed Move package plus Testnet smoke flows, including sponsored MockUSDC where buyer and seller hold 0 SUI while the sponsor pays gas. Public hosting, demo video, and browser-wallet sponsored E2E remain final submission steps.
+This is a hackathon MVP on public Sui Testnet. It does not claim production USDC support, fiat ramps, legal arbitration, full event indexing, or Stripe replacement behavior. The current strongest evidence is the deployed Move package plus Testnet smoke flows, including sponsored MockUSDC where buyer and seller hold 0 SUI while the sponsor pays gas. The public demo is a static mock demo; demo video and browser-wallet sponsored E2E remain final submission steps.
 ```
 
 ## Verify Before Pasting
@@ -158,7 +164,6 @@ This is a hackathon MVP on public Sui Testnet. It does not claim production USDC
 
 ## Leave Blank Until Verified
 
-- Demo URL: Do not submit a demo URL until Cloudflare or another public host is actually deployed and browser-verified.
 - Demo video URL: Record and upload the demo video first. Use docs/13-demo-script-cn.md.
 
 ## Evidence Links
@@ -171,13 +176,11 @@ This is a hackathon MVP on public Sui Testnet. It does not claim production USDC
 
 ## Current Gaps
 
-- Static public demo path
 - Real API hosted demo
 - Browser wallet sponsored E2E
 
 ## Next Actions
 
-- Leave Demo URL blank unless a public URL has been deployed and opened successfully in a browser.
 - Leave Demo video URL blank unless a public or unlisted video has been uploaded and opened successfully.
 - If the form requires Demo URL, deploy Cloudflare/GitHub Pages static demo or a hosted API demo first, then rerun npm run founder:verify.
 - For a stronger demo, record one browser-wallet sponsored flow and export evidence with npm run evidence:browser-wallet.
@@ -217,7 +220,7 @@ Purpose: keep the founder submission decision tied to the live public entry page
 - Open the registration form now.
 - Treat the live DeepSurge UI as authoritative for whether this is pre-registration or final project submission.
 - Select only one track: DeFi & Payments.
-- Do not fill Demo URL unless the public URL opens successfully in a browser.
+- Demo URL can be used because the GitHub Pages static demo opens successfully in a browser: https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
 - Do not fill Demo video URL unless the uploaded video opens publicly or unlisted.
 - Repository URL can be used because the GitHub repository is public.
 
@@ -227,11 +230,11 @@ Go:
 
 - Use `submission/registration-copy.md` for prepared fields and optional answers.
 - Use Testnet evidence links from README and `submission/registration-fields.json`.
-- Submit a pre-registration form if it accepts project basics without requiring public demo/video.
+- Submit a pre-registration form if it accepts project basics and the static public demo URL.
 
 No-Go:
 
-- The live form requires Demo URL, but GitHub Pages/Cloudflare/hosted API has not been deployed and browser-verified.
 - The live form requires Demo video URL, but no public or unlisted video has been uploaded.
+- The live form rejects a static demo and requires a hosted API demo or browser-wallet E2E demo URL.
 - The live form requires production payment claims, real USDC, or legal arbitration claims beyond the current Testnet mUSDC MVP.
 

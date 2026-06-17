@@ -86,6 +86,12 @@ Sui Move, Sui TypeScript SDK, React, Vite, Fastify, Node.js 22, GitHub Actions, 
 https://github.com/a392479619-blip/sui-paylink
 ```
 
+### Demo URL
+
+```text
+https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
+```
+
 ### Contract package
 
 ```text
@@ -138,10 +144,10 @@ Judges can inspect the public Sui Testnet package and transactions in Sui Explor
 
 ### What is not finished?
 
-Length: 442/900
+Length: 464/900
 
 ```text
-This is a hackathon MVP on public Sui Testnet. It does not claim production USDC support, fiat ramps, legal arbitration, full event indexing, or Stripe replacement behavior. The current strongest evidence is the deployed Move package plus Testnet smoke flows, including sponsored MockUSDC where buyer and seller hold 0 SUI while the sponsor pays gas. Public hosting, demo video, and browser-wallet sponsored E2E remain final submission steps.
+This is a hackathon MVP on public Sui Testnet. It does not claim production USDC support, fiat ramps, legal arbitration, full event indexing, or Stripe replacement behavior. The current strongest evidence is the deployed Move package plus Testnet smoke flows, including sponsored MockUSDC where buyer and seller hold 0 SUI while the sponsor pays gas. The public demo is a static mock demo; demo video and browser-wallet sponsored E2E remain final submission steps.
 ```
 
 ## Needs Founder Verification
@@ -151,12 +157,6 @@ Do not paste these until the condition is true in the live form.
 ## Hold Fields
 
 Leave these blank unless the condition has been verified in a browser.
-
-### Demo URL
-
-Status: HOLD
-Reason: Do not submit a demo URL until Cloudflare or another public host is actually deployed and browser-verified.
-Value to submit now: leave blank
 
 ### Demo video URL
 
@@ -175,13 +175,14 @@ Value to submit now: leave blank
 ## Go Conditions
 
 - The form accepts project basics, track, repository URL, and written description.
-- The form allows demo URL and demo video URL to be omitted or added later.
+- The form accepts the public GitHub Pages static Demo URL.
+- The form allows demo video URL to be omitted or added later.
 - The public repository URL is accepted by the submission form.
 
 ## No-Go Conditions
 
-- The form requires a public demo URL before submission.
 - The form requires a public or unlisted demo video before submission.
+- The form rejects a static demo and requires a hosted API demo or browser-wallet E2E demo URL.
 - The form requires production payment claims beyond current Testnet mUSDC evidence.
 
 ## Pre-Submit Commands

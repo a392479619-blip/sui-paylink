@@ -31,8 +31,8 @@ Mark each field exactly as the live UI shows it.
 | Tech stack | [ ] | [ ] | `submission/founder-submission-pack.md` | ready |
 | Contract package | [ ] | [ ] | `submission/founder-submission-pack.md` | ready |
 | Team | [ ] | [ ] | `submission/founder-submission-pack.md` | ready |
-| Repository URL | [ ] | [ ] | repo URL only if public or private access is confirmed | needs verification |
-| Demo URL | [ ] | [ ] | only after public URL opens in browser | hold |
+| Repository URL | [ ] | [ ] | `https://github.com/a392479619-blip/sui-paylink` | ready |
+| Demo URL | [ ] | [ ] | `https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow` | ready static demo |
 | Demo video URL | [ ] | [ ] | only after public/unlisted video opens | hold |
 
 ## Live Required-Field Decision
@@ -50,6 +50,8 @@ Demo URL:
 - [ ] Not present
 - [ ] Optional
 - [ ] Required
+- [ ] Required and static demo is accepted
+- [ ] Required but hosted API or browser-wallet E2E demo is required
 - Decision:
 
 Demo video URL:
@@ -72,14 +74,13 @@ Go only if all true:
 - [ ] `npm run founder:verify` says `Open registration form: YES`
 - [ ] No live required field depends on an unverified placeholder URL
 - [ ] Repository access requirement is satisfied
-- [ ] Demo URL is blank or browser-verified
+- [ ] Demo URL is blank or the verified GitHub Pages static demo is accepted
 - [ ] Demo video URL is blank or browser-verified
 - [ ] No production USDC, legal arbitration, or Stripe-replacement claims are made
 
 No-Go if any true:
 
-- [ ] Public repo required, but repo is still private
-- [ ] Demo URL required, but no public URL opens in browser
+- [ ] Demo URL required, but the form rejects a static demo
 - [ ] Demo video required, but no uploaded video opens publicly/unlisted
 - [ ] Form forces production claims beyond Testnet mUSDC MVP
 

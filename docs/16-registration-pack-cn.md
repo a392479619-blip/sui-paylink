@@ -13,7 +13,7 @@
 - 官方页面显示：Sui Overflow 2026，May - August 2026，Registration is open。
 - 2026-06-14 复核：官方 FAQ 同时写着 `Pre-registration is now open`。这意味着当前入口可能是预注册/资料创建阶段，不要假设已经是最终项目提交表。
 - 2026-06-14 复核：DeepSurge 公开 HTML 没有暴露表单字段和 required 状态。Demo URL、video URL、repo URL 是否必填，必须以你登录后的表单 UI 为准。
-- 2026-06-17 复核：GitHub 仓库已 public；Sponsor ready；本地 Judge Test Mode 已启用网页 mint 测试 mUSDC。
+- 2026-06-17 复核：GitHub 仓库已 public；Sponsor ready；本地 Judge Test Mode 已启用网页 mint 测试 mUSDC；GitHub Pages 静态 Demo URL 已部署并验证。
 - 官方 FAQ 显示：只能选择一个最能代表项目的 track。
 - 适配 track：DeFi & Payments。官方 track 文案覆盖 financial primitives / payment rails / real-world scenarios，SuiPayLink 是面向跨境数字服务的 gasless escrow payment link。
 
@@ -26,9 +26,9 @@
 当前硬边界：
 
 - GitHub 仓库已 public，可以填写 Repository URL。
-- 当前没有真实公开 API demo URL。
+- 当前有 GitHub Pages 静态 Demo URL，可以展示流程，但不是公开 API demo。
 - 当前 Cloudflare Pages workflow 已有，但需要配置 `CLOUDFLARE_ACCOUNT_ID` 和 `CLOUDFLARE_API_TOKEN` 后手动部署。
-- 当前 GitHub Pages 需要启用 Pages 并重跑 `Static Demo Pages` workflow。
+- 当前 GitHub Pages 已启用，`Static Demo Pages` workflow 已通过。
 - 当前 sponsor 地址已有 Testnet SUI gas，本地真实浏览器钱包 sponsored E2E 可以开始测试。
 - 当前可提交的链上证据是 Testnet smoke，包括 sponsored MockUSDC 证据；不是浏览器钱包端到端证据。
 
@@ -111,19 +111,19 @@ Sui Move, Sui TypeScript SDK, React, Vite, Fastify, Node.js 22, GitHub Actions, 
 
 <https://github.com/a392479619-blip/sui-paylink>
 
-Current status: private as of 2026-06-13. Before final submission, make it public or verify that the judges can access it.
+Current status: public as of 2026-06-17.
 
 ### Demo URL
 
-Use only after deployment is actually done:
+GitHub Pages static demo, browser-verified:
+
+<https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow>
+
+Current status: ready as a static mock demo. Do not describe it as a hosted API demo or proof of browser-wallet E2E.
+
+Cloudflare fallback, only after deployment:
 
 <https://sui-paylink.pages.dev/pay/demo-ai-workflow>
-
-Current status: not deployed yet. Do not put this into the form until the URL opens in a browser.
-
-Fallback if the form allows no public demo yet:
-
-Use the repository README and demo video link, and state: "Public hosted demo pending; local preview is reproducible with `npm run preview:prod`."
 
 ### Demo video URL
 

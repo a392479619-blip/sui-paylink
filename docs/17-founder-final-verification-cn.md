@@ -19,9 +19,10 @@
 - GitHub 仓库已 public。
 - Sponsor 地址已 ready。
 - 本地 Judge Test Mode 已启用网页 mint 测试 mUSDC。
-- 仍缺公开 Demo URL、公开视频 URL、浏览器钱包 E2E evidence。
+- GitHub Pages 静态 Demo URL 已部署并验证。
+- 仍缺公开视频 URL、浏览器钱包 E2E evidence。
 
-结论：可以打开报名/预注册入口填写资料，但不要假设已经进入最终项目提交阶段。Demo URL、Demo video URL、Repository URL 是否强制，必须以你登录后的表单 UI 为准。
+结论：可以打开报名/预注册入口填写资料，但不要假设已经进入最终项目提交阶段。Demo video URL、是否接受静态 Demo、Repository URL 是否强制，必须以你登录后的表单 UI 为准。
 
 ## 当前结论
 
@@ -29,7 +30,7 @@
 
 不能无条件最终提交。最终提交前仍需要你亲自处理：
 
-- Demo URL 当前没有可填的公开验证 URL。
+- Demo URL 当前有可填的 GitHub Pages 静态 Demo URL，但它不是公开 API demo。
 - Demo video URL 当前没有可填的公开或 unlisted 视频 URL。
 - 真实 browser-wallet sponsored E2E 还需要你用两个钱包走完并导出 evidence。
 
@@ -80,11 +81,17 @@ No-Go：
 
 ## 第 3 步：Demo URL 决策
 
-当前不要填 Demo URL，除非其中一个路径完成并在浏览器打开成功：
+当前可以填写已验证的 GitHub Pages 静态 Demo URL：
+
+```text
+https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
+```
+
+注意：这是静态 mock demo，用来展示流程，不是公开 API demo，也不代表浏览器钱包 E2E 已完成。
 
 ### 方案 A：GitHub Pages
 
-当前仓库已 public，可以启用 GitHub Pages。
+当前仓库已 public，GitHub Pages 已启用。
 
 要走 GitHub Pages：
 
@@ -101,7 +108,7 @@ npm run demo:pages-cutover -- --confirm-public-repo
 https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
 ```
 
-4. 打开成功后再填 Demo URL。
+4. 打开成功后可以填写 Demo URL。
 
 更稳的方式是先 dry-run：
 
@@ -149,11 +156,11 @@ npm run demo:cloudflare-cutover -- --confirm-cloudflare-deploy
 https://sui-paylink.pages.dev/pay/demo-ai-workflow
 ```
 
-5. 打开成功后再填 Demo URL。
+5. 如果你改用 Cloudflare 且打开成功，可以改填 Cloudflare Demo URL。
 
 No-Go：
 
-- 表单强制 Demo URL，但上述 URL 都没有实际打开成功。
+- 表单不接受静态 Demo，要求真实公开 API demo 或浏览器钱包 E2E demo。
 - 你只能本地打开，不能公开访问。
 
 ## 第 4 步：Sponsor gas 决策
@@ -170,7 +177,7 @@ No-Go：
 100000000 MIST
 ```
 
-官方 faucet 当前对本机请求限流。需要手动给上面地址注入 Testnet SUI，然后跑：
+Sponsor 当前已 ready。提交前仍建议跑：
 
 ```bash
 npm run sponsor:readiness
@@ -186,7 +193,7 @@ npm run founder:verify
 
 - 不要临时换 sponsor 地址。
 - 如果换地址，`.env.local` 和后续部署环境里的 `SPONSOR_PRIVATE_KEY` 必须一致。
-- 没有 sponsor gas 不影响最低报名 PASS，但影响真实 browser-wallet sponsored E2E 录屏。
+- 没有 sponsor gas 不影响最低报名 PASS，但影响真实 browser-wallet sponsored E2E 录屏。如果 readiness 显示余额不足，先给上面地址补 Testnet SUI。
 
 ## 第 5 步：Demo video 决策
 
@@ -229,7 +236,7 @@ No-Go：
 谨慎填写：
 
 - Repository URL：当前仓库已 public，可以填写。
-- Demo URL：只有公开 URL 浏览器验证后填写。
+- Demo URL：当前 GitHub Pages 静态 Demo URL 已验证，可以填写；不要把它描述成真实公开 API demo。
 - Demo video URL：只有公开视频或 unlisted 视频验证后填写。
 
 最后再跑：
@@ -257,6 +264,6 @@ npm run founder:verify
 如果登录后看到的是最终项目提交表：
 
 - 先确认 repo 是否必须 public。
-- 先确认 Demo URL 是否必填。
+- 先确认表单是否接受静态 Demo URL。
 - 先确认 Demo video 是否必填。
 - 如果任何一项必填但未完成，先 No-Go，不要用占位链接提交。

@@ -23,7 +23,7 @@ Purpose: keep the founder submission decision tied to the live public entry page
 - Open the registration form now.
 - Treat the live DeepSurge UI as authoritative for whether this is pre-registration or final project submission.
 - Select only one track: DeFi & Payments.
-- Do not fill Demo URL unless the public URL opens successfully in a browser.
+- Demo URL can be used because the GitHub Pages static demo opens successfully in a browser: https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
 - Do not fill Demo video URL unless the uploaded video opens publicly or unlisted.
 - Repository URL can be used because the GitHub repository is public.
 
@@ -33,10 +33,10 @@ Go:
 
 - Use `submission/registration-copy.md` for prepared fields and optional answers.
 - Use Testnet evidence links from README and `submission/registration-fields.json`.
-- Submit a pre-registration form if it accepts project basics without requiring public demo/video.
+- Submit a pre-registration form if it accepts project basics and the static public demo URL.
 
 No-Go:
 
-- The live form requires Demo URL, but GitHub Pages/Cloudflare/hosted API has not been deployed and browser-verified.
 - The live form requires Demo video URL, but no public or unlisted video has been uploaded.
+- The live form rejects a static demo and requires a hosted API demo or browser-wallet E2E demo URL.
 - The live form requires production payment claims, real USDC, or legal arbitration claims beyond the current Testnet mUSDC MVP.
