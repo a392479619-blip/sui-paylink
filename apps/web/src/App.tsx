@@ -39,7 +39,7 @@ type PaylinkRoute = {
 const initialForm: CreatePaylinkInput = {
   mode: "escrow",
   sellerName: "Alice AI Automation Studio",
-  sellerAddress: "0x648badce46f20a771d805670901239e868f5d0c7e297a3616b579075a800f9f5",
+  sellerAddress: "",
   buyerName: "Buyer / initiator",
   buyerAddress: "",
   amount: "100",
@@ -47,6 +47,7 @@ const initialForm: CreatePaylinkInput = {
   memo: "AI support workflow setup - 48 hour delivery",
   feeBps: 100,
 };
+const createOrderDraftStorageKey = "suipaylink:create-order-draft:v1";
 
 const TESTNET_PACKAGE_ID = "0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7";
 const SPONSORED_ESCROW_OBJECT_ID = "0x9a1fefe14c9148a246122c9d280075994a698650e09ca6e664d9c42e4304e066";
@@ -282,7 +283,7 @@ function DashboardPage({ onNavigate }: { onNavigate: (path: string) => void }) {
 function CreateOrderPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const account = useCurrentAccount();
   const [config, setConfig] = useState<AppConfig | null>(null);
-  const [form, setForm] = useState<CreatePaylinkInput>(initialForm);
+  const [form, setForm] = useState<CreatePaylinkInput>(() => loadCreateOrderDraft());
   const [createdPaylink, setCreatedPaylink] = useState<Paylink | null>(null);
   const [error, setError] = useState<string>("");
   const canCreate = Boolean(account?.address);
@@ -293,15 +294,27 @@ function CreateOrderPage({ onNavigate }: { onNavigate: (path: string) => void })
       .catch((err) => setError(errorText(err)));
   }, []);
 
+  useEffect(() => {
+    saveCreateOrderDraft(form);
+  }, [form]);
+
   async function handleCreate() {
     setError("");
     if (!account?.address) {
       setError("Connect the buyer wallet before creating an escrow order");
       return;
     }
+    if (!form.sellerAddress.trim()) {
+      setError("Enter the seller receiving address before creating an escrow order");
+      return;
+    }
     try {
       const paylink = await createPaylink({
         ...form,
+        sellerName: form.sellerName.trim(),
+        sellerAddress: form.sellerAddress.trim(),
+        buyerName: form.buyerName?.trim(),
+        memo: form.memo.trim(),
         buyerAddress: account.address,
       });
       setCreatedPaylink(paylink);
@@ -384,6 +397,7 @@ function CreateOrderPage({ onNavigate }: { onNavigate: (path: string) => void })
             <input
               value={form.sellerAddress}
               onChange={(event) => setForm({ ...form, sellerAddress: event.target.value })}
+              placeholder="Enter seller Sui wallet address"
             />
           </label>
           <label>
@@ -1667,6 +1681,45 @@ function amountToBaseUnits(amount: string, decimals: number): string {
   }
   const units = `${whole}${fraction.padEnd(decimals, "0")}`.replace(/^0+(?=\d)/, "");
   return units || "0";
+}
+
+function loadCreateOrderDraft(): CreatePaylinkInput {
+  try {
+    const rawDraft = window.localStorage.getItem(createOrderDraftStorageKey);
+    if (!rawDraft) {
+      return initialForm;
+    }
+    const draft = JSON.parse(rawDraft) as Partial<CreatePaylinkInput>;
+    return {
+      ...initialForm,
+      ...draft,
+      mode: draft.mode === "direct" || draft.mode === "escrow" ? draft.mode : initialForm.mode,
+      sellerName: typeof draft.sellerName === "string" ? draft.sellerName : initialForm.sellerName,
+      sellerAddress: typeof draft.sellerAddress === "string" ? draft.sellerAddress : "",
+      buyerName: typeof draft.buyerName === "string" ? draft.buyerName : initialForm.buyerName,
+      buyerAddress: "",
+      amount: typeof draft.amount === "string" ? draft.amount : initialForm.amount,
+      token: typeof draft.token === "string" ? draft.token : initialForm.token,
+      memo: typeof draft.memo === "string" ? draft.memo : initialForm.memo,
+      feeBps: typeof draft.feeBps === "number" ? draft.feeBps : initialForm.feeBps,
+    };
+  } catch {
+    return initialForm;
+  }
+}
+
+function saveCreateOrderDraft(form: CreatePaylinkInput) {
+  try {
+    window.localStorage.setItem(
+      createOrderDraftStorageKey,
+      JSON.stringify({
+        ...form,
+        buyerAddress: "",
+      }),
+    );
+  } catch {
+    // Local storage is optional; losing the draft should not block escrow creation.
+  }
 }
 
 function shortId(value: string): string {
