@@ -117,6 +117,7 @@ export function App() {
 }
 
 function DashboardPage() {
+  const account = useCurrentAccount();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [form, setForm] = useState<CreatePaylinkInput>(initialForm);
   const [paylinks, setPaylinks] = useState<Paylink[]>([]);
@@ -129,6 +130,7 @@ function DashboardPage() {
     () => paylinks.find((paylink) => paylink.id === selectedId) ?? paylinks[0],
     [paylinks, selectedId],
   );
+  const canCreate = Boolean(account?.address);
 
   async function refresh() {
     const [nextConfig, nextPaylinks] = await Promise.all([getConfig(), listPaylinks()]);
@@ -158,8 +160,15 @@ function DashboardPage() {
 
   async function handleCreate() {
     setError("");
+    if (!account?.address) {
+      setError("Connect the buyer wallet before creating an escrow order");
+      return;
+    }
     try {
-      const paylink = await createPaylink(form);
+      const paylink = await createPaylink({
+        ...form,
+        buyerAddress: account.address,
+      });
       await refresh();
       setSelectedId(paylink.id);
     } catch (err) {
@@ -272,21 +281,21 @@ function DashboardPage() {
               onChange={(event) => setForm({ ...form, buyerName: event.target.value })}
             />
           </label>
-          <label>
-            Buyer address optional
-            <input
-              value={form.buyerAddress ?? ""}
-              onChange={(event) => setForm({ ...form, buyerAddress: event.target.value })}
-              placeholder="Leave blank; funding wallet becomes buyer"
-            />
-          </label>
+          <div className="wallet-bound-field">
+            <span>Buyer wallet</span>
+            <strong>{account?.address ? shortId(account.address) : "Connect wallet to create"}</strong>
+            <p className="muted">The connected wallet becomes the buyer and signs the fund/release actions.</p>
+          </div>
           <label>
             Memo
             <textarea value={form.memo} onChange={(event) => setForm({ ...form, memo: event.target.value })} />
           </label>
-          <button className="primary" onClick={handleCreate}>
-            Create buyer-started escrow
-          </button>
+          <div className="create-order-action">
+            <ConnectButton connectText="Connect buyer wallet" />
+            <button className="primary" onClick={handleCreate} disabled={!canCreate}>
+              Create escrow order
+            </button>
+          </div>
         </section>
 
         <section className="panel">

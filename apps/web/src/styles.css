@@ -429,6 +429,41 @@ textarea {
   resize: vertical;
 }
 
+.wallet-bound-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  border: 1px solid #d7e2ea;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f7fbfd;
+}
+
+.wallet-bound-field span {
+  color: #6c7a88;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wallet-bound-field strong {
+  overflow-wrap: anywhere;
+}
+
+.wallet-bound-field p {
+  margin: 0;
+}
+
+.create-order-action {
+  display: grid;
+  grid-template-columns: minmax(220px, auto) 1fr;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+  border-top: 1px solid #e3ebf1;
+  padding-top: 16px;
+}
+
 button {
   min-height: 40px;
   border: 1px solid #cfd9e2;
@@ -1226,7 +1261,8 @@ button:disabled {
   .demo-panel,
   .demo-steps,
   .receipt-grid,
-  .timeline {
+  .timeline,
+  .create-order-action {
     grid-template-columns: 1fr;
   }
 
