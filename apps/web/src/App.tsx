@@ -420,7 +420,8 @@ function PublicPaylinkPage({ paylinkId, role }: { paylinkId: string; role: Payli
         </div>
       </section>
 
-      {error && <div className="error">{error}</div>}
+      {error && !paylink && <MissingPaylinkPanel paylinkId={paylinkId} error={error} />}
+      {error && paylink && <div className="error">{error}</div>}
 
       {!paylink && !error && <section className="panel">Loading paylink...</section>}
 
@@ -493,6 +494,23 @@ function SubmissionEvidencePanel() {
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+function MissingPaylinkPanel({ paylinkId, error }: { paylinkId: string; error: string }) {
+  return (
+    <section className="panel missing-paylink">
+      <p className="eyebrow">Paylink not available</p>
+      <h2>This link is not in the local database</h2>
+      <p>
+        The local database was cleared, so old demo links such as <code>{paylinkId}</code> no longer exist.
+        Start from the home page and create a new buyer-started escrow order.
+      </p>
+      <p className="muted">Raw error: {error}</p>
+      <a className="button-link" href="/">
+        Create new escrow order
+      </a>
     </section>
   );
 }
