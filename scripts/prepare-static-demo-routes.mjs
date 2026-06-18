@@ -8,6 +8,7 @@ const distDir = resolve(rootDir, "apps", "web", "dist");
 const indexPath = resolve(distDir, "index.html");
 const notFoundPath = resolve(distDir, "404.html");
 const demoRouteIndexPaths = [
+  resolve(distDir, "create", "index.html"),
   resolve(distDir, "pay", "demo-ai-workflow", "index.html"),
   resolve(distDir, "buyer", "demo-ai-workflow", "index.html"),
   resolve(distDir, "seller", "demo-ai-workflow", "index.html"),

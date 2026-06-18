@@ -109,6 +109,9 @@ export function App() {
   if (paylinkRoute) {
     return <PublicPaylinkPage paylinkId={paylinkRoute.id} role={paylinkRoute.role} />;
   }
+  if (isCreatePath(initialPath)) {
+    return <CreateOrderPage />;
+  }
   if (!isDashboardPath(initialPath)) {
     return <InvalidRoutePage path={initialPath} />;
   }
@@ -119,44 +122,161 @@ export function App() {
 function DashboardPage() {
   const account = useCurrentAccount();
   const [config, setConfig] = useState<AppConfig | null>(null);
-  const [form, setForm] = useState<CreatePaylinkInput>(initialForm);
   const [paylinks, setPaylinks] = useState<Paylink[]>([]);
-  const [selectedId, setSelectedId] = useState<string>("");
-  const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
-  const [syncingChain, setSyncingChain] = useState(false);
   const [error, setError] = useState<string>("");
-
-  const selected = useMemo(
-    () => paylinks.find((paylink) => paylink.id === selectedId) ?? paylinks[0],
-    [paylinks, selectedId],
+  const connectedAddress = account?.address ?? "";
+  const userOrders = useMemo(
+    () => (connectedAddress ? paylinks.filter((paylink) => paylinkBelongsToWallet(paylink, connectedAddress)) : []),
+    [paylinks, connectedAddress],
   );
-  const canCreate = Boolean(account?.address);
+  const activeOrders = userOrders.filter((paylink) => !["released", "refunded"].includes(paylink.status)).length;
+  const buyerOrders = userOrders.filter((paylink) => paylink.buyerAddress && sameSuiAddress(paylink.buyerAddress, connectedAddress)).length;
+  const sellerOrders = userOrders.filter((paylink) => paylink.sellerAddress && sameSuiAddress(paylink.sellerAddress, connectedAddress)).length;
+  const canCreate = Boolean(connectedAddress);
 
   async function refresh() {
     const [nextConfig, nextPaylinks] = await Promise.all([getConfig(), listPaylinks()]);
     setConfig(nextConfig);
     setPaylinks(nextPaylinks);
-    setSelectedId((current) => {
-      if (current && nextPaylinks.some((paylink) => paylink.id === current)) {
-        return current;
-      }
-      return nextPaylinks[0]?.id ?? "";
-    });
   }
 
   useEffect(() => {
     refresh().catch((err) => setError(errorText(err)));
   }, []);
 
+  function openCreatePage() {
+    if (!canCreate) return;
+    window.location.href = appHref("create");
+  }
+
+  return (
+    <main className="shell">
+      {STATIC_DEMO_ENABLED && <StaticDemoBanner />}
+      <section className="hero platform-hero">
+        <div>
+          <p className="eyebrow">SuiPayLink platform</p>
+          <h1>Escrow links for service work on Sui</h1>
+          <p className="hero-copy">
+            Buyers lock stablecoin funds before work starts. Sellers see proof of funds, deliver the service,
+            and get paid after buyer release. The app sponsor covers Sui gas for the wallet-signed flow.
+          </p>
+          <div className="hero-actions">
+            <ConnectButton connectText="Connect wallet" />
+            <button className="primary" onClick={openCreatePage} disabled={!canCreate}>
+              Create escrow order
+            </button>
+          </div>
+          {!canCreate && <p className="muted">Connect a Sui wallet to create orders and view related orders.</p>}
+        </div>
+        <div className="platform-status-card">
+          <p className="eyebrow">Account center</p>
+          <dl>
+            <div>
+              <dt>Network</dt>
+              <dd>{config?.network ?? "testnet"}</dd>
+            </div>
+            <div>
+              <dt>Wallet</dt>
+              <dd>{connectedAddress ? shortId(connectedAddress) : "not connected"}</dd>
+            </div>
+            <div>
+              <dt>Related orders</dt>
+              <dd>{connectedAddress ? userOrders.length : "connect first"}</dd>
+            </div>
+            <div>
+              <dt>Sponsor gas</dt>
+              <dd>{config?.sponsorEnabled ? "enabled" : "not configured"}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      {error && <div className="error">{error}</div>}
+
+      <section className="platform-grid">
+        <div className="platform-card">
+          <span>01</span>
+          <strong>Funds lock before work</strong>
+          <p>Seller can verify that the buyer has funded the escrow before committing delivery time.</p>
+        </div>
+        <div className="platform-card">
+          <span>02</span>
+          <strong>Buyer controls final release</strong>
+          <p>Funds are released after delivery review. Pre-delivery refunds stay separate from post-delivery disputes.</p>
+        </div>
+        <div className="platform-card">
+          <span>03</span>
+          <strong>Gasless wallet signing</strong>
+          <p>Buyer and seller sign the business actions while the sponsor pays Sui network gas.</p>
+        </div>
+      </section>
+
+      <section className="panel orders-center">
+        <div className="orders-heading">
+          <div>
+            <p className="eyebrow">Your orders</p>
+            <h2>Related escrow orders</h2>
+          </div>
+          <div className="order-stats">
+            <span>{activeOrders} active</span>
+            <span>{buyerOrders} buyer</span>
+            <span>{sellerOrders} seller</span>
+          </div>
+        </div>
+
+        {!connectedAddress && (
+          <div className="empty-state">
+            <h3>Connect wallet to load your order center</h3>
+            <p className="muted">After login, this page shows orders where the connected wallet is the buyer or seller.</p>
+            <ConnectButton connectText="Connect wallet" />
+          </div>
+        )}
+
+        {connectedAddress && userOrders.length === 0 && (
+          <div className="empty-state">
+            <h3>No related orders yet</h3>
+            <p className="muted">Create a buyer-started escrow order, or ask a buyer to use your seller wallet address.</p>
+            <button className="primary" onClick={openCreatePage}>
+              Create escrow order
+            </button>
+          </div>
+        )}
+
+        {connectedAddress && userOrders.length > 0 && (
+          <div className="order-list">
+            {userOrders.map((paylink) => (
+              <UserOrderCard key={paylink.id} paylink={paylink} accountAddress={connectedAddress} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <details className="advanced-verification">
+        <summary>Advanced verification panels</summary>
+        <p className="muted">
+          These panels are for low-level Sui transaction checks. They are not required for the buyer/seller demo flow.
+        </p>
+        <ChainDemo />
+        <SponsoredDemo config={config} />
+        <SubmissionEvidencePanel />
+      </details>
+    </main>
+  );
+}
+
+function CreateOrderPage() {
+  const account = useCurrentAccount();
+  const [config, setConfig] = useState<AppConfig | null>(null);
+  const [form, setForm] = useState<CreatePaylinkInput>(initialForm);
+  const [createdPaylink, setCreatedPaylink] = useState<Paylink | null>(null);
+  const [error, setError] = useState<string>("");
+  const canCreate = Boolean(account?.address);
+
   useEffect(() => {
-    if (!selected) {
-      setReceipt(null);
-      return;
-    }
-    getReceipt(selected.id)
-      .then(setReceipt)
-      .catch(() => setReceipt(null));
-  }, [selected?.id, selected?.status]);
+    getConfig()
+      .then(setConfig)
+      .catch((err) => setError(errorText(err)));
+  }, []);
 
   async function handleCreate() {
     setError("");
@@ -169,36 +289,9 @@ function DashboardPage() {
         ...form,
         buyerAddress: account.address,
       });
-      await refresh();
-      setSelectedId(paylink.id);
+      setCreatedPaylink(paylink);
     } catch (err) {
       setError(errorText(err));
-    }
-  }
-
-  async function handleAction(action: PaylinkAction) {
-    if (!selected) return;
-    setError("");
-    try {
-      await runPaylinkAction(selected.id, action);
-      await refresh();
-    } catch (err) {
-      setError(errorText(err));
-    }
-  }
-
-  async function handleSyncChain() {
-    if (!selected) return;
-    setError("");
-    setSyncingChain(true);
-    try {
-      const nextReceipt = await syncPaylinkChain(selected.id);
-      await refresh();
-      setReceipt(nextReceipt);
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      setSyncingChain(false);
     }
   }
 
@@ -207,22 +300,27 @@ function DashboardPage() {
       {STATIC_DEMO_ENABLED && <StaticDemoBanner />}
       <section className="hero">
         <div>
-          <p className="eyebrow">Sui Overflow 2026 MVP</p>
-          <h1>SuiPayLink</h1>
+          <p className="eyebrow">Create escrow order</p>
+          <h1>Start a buyer-funded service escrow</h1>
           <p className="hero-copy">
-            Gasless stablecoin escrow links for cross-border digital service work.
+            Connect the buyer wallet first. The connected wallet is recorded as the buyer and signs funding and release.
           </p>
+        </div>
+        <div className="hero-actions stacked">
+          <ConnectButton connectText="Connect buyer wallet" />
+          <a className="button-link" href={appHref("")}>
+            Back to platform
+          </a>
         </div>
       </section>
 
       {error && <div className="error">{error}</div>}
 
-      <div className="layout">
+      <div className="layout create-layout">
         <section className="panel">
-          <h2>Buyer creates escrow order</h2>
+          <h2>Order details</h2>
           <p className="muted">
-            The buyer starts here, enters the seller receiving wallet, then opens the Buyer page to fund escrow.
-            The buyer wallet is recorded automatically after funding.
+            Enter the seller receiving wallet and service scope. The seller does not need an account before order creation.
           </p>
           <div className="grid">
             <label>
@@ -284,7 +382,7 @@ function DashboardPage() {
           <div className="wallet-bound-field">
             <span>Buyer wallet</span>
             <strong>{account?.address ? shortId(account.address) : "Connect wallet to create"}</strong>
-            <p className="muted">The connected wallet becomes the buyer and signs the fund/release actions.</p>
+            <p className="muted">This wallet becomes the buyer for funding, refund, and release actions.</p>
           </div>
           <label>
             Memo
@@ -298,66 +396,103 @@ function DashboardPage() {
           </div>
         </section>
 
-        <section className="panel">
-          <h2>Escrow orders</h2>
-          <div className="table">
-            {paylinks.map((paylink) => (
-              <button
-                className={`row ${selected?.id === paylink.id ? "active" : ""}`}
-                key={paylink.id}
-                onClick={() => setSelectedId(paylink.id)}
-              >
-                <span>{paylink.memo}</span>
-                <strong>{paylink.amount} {paylink.token}</strong>
-                <em>{paylink.status}</em>
-              </button>
-            ))}
-            {paylinks.length === 0 && <p className="muted">No paylinks yet. Create the first demo link.</p>}
-          </div>
-        </section>
+        <aside className="panel create-side-panel">
+          <p className="eyebrow">What happens next</p>
+          <h2>Buyer and seller get separate pages</h2>
+          <ol>
+            <li>Buyer funds escrow from the Buyer page.</li>
+            <li>Seller marks delivery from the Seller page.</li>
+            <li>Buyer releases funds after review.</li>
+          </ol>
+          <p className="muted">
+            Refund is only automatic before seller delivery. After delivery, problems move to the dispute path in this MVP.
+          </p>
+        </aside>
       </div>
 
-      {selected && (
+      {createdPaylink && (
         <section className="paylink">
           <div>
-            <p className="eyebrow">Public paylink</p>
-            <h2>{selected.amount} {selected.token}</h2>
-            <p>{selected.memo}</p>
-            <p className="muted">Seller: {selected.sellerName}</p>
-            <p className="muted">Buyer: {selected.buyerName ?? "not specified"}</p>
-            <p className="muted">Buyer address: {selected.buyerAddress || "recorded after funding"}</p>
-            <p className="muted">
-              Share URL: <a href={selected.publicUrl}>{selected.publicUrl}</a>
-            </p>
+            <p className="eyebrow">Created order</p>
+            <h2>{createdPaylink.amount} {createdPaylink.token}</h2>
+            <p>{createdPaylink.memo}</p>
+            <p className="muted">Buyer wallet: {createdPaylink.buyerAddress || "recorded after funding"}</p>
+            <p className="muted">Seller wallet: {createdPaylink.sellerAddress}</p>
             <div className="role-links">
-              <a className="button-link" href={paylinkHref(selected.id, "buyer")} target="_blank" rel="noreferrer">
+              <a className="button-link" href={paylinkHref(createdPaylink.id, "buyer")} target="_blank" rel="noreferrer">
                 Open Buyer page
               </a>
-              <a className="button-link" href={paylinkHref(selected.id, "seller")} target="_blank" rel="noreferrer">
+              <a className="button-link" href={paylinkHref(createdPaylink.id, "seller")} target="_blank" rel="noreferrer">
                 Open Seller page
               </a>
-              <a className="button-link" href={paylinkHref(selected.id, "overview")} target="_blank" rel="noreferrer">
+              <a className="button-link" href={paylinkHref(createdPaylink.id, "overview")} target="_blank" rel="noreferrer">
                 Open overview
               </a>
             </div>
           </div>
-          <PaylinkActions paylink={selected} onAction={handleAction} />
+          <StatusPill status={createdPaylink.status} />
         </section>
       )}
-
-      {receipt && <ReceiptPanel receipt={receipt} onSyncChain={handleSyncChain} syncingChain={syncingChain} />}
-
-      <details className="advanced-verification">
-        <summary>Advanced verification panels</summary>
-        <p className="muted">
-          These panels are for low-level Sui transaction checks. They are not required for the buyer/seller demo flow.
-        </p>
-        <ChainDemo />
-        <SponsoredDemo config={config} />
-        <SubmissionEvidencePanel />
-      </details>
     </main>
   );
+}
+
+function UserOrderCard({ paylink, accountAddress }: { paylink: Paylink; accountAddress: string }) {
+  const role = orderRoleForWallet(paylink, accountAddress);
+  const primaryRole: PaylinkPageRole = role === "seller" ? "seller" : "buyer";
+
+  return (
+    <article className="order-card">
+      <div>
+        <div className="order-card-topline">
+          <span className={`role-badge ${role}`}>{role}</span>
+          <StatusPill status={paylink.status} />
+        </div>
+        <h3>{paylink.memo}</h3>
+        <p className="muted">{paylink.amount} {paylink.token} · {paylink.sellerName}</p>
+      </div>
+      <dl className="facts compact">
+        <div>
+          <dt>Buyer</dt>
+          <dd>{paylink.buyerAddress ? shortId(paylink.buyerAddress) : "pending"}</dd>
+        </div>
+        <div>
+          <dt>Seller</dt>
+          <dd>{paylink.sellerAddress ? shortId(paylink.sellerAddress) : "pending"}</dd>
+        </div>
+        <div>
+          <dt>Escrow</dt>
+          <dd>{paylink.escrowObjectId ? shortId(paylink.escrowObjectId) : "pending"}</dd>
+        </div>
+        <div>
+          <dt>Created</dt>
+          <dd>{formatDate(paylink.createdAt)}</dd>
+        </div>
+      </dl>
+      <div className="role-links">
+        <a className="button-link" href={paylinkHref(paylink.id, primaryRole)}>
+          Continue as {role}
+        </a>
+        <a className="button-link" href={paylinkHref(paylink.id, "overview")}>
+          Overview
+        </a>
+      </div>
+    </article>
+  );
+}
+
+function paylinkBelongsToWallet(paylink: Paylink, address: string): boolean {
+  return Boolean(
+    (paylink.buyerAddress && sameSuiAddress(paylink.buyerAddress, address)) ||
+      (paylink.sellerAddress && sameSuiAddress(paylink.sellerAddress, address)),
+  );
+}
+
+function orderRoleForWallet(paylink: Paylink, address: string): "buyer" | "seller" {
+  if (paylink.sellerAddress && sameSuiAddress(paylink.sellerAddress, address)) {
+    return "seller";
+  }
+  return "buyer";
 }
 
 function InvalidRoutePage({ path }: { path: string }) {
@@ -379,8 +514,8 @@ function InvalidRoutePage({ path }: { path: string }) {
           Valid routes look like <code>/buyer/&lt;id&gt;</code>, <code>/seller/&lt;id&gt;</code>, or{" "}
           <code>/pay/&lt;id&gt;</code>.
         </p>
-        <a className="button-link" href="/">
-          Back to create escrow order
+        <a className="button-link" href={appHref("")}>
+          Back to platform
         </a>
       </section>
     </main>
@@ -551,8 +686,8 @@ function MissingPaylinkPanel({ paylinkId, error }: { paylinkId: string; error: s
         Start from the home page and create a new buyer-started escrow order.
       </p>
       <p className="muted">Raw error: {error}</p>
-      <a className="button-link" href="/">
-        Create new escrow order
+      <a className="button-link" href={appHref("")}>
+        Back to platform
       </a>
     </section>
   );
@@ -1492,9 +1627,17 @@ function isDashboardPath(pathname: string): boolean {
   return appPath === "/" || appPath === "";
 }
 
+function isCreatePath(pathname: string): boolean {
+  return normalizedAppPath(pathname) === "/create";
+}
+
 function normalizedAppPath(pathname: string): string {
   const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
   return base && pathname.startsWith(base) ? pathname.slice(base.length) || "/" : pathname;
+}
+
+function appHref(path: string): string {
+  return new URL(path, new URL(import.meta.env.BASE_URL, window.location.origin)).toString();
 }
 
 function formatDate(value: string): string {

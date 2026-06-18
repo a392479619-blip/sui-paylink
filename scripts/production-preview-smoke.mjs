@@ -78,6 +78,9 @@ try {
   assert(rootHtml.includes("<title>SuiPayLink</title>"), "root route did not return the web app");
   assert(!rootHtml.includes("127.0.0.1:8787"), "production HTML should not point to local dev API");
 
+  const createHtml = await getText(`${baseUrl}/create`);
+  assert(createHtml.includes("<title>SuiPayLink</title>"), "create route did not return the web app");
+
   const paylinkHtml = await getText(`${baseUrl}/pay/${created.id}`);
   assert(paylinkHtml.includes("<title>SuiPayLink</title>"), "paylink route did not return the web app");
 
@@ -114,6 +117,7 @@ try {
           "demo-seed-mock-release",
           "create-paylink",
           "root-web",
+          "create-web",
           "paylink-web",
           "buyer-web",
           "seller-web",

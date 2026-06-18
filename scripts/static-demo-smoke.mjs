@@ -9,6 +9,7 @@ const distDir = resolve(rootDir, "apps", "web", "dist");
 const indexPath = resolve(distDir, "index.html");
 const notFoundPath = resolve(distDir, "404.html");
 const demoRouteIndexPaths = [
+  resolve(distDir, "create", "index.html"),
   resolve(distDir, "pay", "demo-ai-workflow", "index.html"),
   resolve(distDir, "buyer", "demo-ai-workflow", "index.html"),
   resolve(distDir, "seller", "demo-ai-workflow", "index.html"),
@@ -53,6 +54,8 @@ try {
   const root = await expectOk(`${baseUrl}/`);
   expectIncludes(root, '<div id="root"></div>', "root html");
 
+  const create = await expectOk(`${baseUrl}/create`);
+  expectIncludes(create, '<div id="root"></div>', "create fallback html");
   const paylink = await expectOk(`${baseUrl}/pay/demo-ai-workflow`);
   expectIncludes(paylink, '<div id="root"></div>', "paylink fallback html");
   const buyer = await expectOk(`${baseUrl}/buyer/demo-ai-workflow`);
@@ -73,9 +76,11 @@ try {
     baseUrl,
     checked: [
       "index",
+      "create-fallback",
       "paylink-fallback",
       "asset-base-path",
       "github-pages-404",
+      "github-pages-create-route",
       "github-pages-paylink-route",
       "github-pages-buyer-route",
       "github-pages-seller-route",
