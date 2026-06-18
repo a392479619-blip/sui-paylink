@@ -4,7 +4,6 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { extname, isAbsolute, relative, resolve } from "node:path";
 import {
   buildSponsoredTransactionSchema,
-  claimPaylinkRoleSchema,
   createPaylinkSchema,
   mintTestMockUsdcSchema,
   mutatePaylinkSchema,
@@ -25,7 +24,6 @@ import {
 } from "./sponsor.js";
 import {
   buildReceipt,
-  claimPaylinkRole,
   createPaylink,
   fundPaylink,
   getPaylink,
@@ -72,18 +70,6 @@ app.get<{ Params: { id: string } }>("/api/paylinks/:id", async (request, reply) 
     return reply.code(404).send({ error: "Paylink not found" });
   }
   return paylink;
-});
-
-app.post<{ Params: { id: string } }>("/api/paylinks/:id/claim-role", async (request, reply) => {
-  const parsed = claimPaylinkRoleSchema.safeParse(request.body ?? {});
-  if (!parsed.success) {
-    return reply.code(400).send({ error: parsed.error.flatten() });
-  }
-  try {
-    return claimPaylinkRole(request.params.id, parsed.data);
-  } catch (error) {
-    return reply.code(400).send({ error: errorMessage(error) });
-  }
 });
 
 app.get<{ Params: { id: string } }>("/api/paylinks/:id/receipt", async (request, reply) => {

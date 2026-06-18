@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "
 import { dirname } from "node:path";
 import { nanoid } from "nanoid";
 import type {
-  ClaimPaylinkRoleInput,
   CreatePaylinkInput,
   Paylink,
   ReceiptSummary,
@@ -47,40 +46,6 @@ export function getPaylink(id: string): Paylink | undefined {
 export function createPaylink(input: CreatePaylinkInput): Paylink {
   const id = nanoid(10);
   return insertPaylink(id, input);
-}
-
-export function claimPaylinkRole(id: string, input: ClaimPaylinkRoleInput): Paylink {
-  const paylink = requirePaylink(id);
-  if (paylink.status !== "created") {
-    throw new Error(`Cannot claim ${input.role} role in status ${paylink.status}`);
-  }
-
-  const address = normalizePaylinkAddress(input.address);
-  const timestamp = now();
-
-  if (input.role === "seller") {
-    if (paylink.sellerAddress && paylink.sellerAddress !== address) {
-      throw new Error("Seller role is already claimed by another address");
-    }
-    if (paylink.buyerAddress && paylink.buyerAddress === address) {
-      throw new Error("Seller address must differ from buyer address");
-    }
-    return updatePaylink(id, {
-      sellerAddress: address,
-      sellerName: input.name ?? paylink.sellerName,
-    }, timestamp);
-  }
-
-  if (paylink.buyerAddress && paylink.buyerAddress !== address) {
-    throw new Error("Buyer role is already claimed by another address");
-  }
-  if (paylink.sellerAddress && paylink.sellerAddress === address) {
-    throw new Error("Buyer address must differ from seller address");
-  }
-  return updatePaylink(id, {
-    buyerAddress: address,
-    buyerName: input.name ?? paylink.buyerName,
-  }, timestamp);
 }
 
 function insertPaylink(id: string, input: CreatePaylinkInput, demoSeed = false): Paylink {
@@ -331,14 +296,9 @@ function seedDemoPaylink() {
     if (current.demoSeed && current.publicUrl !== publicUrl) {
       updatePaylink(demoSeedPaylinkId, { publicUrl });
     }
-    if (
-      current.demoSeed &&
-      demoSeedFlexibleRoles &&
-      current.status === "created" &&
-      (current.sellerAddress || current.buyerAddress)
-    ) {
+    if (current.demoSeed && demoSeedFlexibleRoles && current.status === "created") {
       updatePaylink(demoSeedPaylinkId, {
-        sellerAddress: "",
+        sellerAddress: demoSeedSellerAddress,
         buyerAddress: "",
       });
     }
@@ -350,7 +310,7 @@ function seedDemoPaylink() {
     {
       mode: "escrow",
       sellerName: demoSeedSellerName,
-      sellerAddress: demoSeedFlexibleRoles ? "" : demoSeedSellerAddress,
+      sellerAddress: demoSeedSellerAddress,
       buyerName: demoSeedBuyerName,
       buyerAddress: demoSeedFlexibleRoles ? "" : demoSeedBuyerAddress,
       amount: demoSeedAmount,

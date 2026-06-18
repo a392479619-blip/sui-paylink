@@ -1,7 +1,6 @@
 import type {
   AppConfig,
   BuildSponsoredTransactionInput,
-  ClaimPaylinkRoleInput,
   CreatePaylinkInput,
   MintTestMockUsdcInput,
   MintTestMockUsdcResult,
@@ -80,24 +79,6 @@ export async function createPaylink(input: CreatePaylinkInput): Promise<Paylink>
     return paylink;
   }
   return request("/api/paylinks", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
-}
-
-export async function claimPaylinkRole(id: string, input: ClaimPaylinkRoleInput): Promise<Paylink> {
-  if (STATIC_DEMO_ENABLED) {
-    const paylinks = loadStaticPaylinks();
-    const index = paylinks.findIndex((item) => item.id === id);
-    if (index < 0) {
-      throw new Error("Static demo Paylink not found");
-    }
-    const next = claimStaticPaylinkRole(paylinks[index], input);
-    paylinks[index] = next;
-    saveStaticPaylinks(paylinks);
-    return next;
-  }
-  return request(`/api/paylinks/${id}/claim-role`, {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -298,8 +279,8 @@ function staticSeedPaylink(): Paylink {
     id: "demo-ai-workflow",
     mode: "escrow",
     sellerName: "Alice AI Automation Studio",
-    sellerAddress: "",
-    buyerName: "Bob from Sui Project",
+    sellerAddress: "0x648badce46f20a771d805670901239e868f5d0c7e297a3616b579075a800f9f5",
+    buyerName: "Buyer / initiator",
     buyerAddress: "",
     amount: "100",
     token: "mUSDC",
@@ -309,33 +290,6 @@ function staticSeedPaylink(): Paylink {
     demoSeed: true,
     publicUrl: staticPaylinkUrl("demo-ai-workflow"),
     createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-}
-
-function claimStaticPaylinkRole(paylink: Paylink, input: ClaimPaylinkRoleInput): Paylink {
-  if (paylink.status !== "created") {
-    throw new Error(`Cannot claim ${input.role} role in status ${paylink.status}`);
-  }
-  const timestamp = new Date().toISOString();
-  if (input.role === "seller") {
-    if (paylink.sellerAddress && !sameAddress(paylink.sellerAddress, input.address)) {
-      throw new Error("Seller role is already claimed by another address");
-    }
-    return {
-      ...paylink,
-      sellerAddress: input.address,
-      sellerName: input.name ?? paylink.sellerName,
-      updatedAt: timestamp,
-    };
-  }
-  if (paylink.buyerAddress && !sameAddress(paylink.buyerAddress, input.address)) {
-    throw new Error("Buyer role is already claimed by another address");
-  }
-  return {
-    ...paylink,
-    buyerAddress: input.address,
-    buyerName: input.name ?? paylink.buyerName,
     updatedAt: timestamp,
   };
 }

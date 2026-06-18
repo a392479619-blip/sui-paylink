@@ -12,7 +12,6 @@ import type {
 } from "@suipaylink/shared";
 import {
   buildSponsoredTransaction,
-  claimPaylinkRole,
   createPaylink,
   getConfig,
   getPaylink,
@@ -41,8 +40,8 @@ const initialForm: CreatePaylinkInput = {
   mode: "escrow",
   sellerName: "Alice AI Automation Studio",
   sellerAddress: "0x648badce46f20a771d805670901239e868f5d0c7e297a3616b579075a800f9f5",
-  buyerName: "Bob from Sui Project",
-  buyerAddress: "0x3bb115974618e32b56dd6fb259b1c8cbfce72177fe7a36ab618e245ef19ca3f1",
+  buyerName: "Buyer / initiator",
+  buyerAddress: "",
   amount: "100",
   token: "mUSDC",
   memo: "AI support workflow setup - 48 hour delivery",
@@ -99,7 +98,7 @@ const submissionBoundaries = [
   {
     status: "Open",
     title: "Browser-wallet E2E",
-    detail: "Needs funded sponsor gas and one real wallet-signed sponsored flow before claiming full hosted gasless UX.",
+    detail: "Needs funded sponsor gas and one real wallet-signed sponsored flow before calling it full hosted gasless UX.",
   },
 ];
 
@@ -214,7 +213,11 @@ function DashboardPage() {
 
       <div className="layout">
         <section className="panel">
-          <h2>Create paylink</h2>
+          <h2>Buyer creates escrow order</h2>
+          <p className="muted">
+            The buyer starts here, enters the seller receiving wallet, then opens the Buyer page to fund escrow.
+            The buyer wallet is recorded automatically after funding.
+          </p>
           <div className="grid">
             <label>
               Mode
@@ -259,7 +262,7 @@ function DashboardPage() {
             />
           </label>
           <label>
-            Seller address
+            Seller receiving address
             <input
               value={form.sellerAddress}
               onChange={(event) => setForm({ ...form, sellerAddress: event.target.value })}
@@ -273,10 +276,11 @@ function DashboardPage() {
             />
           </label>
           <label>
-            Buyer address
+            Buyer address optional
             <input
               value={form.buyerAddress ?? ""}
               onChange={(event) => setForm({ ...form, buyerAddress: event.target.value })}
+              placeholder="Leave blank; funding wallet becomes buyer"
             />
           </label>
           <label>
@@ -284,12 +288,12 @@ function DashboardPage() {
             <textarea value={form.memo} onChange={(event) => setForm({ ...form, memo: event.target.value })} />
           </label>
           <button className="primary" onClick={handleCreate}>
-            Create escrow paylink
+            Create buyer-started escrow
           </button>
         </section>
 
         <section className="panel">
-          <h2>Seller dashboard</h2>
+          <h2>Escrow orders</h2>
           <div className="table">
             {paylinks.map((paylink) => (
               <button
@@ -315,7 +319,7 @@ function DashboardPage() {
             <p>{selected.memo}</p>
             <p className="muted">Seller: {selected.sellerName}</p>
             <p className="muted">Buyer: {selected.buyerName ?? "not specified"}</p>
-            <p className="muted">Buyer address: {selected.buyerAddress ?? "not specified"}</p>
+            <p className="muted">Buyer address: {selected.buyerAddress || "recorded after funding"}</p>
             <p className="muted">
               Share URL: <a href={selected.publicUrl}>{selected.publicUrl}</a>
             </p>
@@ -635,30 +639,9 @@ function SponsoredPaylinkActions({
   const [paymentCoinId, setPaymentCoinId] = useState("");
   const [coinLookup, setCoinLookup] = useState("");
   const [pendingAction, setPendingAction] = useState<
-    SponsoredTransactionAction | "find-coin" | "mint-test-coin" | "claim-seller" | "claim-buyer" | null
+    SponsoredTransactionAction | "find-coin" | "mint-test-coin" | null
   >(null);
   const [lastRecord, setLastRecord] = useState<SponsoredTransactionRecord | null>(null);
-
-  async function claimRole(roleToClaim: "seller" | "buyer") {
-    if (!account) {
-      onError("Connect a Sui wallet first");
-      return;
-    }
-    onError("");
-    setPendingAction(roleToClaim === "seller" ? "claim-seller" : "claim-buyer");
-    try {
-      await claimPaylinkRole(paylink.id, {
-        role: roleToClaim,
-        address: account.address,
-        name: roleToClaim === "seller" ? paylink.sellerName : paylink.buyerName,
-      });
-      await onRefresh();
-    } catch (err) {
-      onError(errorText(err));
-    } finally {
-      setPendingAction(null);
-    }
-  }
 
   async function mintTestCoin() {
     if (!account || !expectedAmountUnits) return;
@@ -723,7 +706,7 @@ function SponsoredPaylinkActions({
       return;
     }
     if (action === "fund-mock-usdc" && !paylink.sellerAddress) {
-      onError("Open the Seller page and claim the seller role before buyer funding");
+      onError("Create the paylink with a seller receiving address before buyer funding");
       return;
     }
     if (action !== "fund-mock-usdc" && !paylink.escrowObjectId) {
@@ -806,22 +789,6 @@ function SponsoredPaylinkActions({
       paylink.status === "created" &&
       pendingAction !== "fund-mock-usdc",
   );
-  const canClaimSeller = Boolean(
-    role === "seller" &&
-      connectedAddress &&
-      !paylink.sellerAddress &&
-      paylink.status === "created" &&
-      (!paylink.buyerAddress || !sameSuiAddress(connectedAddress, paylink.buyerAddress)) &&
-      pendingAction !== "claim-seller",
-  );
-  const canClaimBuyer = Boolean(
-    role === "buyer" &&
-      connectedAddress &&
-      !paylink.buyerAddress &&
-      paylink.status === "created" &&
-      (!paylink.sellerAddress || !sameSuiAddress(connectedAddress, paylink.sellerAddress)) &&
-      pendingAction !== "claim-buyer",
-  );
   const canDeliver = Boolean(
     sponsorReady &&
       sellerConnected &&
@@ -868,32 +835,6 @@ function SponsoredPaylinkActions({
         <strong>{roleInstruction.title}</strong>
         <p>{roleInstruction.detail}</p>
       </div>
-
-      {role === "seller" && !paylink.sellerAddress && paylink.status === "created" && (
-        <section className="role-claim-card">
-          <div>
-            <p className="eyebrow">Seller role</p>
-            <h3>Use your connected wallet as Seller</h3>
-            <p>The demo link is not bound to a test seller account. Claim this role before Buyer funds escrow.</p>
-          </div>
-          <button onClick={() => claimRole("seller")} disabled={!canClaimSeller || pending}>
-            {pendingAction === "claim-seller" ? "Claiming..." : "Claim seller role"}
-          </button>
-        </section>
-      )}
-
-      {role === "buyer" && !paylink.buyerAddress && paylink.status === "created" && (
-        <section className="role-claim-card">
-          <div>
-            <p className="eyebrow">Buyer role</p>
-            <h3>Use your connected wallet as Buyer</h3>
-            <p>The buyer role is open. Claim it now, or it will be recorded automatically after funding succeeds.</p>
-          </div>
-          <button onClick={() => claimRole("buyer")} disabled={!canClaimBuyer || pending}>
-            {pendingAction === "claim-buyer" ? "Claiming..." : "Claim buyer role"}
-          </button>
-        </section>
-      )}
 
       <WalletE2EChecklist paylink={paylink} accountAddress={account?.address} role={role} />
       <SponsorReadinessCard readiness={sponsorReadiness} />
@@ -1180,7 +1121,7 @@ function PaylinkFacts({ paylink, compact = false }: { paylink: Paylink; compact?
       </div>
       <div>
         <dt>Seller address</dt>
-        <dd>{paylink.sellerAddress || "open - claim on Seller page"}</dd>
+        <dd>{paylink.sellerAddress || "required before buyer funding"}</dd>
       </div>
       <div>
         <dt>Buyer</dt>
@@ -1188,7 +1129,7 @@ function PaylinkFacts({ paylink, compact = false }: { paylink: Paylink; compact?
       </div>
       <div>
         <dt>Buyer address</dt>
-        <dd>{paylink.buyerAddress || "open - connected Buyer wallet"}</dd>
+        <dd>{paylink.buyerAddress || "recorded from funding wallet"}</dd>
       </div>
       <div>
         <dt>Fee</dt>
@@ -1558,13 +1499,13 @@ function actionInstructionForRole(
     if (status === "created") {
       if (!paylink.sellerAddress) {
         return {
-          title: "Waiting for Seller to claim the receiving wallet.",
-          detail: "Open the Seller page first. The buyer can mint test mUSDC, but funding needs a seller address.",
+          title: "Seller receiving address is missing.",
+          detail: "Create the order with the seller wallet address first. No seller account setup is needed.",
         };
       }
       return {
         title: "Connect Buyer wallet, mint test mUSDC, then fund escrow.",
-        detail: "The buyer signs the business transaction. Sponsor pays the SUI gas.",
+        detail: "The connected wallet becomes the buyer when funding succeeds. Sponsor pays the SUI gas.",
       };
     }
     if (status === "funded") {
@@ -1588,13 +1529,13 @@ function actionInstructionForRole(
     if (status === "created") {
       if (!paylink.sellerAddress) {
         return {
-          title: "Claim Seller role with your wallet.",
-          detail: "This demo link is open. The connected wallet becomes the seller before Buyer funds escrow.",
+          title: "Seller receiving address is missing.",
+          detail: "Buyer must create the order with the seller wallet address before funding escrow.",
         };
       }
       return {
         title: "Seller is waiting for Buyer funding.",
-        detail: "Open the Buyer page first and complete fund escrow before delivery.",
+        detail: "No seller login is required here. The seller only signs delivery after funds are escrowed.",
       };
     }
     if (status === "funded") {
