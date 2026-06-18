@@ -1180,6 +1180,24 @@ button:disabled {
   background: #fff4f4;
 }
 
+.advanced-verification {
+  margin-top: 32px;
+  padding: 16px;
+  border: 1px solid #d7e2ea;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.advanced-verification summary {
+  cursor: pointer;
+  color: #176b87;
+  font-weight: 800;
+}
+
+.advanced-verification > .muted {
+  margin-bottom: 16px;
+}
+
 @media (max-width: 900px) {
   .hero,
   .paylink {

@@ -109,6 +109,9 @@ export function App() {
   if (paylinkRoute) {
     return <PublicPaylinkPage paylinkId={paylinkRoute.id} role={paylinkRoute.role} />;
   }
+  if (!isDashboardPath(initialPath)) {
+    return <InvalidRoutePage path={initialPath} />;
+  }
 
   return <DashboardPage />;
 }
@@ -204,12 +207,6 @@ function DashboardPage() {
       </section>
 
       {error && <div className="error">{error}</div>}
-
-      <ChainDemo />
-
-      <SponsoredDemo config={config} />
-
-      <SubmissionEvidencePanel />
 
       <div className="layout">
         <section className="panel">
@@ -340,6 +337,43 @@ function DashboardPage() {
       )}
 
       {receipt && <ReceiptPanel receipt={receipt} onSyncChain={handleSyncChain} syncingChain={syncingChain} />}
+
+      <details className="advanced-verification">
+        <summary>Advanced verification panels</summary>
+        <p className="muted">
+          These panels are for low-level Sui transaction checks. They are not required for the buyer/seller demo flow.
+        </p>
+        <ChainDemo />
+        <SponsoredDemo config={config} />
+        <SubmissionEvidencePanel />
+      </details>
+    </main>
+  );
+}
+
+function InvalidRoutePage({ path }: { path: string }) {
+  return (
+    <main className="shell">
+      <section className="hero">
+        <div>
+          <p className="eyebrow">Route not available</p>
+          <h1>SuiPayLink</h1>
+          <p className="hero-copy">
+            <code>{path}</code> is not a valid demo route. Start from the home page and open the generated Buyer,
+            Seller, or Overview links.
+          </p>
+        </div>
+      </section>
+      <section className="panel missing-paylink">
+        <h2>Use the generated demo links</h2>
+        <p className="muted">
+          Valid routes look like <code>/buyer/&lt;id&gt;</code>, <code>/seller/&lt;id&gt;</code>, or{" "}
+          <code>/pay/&lt;id&gt;</code>.
+        </p>
+        <a className="button-link" href="/">
+          Back to create escrow order
+        </a>
+      </section>
     </main>
   );
 }
@@ -1435,14 +1469,23 @@ function walletE2ECompletedActions(status: Paylink["status"]): SponsoredTransact
 }
 
 function parsePaylinkRoute(pathname: string): PaylinkRoute | null {
-  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-  const appPath = base && pathname.startsWith(base) ? pathname.slice(base.length) || "/" : pathname;
+  const appPath = normalizedAppPath(pathname);
   const match = appPath.match(/^\/(pay|buyer|seller)\/([^/]+)\/?$/);
   if (!match?.[1] || !match[2]) {
     return null;
   }
   const role = match[1] === "buyer" || match[1] === "seller" ? match[1] : "overview";
   return { role, id: decodeURIComponent(match[2]) };
+}
+
+function isDashboardPath(pathname: string): boolean {
+  const appPath = normalizedAppPath(pathname);
+  return appPath === "/" || appPath === "";
+}
+
+function normalizedAppPath(pathname: string): string {
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+  return base && pathname.startsWith(base) ? pathname.slice(base.length) || "/" : pathname;
 }
 
 function formatDate(value: string): string {
