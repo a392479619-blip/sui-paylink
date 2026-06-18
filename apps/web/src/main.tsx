@@ -9,6 +9,9 @@ import "./styles.css";
 
 const queryClient = new QueryClient();
 const defaultNetwork = (import.meta.env.VITE_SUI_NETWORK ?? "testnet") as "devnet" | "testnet";
+const preferredWallets = ["Slush", "Sui Wallet", "OKX Wallet"];
+const requiredWalletFeatures = ["sui:signTransaction", "sui:signTransactionBlock"] as const;
+const hiddenWalletNameFragments = ["phantom"];
 const networks = {
   devnet: {
     network: "devnet" as const,
@@ -20,11 +23,30 @@ const networks = {
   },
 };
 
+type WalletCandidate = {
+  name: string;
+  features: Record<string, unknown>;
+};
+
+function walletSupportsSuiPayLink(wallet: WalletCandidate) {
+  const walletName = wallet.name.toLowerCase();
+  if (hiddenWalletNameFragments.some((fragment) => walletName.includes(fragment))) {
+    return false;
+  }
+
+  return requiredWalletFeatures.some((feature) => Boolean(wallet.features[feature]));
+}
+
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <SuiClientProvider networks={networks} defaultNetwork={defaultNetwork}>
-        <WalletProvider autoConnect>
+        <WalletProvider
+          autoConnect
+          preferredWallets={preferredWallets}
+          walletFilter={walletSupportsSuiPayLink}
+          slushWallet={{ name: "Slush" }}
+        >
           <App />
         </WalletProvider>
       </SuiClientProvider>
