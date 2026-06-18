@@ -103,23 +103,38 @@ const submissionBoundaries = [
 ];
 
 export function App() {
-  const [initialPath] = useState(() => window.location.pathname);
-  const paylinkRoute = parsePaylinkRoute(initialPath);
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
+  const paylinkRoute = parsePaylinkRoute(currentPath);
+
+  useEffect(() => {
+    function handlePopState() {
+      setCurrentPath(window.location.pathname);
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  function navigate(path: string) {
+    const href = appHref(path);
+    window.history.pushState({}, "", href);
+    setCurrentPath(new URL(href).pathname);
+    window.scrollTo({ top: 0 });
+  }
 
   if (paylinkRoute) {
     return <PublicPaylinkPage paylinkId={paylinkRoute.id} role={paylinkRoute.role} />;
   }
-  if (isCreatePath(initialPath)) {
-    return <CreateOrderPage />;
+  if (isCreatePath(currentPath)) {
+    return <CreateOrderPage onNavigate={navigate} />;
   }
-  if (!isDashboardPath(initialPath)) {
-    return <InvalidRoutePage path={initialPath} />;
+  if (!isDashboardPath(currentPath)) {
+    return <InvalidRoutePage path={currentPath} onNavigate={navigate} />;
   }
 
-  return <DashboardPage />;
+  return <DashboardPage onNavigate={navigate} />;
 }
 
-function DashboardPage() {
+function DashboardPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const account = useCurrentAccount();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [paylinks, setPaylinks] = useState<Paylink[]>([]);
@@ -146,7 +161,7 @@ function DashboardPage() {
 
   function openCreatePage() {
     if (!canCreate) return;
-    window.location.href = appHref("create");
+    onNavigate("create");
   }
 
   return (
@@ -264,7 +279,7 @@ function DashboardPage() {
   );
 }
 
-function CreateOrderPage() {
+function CreateOrderPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const account = useCurrentAccount();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [form, setForm] = useState<CreatePaylinkInput>(initialForm);
@@ -303,14 +318,13 @@ function CreateOrderPage() {
           <p className="eyebrow">Create escrow order</p>
           <h1>Start a buyer-funded service escrow</h1>
           <p className="hero-copy">
-            Connect the buyer wallet first. The connected wallet is recorded as the buyer and signs funding and release.
+            Fill in the seller and service details. The buyer wallet comes from the wallet already connected on the platform home.
           </p>
         </div>
         <div className="hero-actions stacked">
-          <ConnectButton connectText="Connect buyer wallet" />
-          <a className="button-link" href={appHref("")}>
+          <button className="button-link" onClick={() => onNavigate("")}>
             Back to platform
-          </a>
+          </button>
         </div>
       </section>
 
@@ -381,17 +395,19 @@ function CreateOrderPage() {
           </label>
           <div className="wallet-bound-field">
             <span>Buyer wallet</span>
-            <strong>{account?.address ? shortId(account.address) : "Connect wallet to create"}</strong>
-            <p className="muted">This wallet becomes the buyer for funding, refund, and release actions.</p>
+            <strong>{account?.address ? shortId(account.address) : "Not connected"}</strong>
+            <p className="muted">This wallet comes from the platform home and becomes the buyer for funding, refund, and release actions.</p>
           </div>
           <label>
             Memo
             <textarea value={form.memo} onChange={(event) => setForm({ ...form, memo: event.target.value })} />
           </label>
           <div className="create-order-action">
-            <ConnectButton connectText="Connect buyer wallet" />
             <button className="primary" onClick={handleCreate} disabled={!canCreate}>
               Create escrow order
+            </button>
+            <button className="button-link" onClick={() => onNavigate("")}>
+              Back to platform
             </button>
           </div>
         </section>
@@ -495,7 +511,7 @@ function orderRoleForWallet(paylink: Paylink, address: string): "buyer" | "selle
   return "buyer";
 }
 
-function InvalidRoutePage({ path }: { path: string }) {
+function InvalidRoutePage({ path, onNavigate }: { path: string; onNavigate: (path: string) => void }) {
   return (
     <main className="shell">
       <section className="hero">
@@ -514,9 +530,9 @@ function InvalidRoutePage({ path }: { path: string }) {
           Valid routes look like <code>/buyer/&lt;id&gt;</code>, <code>/seller/&lt;id&gt;</code>, or{" "}
           <code>/pay/&lt;id&gt;</code>.
         </p>
-        <a className="button-link" href={appHref("")}>
+        <button className="button-link" onClick={() => onNavigate("")}>
           Back to platform
-        </a>
+        </button>
       </section>
     </main>
   );
