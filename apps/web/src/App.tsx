@@ -1051,24 +1051,38 @@ function WalletE2EChecklist({
 }
 
 function SponsorReadinessCard({ readiness }: { readiness: SponsorReadiness | null }) {
+  const checking = readiness === null;
+  const ready = readiness?.ready === true;
   return (
-    <section className="sponsor-readiness-card">
+    <section className={`sponsor-readiness-card compact ${checking ? "checking" : ready ? "ready" : "warn"}`}>
       <div className="sponsor-readiness-heading">
         <div>
-          <p className="eyebrow">Sponsor readiness</p>
-          <h3>{readiness?.ready ? "Ready for sponsored gas" : "Not ready for sponsored gas"}</h3>
+          <p className="eyebrow">Sponsored gas</p>
+          <h3>{checking ? "Checking sponsor" : ready ? "Sponsor pays SUI gas" : "Sponsor not ready"}</h3>
+          <p>
+            {checking
+              ? "Reading the local sponsor health check."
+              : ready
+              ? "Buyer and seller sign escrow actions; the app sponsor covers network gas."
+              : "Sponsored signing is unavailable until the local sponsor setup is fixed."}
+          </p>
         </div>
-        <strong>{readiness?.balanceMist ?? "0"} MIST</strong>
+        <strong>{checking ? "checking" : readiness?.balanceMist ? `${readiness.balanceMist} MIST` : "0 MIST"}</strong>
       </div>
-      <div className="readiness-checks">
-        {(readiness?.checks ?? []).map((check) => (
-          <div key={check.name} className={check.ok ? "ok" : "warn"}>
-            <span>{check.ok ? "OK" : "TODO"}</span>
-            <strong>{check.name}</strong>
-            <p>{check.detail}</p>
+      {readiness?.checks.length ? (
+        <details className="readiness-details">
+          <summary>Technical checks</summary>
+          <div className="readiness-checks">
+            {readiness.checks.map((check) => (
+              <div key={check.name} className={check.ok ? "ok" : "warn"}>
+                <span>{check.ok ? "OK" : "TODO"}</span>
+                <strong>{check.name}</strong>
+                <p>{check.detail}</p>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </details>
+      ) : null}
     </section>
   );
 }

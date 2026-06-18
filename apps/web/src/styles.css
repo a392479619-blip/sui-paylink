@@ -782,6 +782,22 @@ button:disabled {
   background: #ffffff;
 }
 
+.sponsor-readiness-card.compact {
+  gap: 10px;
+  border-color: #c7e0d1;
+  background: #f4fbf7;
+}
+
+.sponsor-readiness-card.compact.warn {
+  border-color: #ead8a8;
+  background: #fffaf0;
+}
+
+.sponsor-readiness-card.compact.checking {
+  border-color: #d7e2ea;
+  background: #f8fbfd;
+}
+
 .wallet-e2e-card h3,
 .sponsor-readiness-card h3 {
   margin: 0;
@@ -919,10 +935,34 @@ button:disabled {
   gap: 12px;
 }
 
+.sponsor-readiness-heading p {
+  max-width: 520px;
+  margin: 4px 0 0;
+  color: #5d6875;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .sponsor-readiness-heading > strong {
   flex: none;
   color: #162130;
   font-size: 13px;
+}
+
+.readiness-details {
+  color: #5d6875;
+  font-size: 12px;
+}
+
+.readiness-details summary {
+  width: fit-content;
+  cursor: pointer;
+  color: #176b87;
+  font-weight: 800;
+}
+
+.readiness-details[open] summary {
+  margin-bottom: 8px;
 }
 
 .coin-picker {
