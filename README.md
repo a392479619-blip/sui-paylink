@@ -83,7 +83,7 @@ The verified flow completed:
 2. Create and fund shared escrow with SUI.
 3. Mark the service delivered.
 4. Release funds to seller and platform fee receiver.
-5. Create and fund a separate escrow, then refund it to the buyer.
+5. Create and fund a separate escrow, then refund it to the buyer before delivery.
 6. Run a two-party Testnet flow with separate buyer, seller, and fee receiver addresses.
 7. Create, mint, escrow, deliver, and release `mUSDC`, a test-only MockUSDC coin.
 8. Run a sponsored `mUSDC` escrow flow where buyer and seller both hold `0` SUI.
@@ -91,22 +91,22 @@ The verified flow completed:
 
 Verified Testnet evidence:
 
-- [Package](https://suiexplorer.com/object/0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340?network=testnet): `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340`
-- [Publish transaction](https://suiexplorer.com/txblock/ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3?network=testnet): `ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3`
-- [SUI escrow object](https://suiexplorer.com/object/0x7d57991709a3ab42f083c33421b9b33da4edb8266cdcb3bd447129ffa6f5128c?network=testnet): `0x7d57991709a3ab42f083c33421b9b33da4edb8266cdcb3bd447129ffa6f5128c`
-- [SUI release transaction](https://suiexplorer.com/txblock/5SyCRy8Hif79HYRYrkomc32TPSHxd6DiJAorp3p1avPT?network=testnet): `5SyCRy8Hif79HYRYrkomc32TPSHxd6DiJAorp3p1avPT`
+- [Package](https://suiexplorer.com/object/0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7?network=testnet): `0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7`
+- [Publish transaction](https://suiexplorer.com/txblock/EzCXP2GqsZg9E9y1tBuje7RiTMQx2a8peExXeEc4SAjH?network=testnet): `EzCXP2GqsZg9E9y1tBuje7RiTMQx2a8peExXeEc4SAjH`
+- [SUI escrow object](https://suiexplorer.com/object/0xe739f5ff0cf7df9d89259b90de24afd80bcde18c8567c9faaa18bc904dfb3f32?network=testnet): `0xe739f5ff0cf7df9d89259b90de24afd80bcde18c8567c9faaa18bc904dfb3f32`
+- [SUI release transaction](https://suiexplorer.com/txblock/3PyZUQ1WXdPpVHyXTG8C8RfMkb4FS8yAdgqinXbeyYgo?network=testnet): `3PyZUQ1WXdPpVHyXTG8C8RfMkb4FS8yAdgqinXbeyYgo`
 - Final state: delivered, released, and empty balance
-- [Refund transaction](https://suiexplorer.com/txblock/BFjypQRCWAfTJWMrSBhYJpV2FoWiXS26FGmpThFjJZ3m?network=testnet): `BFjypQRCWAfTJWMrSBhYJpV2FoWiXS26FGmpThFjJZ3m`
+- [Refund transaction](https://suiexplorer.com/txblock/Ap6CKTuxKSQqKWXFfc676TZfndNsXkkrdwH5pxwt3MJW?network=testnet): `Ap6CKTuxKSQqKWXFfc676TZfndNsXkkrdwH5pxwt3MJW`
 - Refund final state: not delivered, not released, refunded, and empty balance
-- [Two-party release transaction](https://suiexplorer.com/txblock/A4FeNvjhWMhBqRkJfxg6DyNYZhvgArHCn9g9gcuxWJyt?network=testnet): `A4FeNvjhWMhBqRkJfxg6DyNYZhvgArHCn9g9gcuxWJyt`
-- Two-party escrow: `0x1295580b1f37791843cc0ed9885a13eb8c1a932a273a693e360564d9411d50d3`
+- [Two-party release transaction](https://suiexplorer.com/txblock/8nUvpEeFK3sXZX3hdMEjdzctiGpsAN5CH7NhRZ2Yko8Z?network=testnet): `8nUvpEeFK3sXZX3hdMEjdzctiGpsAN5CH7NhRZ2Yko8Z`
+- Two-party escrow: `0xc1a5d8d3316d4e2290b212d9b18dbb26ed9066efe0d304121fbd43d8ce80c8ef`
 - Two-party final state: separate buyer, seller, and fee receiver, delivered, released, and empty balance
-- [MockUSDC release transaction](https://suiexplorer.com/txblock/A4XgUMXCG5eAnG2qLWqy21H4T4MPnYnnzXvygdmmhzP3?network=testnet): `A4XgUMXCG5eAnG2qLWqy21H4T4MPnYnnzXvygdmmhzP3`
-- MockUSDC escrow: `0xa044130a456a9ca7f4f73bce8890c9a21753edbb10909e19682f403aec121e04`
-- MockUSDC coin type: `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340::mock_usdc::MOCK_USDC`
-- [Sponsored MockUSDC fund transaction](https://suiexplorer.com/txblock/ADJcJgnyaC5K8q7tUyygehMqYKYPJ9V2VYbTRUGqK7Nm?network=testnet): `ADJcJgnyaC5K8q7tUyygehMqYKYPJ9V2VYbTRUGqK7Nm`
-- [Sponsored MockUSDC release transaction](https://suiexplorer.com/txblock/FHpRgU1UBvaHVQBNQMh9ReUKmr2jHWgaGZWxQHCkqAeQ?network=testnet): `FHpRgU1UBvaHVQBNQMh9ReUKmr2jHWgaGZWxQHCkqAeQ`
-- Sponsored MockUSDC escrow: `0xfa140db34391e6d7af3968c8cca37725028a7d4c97b3346fc6c4fda2a97ca0dc`
+- [MockUSDC release transaction](https://suiexplorer.com/txblock/JCVgJ7axUWaaNJ35fUTwvVbeVZhM6BAMTV3i9vsVXDuT?network=testnet): `JCVgJ7axUWaaNJ35fUTwvVbeVZhM6BAMTV3i9vsVXDuT`
+- MockUSDC escrow: `0x510ba488084c0ae1e6c10b1ddb4d2e83065e643ea78fc82825ff1723c95d1085`
+- MockUSDC coin type: `0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7::mock_usdc::MOCK_USDC`
+- [Sponsored MockUSDC fund transaction](https://suiexplorer.com/txblock/6JPrSsia2NDvzR5SgYBn21KXCFREb7QRsnzfQzs8saad?network=testnet): `6JPrSsia2NDvzR5SgYBn21KXCFREb7QRsnzfQzs8saad`
+- [Sponsored MockUSDC release transaction](https://suiexplorer.com/txblock/2AUpapsvVJdkXLtt9jVo2X8dgBPP2pvKv8FdGE6nz8QM?network=testnet): `2AUpapsvVJdkXLtt9jVo2X8dgBPP2pvKv8FdGE6nz8QM`
+- Sponsored MockUSDC escrow: `0x9a1fefe14c9148a246122c9d280075994a698650e09ca6e664d9c42e4304e066`
 - Sponsored proof: buyer SUI `0`, seller SUI `0`, sponsor paid gas, seller received `99 mUSDC`, fee receiver received `1 mUSDC`.
 
 The latest Testnet smoke tests include both Test SUI and `mUSDC`. `mUSDC` is a
@@ -191,10 +191,11 @@ Sponsored API endpoints:
 - `POST /api/sponsored-transactions/:id/submit`
 
 Allowed sponsored actions are `fund-mock-usdc`, `mark-delivered`, `release`,
-and `refund`. Without `SPONSOR_PRIVATE_KEY`, the API returns `503` and
+and pre-delivery `refund`. Without `SPONSOR_PRIVATE_KEY`, the API returns `503` and
 `sponsorEnabled: false`. For Paylink-bound requests, the API rejects duplicate
 active sponsor builds for the same action, blocks conflicting release/refund
-settlement requests, and re-dry-runs transaction bytes before sponsor signing.
+settlement requests, rejects refunds after seller delivery, and re-dry-runs
+transaction bytes before sponsor signing.
 
 The public buyer page at `/pay/<id>` is wired to the same sponsored transaction
 path. It shows wallet connection, required signer roles, payment coin object

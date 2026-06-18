@@ -49,8 +49,8 @@ const initialForm: CreatePaylinkInput = {
   feeBps: 100,
 };
 
-const TESTNET_PACKAGE_ID = "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340";
-const SPONSORED_ESCROW_OBJECT_ID = "0xfa140db34391e6d7af3968c8cca37725028a7d4c97b3346fc6c4fda2a97ca0dc";
+const TESTNET_PACKAGE_ID = "0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7";
+const SPONSORED_ESCROW_OBJECT_ID = "0x9a1fefe14c9148a246122c9d280075994a698650e09ca6e664d9c42e4304e066";
 
 const submissionEvidence = [
   {
@@ -60,18 +60,18 @@ const submissionEvidence = [
   },
   {
     label: "Publish",
-    value: "ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3",
-    href: explorerUrl("ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3", "testnet"),
+    value: "EzCXP2GqsZg9E9y1tBuje7RiTMQx2a8peExXeEc4SAjH",
+    href: explorerUrl("EzCXP2GqsZg9E9y1tBuje7RiTMQx2a8peExXeEc4SAjH", "testnet"),
   },
   {
     label: "Sponsored fund",
-    value: "ADJcJgnyaC5K8q7tUyygehMqYKYPJ9V2VYbTRUGqK7Nm",
-    href: explorerUrl("ADJcJgnyaC5K8q7tUyygehMqYKYPJ9V2VYbTRUGqK7Nm", "testnet"),
+    value: "6JPrSsia2NDvzR5SgYBn21KXCFREb7QRsnzfQzs8saad",
+    href: explorerUrl("6JPrSsia2NDvzR5SgYBn21KXCFREb7QRsnzfQzs8saad", "testnet"),
   },
   {
     label: "Sponsored release",
-    value: "FHpRgU1UBvaHVQBNQMh9ReUKmr2jHWgaGZWxQHCkqAeQ",
-    href: explorerUrl("FHpRgU1UBvaHVQBNQMh9ReUKmr2jHWgaGZWxQHCkqAeQ", "testnet"),
+    value: "2AUpapsvVJdkXLtt9jVo2X8dgBPP2pvKv8FdGE6nz8QM",
+    href: explorerUrl("2AUpapsvVJdkXLtt9jVo2X8dgBPP2pvKv8FdGE6nz8QM", "testnet"),
   },
   {
     label: "Sponsored escrow",
@@ -84,7 +84,7 @@ const submissionBoundaries = [
   {
     status: "Verified",
     title: "Move escrow state machine",
-    detail: "Published on Sui Testnet with SUI escrow, refund, two-party, MockUSDC, and sponsored MockUSDC smoke evidence.",
+    detail: "Published on Sui Testnet with SUI escrow, pre-delivery refund, two-party, MockUSDC, and sponsored MockUSDC smoke evidence.",
   },
   {
     status: "Verified",
@@ -510,7 +510,7 @@ function StaticDemoBanner() {
 
 function RoleSwitch({ paylink, role }: { paylink: Paylink; role: PaylinkPageRole }) {
   const links: Array<{ label: string; role: PaylinkPageRole; detail: string }> = [
-    { label: "Buyer page", role: "buyer", detail: "mint test mUSDC, fund escrow, release or refund" },
+    { label: "Buyer page", role: "buyer", detail: "mint test mUSDC, fund escrow, release after delivery" },
     { label: "Seller page", role: "seller", detail: "mark delivered after buyer funds escrow" },
     { label: "Overview", role: "overview", detail: "see both sides and transaction history" },
   ];
@@ -840,7 +840,7 @@ function SponsoredPaylinkActions({
     sponsorReady &&
       buyerConnected &&
       paylink.escrowObjectId &&
-      ["funded", "delivered"].includes(paylink.status) &&
+      paylink.status === "funded" &&
       pendingAction !== "refund",
   );
   const showBuyerControls = role !== "seller";
@@ -850,7 +850,7 @@ function SponsoredPaylinkActions({
     { label: "Fund", action: "fund-mock-usdc" },
     { label: "Deliver", action: "mark-delivered" },
     { label: "Release", action: "release" },
-    { label: "Refund", action: "refund" },
+    { label: "Pre-delivery refund", action: "refund" },
   ];
 
   return (
@@ -970,12 +970,14 @@ function SponsoredPaylinkActions({
             >
               {pendingAction === "release" ? "Releasing..." : "Buyer signs release"}
             </button>
-            <button
-              onClick={() => executeSponsoredAction("refund")}
-              disabled={!canRefund || pending}
-            >
-              {pendingAction === "refund" ? "Refunding..." : "Refund with sponsor"}
-            </button>
+            {paylink.status === "funded" && (
+              <button
+                onClick={() => executeSponsoredAction("refund")}
+                disabled={!canRefund || pending}
+              >
+                {pendingAction === "refund" ? "Refunding..." : "Refund before delivery"}
+              </button>
+            )}
           </>
         )}
         {showSellerControls && (
@@ -987,6 +989,19 @@ function SponsoredPaylinkActions({
           </button>
         )}
       </div>
+
+      {showBuyerControls && paylink.status === "delivered" && (
+        <section className="role-claim-card">
+          <div>
+            <p className="eyebrow">Dispute policy</p>
+            <h3>Automatic refund is closed after delivery</h3>
+            <p>
+              Buyer can release funds after reviewing delivery. If there is a problem, this MVP records the
+              issue off-chain; production dispute handling needs deadlines, evidence review, or mutual approval.
+            </p>
+          </div>
+        </section>
+      )}
 
       {lastRecord && (
         <div className="sponsored-latest">
@@ -1209,9 +1224,9 @@ function PaylinkActions({
       </button>
       <button
         onClick={() => onAction("refund")}
-        disabled={!["funded", "delivered"].includes(paylink.status) || pendingAction === "refund"}
+        disabled={paylink.status !== "funded" || pendingAction === "refund"}
       >
-        {pendingAction === "refund" ? "Refunding..." : "Refund"}
+        {pendingAction === "refund" ? "Refunding..." : "Refund before delivery"}
       </button>
     </div>
   );
@@ -1555,13 +1570,13 @@ function actionInstructionForRole(
     if (status === "funded") {
       return {
         title: "Buyer is waiting for Seller delivery.",
-        detail: "Keep this page open, then switch back after Seller signs delivery.",
+        detail: "Buyer can still cancel before delivery, but refund closes after Seller marks delivered.",
       };
     }
     if (status === "delivered") {
       return {
-        title: "Buyer can release funds or refund.",
-        detail: "For the demo, release is the main path after checking delivery.",
+        title: "Buyer reviews delivery and releases funds.",
+        detail: "Automatic refund is closed after delivery. Problems move to an off-chain dispute path in this MVP.",
       };
     }
     return {

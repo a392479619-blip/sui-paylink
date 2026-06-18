@@ -1,14 +1,14 @@
 {
   "network": "testnet",
-  "packageId": "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340",
-  "upgradeCapId": "0x91174bcbcdef7d23b29f1f4cff53104e61e952eea5cfae259d1e8d9fef22853a",
-  "publishDigest": "ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3",
-  "deployer": "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef",
-  "deployedAt": "2026-06-11T08:52:25Z",
+  "packageId": "0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7",
+  "upgradeCapId": "0xbfbd80aed786cf0c4a19a7bc1ac7f11a1f2c035e69171947ba35d9efa5f2c21a",
+  "publishDigest": "EzCXP2GqsZg9E9y1tBuje7RiTMQx2a8peExXeEc4SAjH",
+  "deployer": "0x0963c210cf5441582505e7f3b12e06d569351dffc51e84efe941525bf3812dc6",
+  "deployedAt": "2026-06-18T07:46:08Z",
   "mockUsdc": {
-    "coinType": "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340::mock_usdc::MOCK_USDC",
-    "treasuryCapId": "0xbd9979321bfae7f3becb1114e92ae6208c316dcfd26852adef50fce1c8c17fae",
-    "metadataId": "0x1b471b701733c5dccfe25a352bfa5f34971a4e33b38eaa51f00fa354a1b5634e",
+    "coinType": "0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7::mock_usdc::MOCK_USDC",
+    "treasuryCapId": "0xd4a31feca435942ec4d402781ed9102b97e23823b8f23a5c32722851ea740c76",
+    "metadataId": "0x8757d3abc9d28b426e7fee53a6d58a625ea1db6192e821d20fedde79574768c0",
     "symbol": "mUSDC",
     "decimals": 6,
     "testOnly": true

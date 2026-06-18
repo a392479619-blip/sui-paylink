@@ -62,7 +62,7 @@ DeFi & Payments
 
 ### Short description
 
-SuiPayLink lets service sellers create gasless stablecoin escrow payment links on Sui. Buyers can enter a sponsored mUSDC escrow flow without holding SUI gas, sellers can mark delivery, buyers can release or refund, and both sides get verifiable Testnet receipts.
+SuiPayLink lets service sellers create gasless stablecoin escrow payment links on Sui. Buyers can enter a sponsored mUSDC escrow flow without holding SUI gas, sellers can mark delivery, buyers can release after delivery or refund before delivery, and both sides get verifiable Testnet receipts.
 
 ### One-sentence description
 
@@ -72,11 +72,11 @@ SuiPayLink turns cross-border digital service payments into gasless Sui escrow l
 
 SuiPayLink is a payment-link product for Web3 services, AI automation sellers, small cross-border agencies, creators, and Sui ecosystem teams paying contributors.
 
-The problem is narrow: stablecoin payments are useful for cross-border digital services, but first-time buyers still get blocked by wallet setup, gas, unclear addresses, and trust. A seller also needs more than a raw wallet address. For service work, both sides need a lightweight agreement, escrow state, delivery proof, release/refund flow, and a receipt they can verify later.
+The problem is narrow: stablecoin payments are useful for cross-border digital services, but first-time buyers still get blocked by wallet setup, gas, unclear addresses, and trust. A seller also needs more than a raw wallet address. For service work, both sides need a lightweight agreement, escrow state, delivery proof, buyer release, pre-delivery refund, and a receipt they can verify later.
 
 SuiPayLink lets a seller create a payment link for a service agreement. The buyer opens the public link, reviews amount, seller, buyer, memo, and sponsor status, then signs the business transaction while a sponsor account pays gas in the verified sponsored flow. The Move package records escrow state on Sui. The API persists Paylinks and sponsored transaction records, and the receipt page can sync against recorded Sui digests and Escrow object state.
 
-The current MVP is intentionally scoped. It proves the payment rail and escrow state machine on public Sui Testnet using a project-owned MockUSDC coin. The repo includes evidence for package publish, SUI escrow, refund, two-party flow, MockUSDC escrow, and sponsored MockUSDC escrow where buyer and seller hold 0 SUI while the sponsor pays gas. It is not a Stripe replacement, not production USDC support, and not a legal arbitration platform.
+The current MVP is intentionally scoped. It proves the payment rail and escrow state machine on public Sui Testnet using a project-owned MockUSDC coin. The repo includes evidence for package publish, SUI escrow, pre-delivery refund, two-party flow, MockUSDC escrow, and sponsored MockUSDC escrow where buyer and seller hold 0 SUI while the sponsor pays gas. It is not a Stripe replacement, not production USDC support, and not a legal arbitration platform.
 
 ### Problem
 
@@ -84,7 +84,7 @@ Stablecoin service payments still require too much manual coordination. Buyers d
 
 ### Solution
 
-SuiPayLink turns a service invoice into a Sui payment link. It supports escrow creation, sponsored transaction build/sign/submit, seller delivery marking, buyer release/refund, receipt math, and on-demand chain verification against Sui transaction digests and Escrow object state.
+SuiPayLink turns a service invoice into a Sui payment link. It supports escrow creation, sponsored transaction build/sign/submit, seller delivery marking, buyer release after delivery, buyer refund before delivery, receipt math, and on-demand chain verification against Sui transaction digests and Escrow object state.
 
 ### Why Sui
 
@@ -133,18 +133,18 @@ Requirement before filling this field: record and upload a public/unlisted video
 
 ### Contract package
 
-`0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340`
+`0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7`
 
 Explorer:
 
-<https://suiexplorer.com/object/0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340?network=testnet>
+<https://suiexplorer.com/object/0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7?network=testnet>
 
 ### Key Testnet evidence
 
-- Package publish: <https://suiexplorer.com/txblock/ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3?network=testnet>
-- Sponsored MockUSDC fund: <https://suiexplorer.com/txblock/ADJcJgnyaC5K8q7tUyygehMqYKYPJ9V2VYbTRUGqK7Nm?network=testnet>
-- Sponsored MockUSDC release: <https://suiexplorer.com/txblock/FHpRgU1UBvaHVQBNQMh9ReUKmr2jHWgaGZWxQHCkqAeQ?network=testnet>
-- Sponsored escrow object: <https://suiexplorer.com/object/0xfa140db34391e6d7af3968c8cca37725028a7d4c97b3346fc6c4fda2a97ca0dc?network=testnet>
+- Package publish: <https://suiexplorer.com/txblock/EzCXP2GqsZg9E9y1tBuje7RiTMQx2a8peExXeEc4SAjH?network=testnet>
+- Sponsored MockUSDC fund: <https://suiexplorer.com/txblock/6JPrSsia2NDvzR5SgYBn21KXCFREb7QRsnzfQzs8saad?network=testnet>
+- Sponsored MockUSDC release: <https://suiexplorer.com/txblock/2AUpapsvVJdkXLtt9jVo2X8dgBPP2pvKv8FdGE6nz8QM?network=testnet>
+- Sponsored escrow object: <https://suiexplorer.com/object/0x9a1fefe14c9148a246122c9d280075994a698650e09ca6e664d9c42e4304e066?network=testnet>
 
 ### Team
 

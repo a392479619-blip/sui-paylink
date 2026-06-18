@@ -1,7 +1,7 @@
 # SuiPayLink Founder Submission Pack
 
 Generated from local submission checks.
-Source updatedAt: 2026-06-17
+Source updatedAt: 2026-06-18
 
 ## Current Decision
 
@@ -42,10 +42,10 @@ DeFi & Payments
 
 ### Short description
 
-Length: 263/500
+Length: 294/500
 
 ```text
-SuiPayLink lets service sellers create gasless stablecoin escrow payment links on Sui. Buyers can enter a sponsored mUSDC escrow flow without holding SUI gas, sellers can mark delivery, buyers can release or refund, and both sides get verifiable Testnet receipts.
+SuiPayLink lets service sellers create gasless stablecoin escrow payment links on Sui. Buyers can enter a sponsored mUSDC escrow flow without holding SUI gas, sellers can mark delivery, buyers can release after delivery or refund before delivery, and both sides get verifiable Testnet receipts.
 ```
 
 ### One-sentence description
@@ -74,10 +74,10 @@ Stablecoin service payments still require too much manual coordination. Buyers d
 
 ### Solution
 
-Length: 280/800
+Length: 318/800
 
 ```text
-SuiPayLink turns a service invoice into a Sui payment link. It supports escrow creation, sponsored transaction build/sign/submit, seller delivery marking, buyer release/refund, receipt math, and on-demand chain verification against Sui transaction digests and Escrow object state.
+SuiPayLink turns a service invoice into a Sui payment link. It supports escrow creation, sponsored transaction build/sign/submit, seller delivery marking, buyer release after delivery, buyer refund before delivery, receipt math, and on-demand chain verification against Sui transaction digests and Escrow object state.
 ```
 
 ### Tech stack
@@ -103,7 +103,7 @@ https://a392479619-blip.github.io/sui-paylink/pay/demo-ai-workflow
 ### Contract package
 
 ```text
-0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340
+0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7
 ```
 
 ### Team
@@ -128,10 +128,10 @@ SuiPayLink targets a concrete payment workflow instead of a generic crypto check
 
 ### What did you build during the hackathon?
 
-Length: 449/900
+Length: 462/900
 
 ```text
-I built a Sui Move escrow package, deployed it on public Sui Testnet, added a project-owned MockUSDC test coin, verified SUI escrow, refund, two-party, MockUSDC, and sponsored MockUSDC flows, built a Fastify API for Paylinks and sponsored transaction build/submit, built a React seller dashboard and public buyer pay page, added receipt sync against Sui digests and Escrow object state, and added smoke/readiness scripts for submission verification.
+I built a Sui Move escrow package, deployed it on public Sui Testnet, added a project-owned MockUSDC test coin, verified SUI escrow, pre-delivery refund, two-party, MockUSDC, and sponsored MockUSDC flows, built a Fastify API for Paylinks and sponsored transaction build/submit, built a React seller dashboard and public buyer pay page, added receipt sync against Sui digests and Escrow object state, and added smoke/readiness scripts for submission verification.
 ```
 
 ### Why Sui?
@@ -168,11 +168,11 @@ This is a hackathon MVP on public Sui Testnet. It does not claim production USDC
 
 ## Evidence Links
 
-- Package: https://suiexplorer.com/object/0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340?network=testnet
-- Package publish transaction: https://suiexplorer.com/txblock/ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3?network=testnet
-- Sponsored MockUSDC fund transaction: https://suiexplorer.com/txblock/ADJcJgnyaC5K8q7tUyygehMqYKYPJ9V2VYbTRUGqK7Nm?network=testnet
-- Sponsored MockUSDC release transaction: https://suiexplorer.com/txblock/FHpRgU1UBvaHVQBNQMh9ReUKmr2jHWgaGZWxQHCkqAeQ?network=testnet
-- Sponsored escrow object: https://suiexplorer.com/object/0xfa140db34391e6d7af3968c8cca37725028a7d4c97b3346fc6c4fda2a97ca0dc?network=testnet
+- Package: https://suiexplorer.com/object/0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7?network=testnet
+- Package publish transaction: https://suiexplorer.com/txblock/EzCXP2GqsZg9E9y1tBuje7RiTMQx2a8peExXeEc4SAjH?network=testnet
+- Sponsored MockUSDC fund transaction: https://suiexplorer.com/txblock/6JPrSsia2NDvzR5SgYBn21KXCFREb7QRsnzfQzs8saad?network=testnet
+- Sponsored MockUSDC release transaction: https://suiexplorer.com/txblock/2AUpapsvVJdkXLtt9jVo2X8dgBPP2pvKv8FdGE6nz8QM?network=testnet
+- Sponsored escrow object: https://suiexplorer.com/object/0x9a1fefe14c9148a246122c9d280075994a698650e09ca6e664d9c42e4304e066?network=testnet
 
 ## Current Gaps
 

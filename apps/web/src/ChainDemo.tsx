@@ -5,7 +5,7 @@ import { useState } from "react";
 const network = (import.meta.env.VITE_SUI_NETWORK ?? "testnet") as "devnet" | "testnet";
 const packageId =
   import.meta.env.VITE_PACKAGE_ID ??
-  "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340";
+  "0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7";
 const suiType = "0x2::sui::SUI";
 const paymentMist = 100_000_000;
 

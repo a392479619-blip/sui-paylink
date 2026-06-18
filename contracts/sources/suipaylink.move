@@ -222,8 +222,8 @@ public fun release<T>(
     });
 }
 
-/// Buyer can refund while MVP has no arbitration.
-/// Production rules should add deadlines, seller acceptance, or dispute policy.
+/// Buyer can refund before seller delivery.
+/// Once seller delivery is marked, refund must become a dispute path instead of an automatic buyer action.
 public fun refund_to_buyer<T>(
     escrow: &mut Escrow<T>,
     ctx: &mut TxContext,
@@ -232,6 +232,7 @@ public fun refund_to_buyer<T>(
     assert!(escrow.funded, E_NOT_FUNDED);
     assert!(!escrow.released, E_ALREADY_RELEASED);
     assert!(!escrow.refunded, E_ALREADY_REFUNDED);
+    assert!(!escrow.delivered, E_ALREADY_DELIVERED);
 
     let refund_balance = balance::withdraw_all(&mut escrow.funds);
     transfer::public_transfer(coin::from_balance(refund_balance, ctx), escrow.buyer);
@@ -442,6 +443,23 @@ fun buyer_cannot_refund_after_release() {
     scenario.next_tx(TEST_BUYER);
     let mut escrow = scenario.take_shared<Escrow<SUI>>();
     release<SUI>(&mut escrow, scenario.ctx());
+    refund_to_buyer<SUI>(&mut escrow, scenario.ctx());
+    test_scenario::return_shared(escrow);
+    scenario.end();
+}
+
+#[test, expected_failure(abort_code = E_ALREADY_DELIVERED)]
+fun buyer_cannot_refund_after_delivery() {
+    let mut scenario = test_scenario::begin(TEST_BUYER);
+    create_test_escrow(&mut scenario, TEST_AMOUNT, TEST_FEE_BPS);
+
+    scenario.next_tx(TEST_SELLER);
+    let mut escrow = scenario.take_shared<Escrow<SUI>>();
+    mark_delivered<SUI>(&mut escrow, test_string(b"https://proof.example/delivery"), scenario.ctx());
+    test_scenario::return_shared(escrow);
+
+    scenario.next_tx(TEST_BUYER);
+    let mut escrow = scenario.take_shared<Escrow<SUI>>();
     refund_to_buyer<SUI>(&mut escrow, scenario.ctx());
     test_scenario::return_shared(escrow);
     scenario.end();

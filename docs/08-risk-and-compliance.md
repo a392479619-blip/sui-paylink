@@ -32,7 +32,7 @@ Early pilots should be:
 | Risk | Impact | Mitigation |
 |---|---|---|
 | Sponsored gas abuse | Sponsor wallet drain | Whitelist calls, cap amounts, rate-limit users, require platform-created links. |
-| Escrow dispute | User dissatisfaction | MVP only supports buyer release/refund; no arbitration promise. |
+| Escrow dispute | User dissatisfaction | MVP supports buyer release after delivery and refund before delivery; no arbitration promise. |
 | Wrong recipient | Funds lost | Display seller identity, memo, address preview, confirmation screen. |
 | Stablecoin support unavailable on testnet | Demo blocked | Use test coin and clearly label production target. |
 | Contract bug | Fund loss | Test with tiny amounts only; do not run production custody before audit. |
@@ -54,7 +54,7 @@ Public demo and README should state:
 - Not a licensed money transmitter.
 - Not legal, tax, or financial advice.
 - Use small test amounts until audited.
-- Escrow release/refund policy is simplified for MVP.
+- Escrow release/pre-delivery refund policy is simplified for MVP.
 
 ## Production prerequisites
 

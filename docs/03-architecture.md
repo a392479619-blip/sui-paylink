@@ -99,7 +99,7 @@ MVP does not solve full arbitration. It only provides:
 - buyer-funded escrow
 - seller delivery mark
 - buyer release
-- buyer refund before release
+- buyer refund before seller delivery
 - immutable event trail
 
 Production needs deadlines, dispute windows, admin policy, and legal terms.

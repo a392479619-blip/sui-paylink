@@ -74,7 +74,7 @@ For Sui ecosystem:
 | Sponsor gas abstraction | Platform | Buyer does not need to handle gas for escrow operations. | Sponsored `mUSDC` Testnet smoke succeeds with buyer and seller SUI balances at `0`. |
 | Mark delivered | Seller | Seller marks work delivered and attaches proof URI. | State moves from `funded` to `delivered`; proof URI is stored. |
 | Release escrow | Buyer | Buyer releases funds after delivery. | State moves from `delivered` to `released`; platform fee and seller amount are computed. |
-| Refund escrow | Buyer | Buyer can refund before release in MVP. | State moves to `refunded`; release is blocked. |
+| Refund escrow | Buyer | Buyer can refund before seller marks delivery. | State moves to `refunded`; release is blocked. After delivery, refund becomes a dispute path, not an automatic buyer action. |
 | Receipt page | Both | Receipt displays payment/escrow state and transaction placeholders. | Receipt page is shareable and displays status timeline. |
 | Seller dashboard | Seller | Seller sees all created links and statuses. | Dashboard lists links, amount, type, status, and actions. |
 
@@ -186,9 +186,9 @@ Output:
 
 Rules:
 
-- Only before release.
+- Only before seller marks delivery.
 - Refund marks transaction final in MVP.
-- Production needs deadline/dispute policy before public launch.
+- After delivery, production needs deadline/dispute policy before public launch.
 
 Output:
 

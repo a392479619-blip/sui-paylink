@@ -14,7 +14,7 @@ import type {
 const API_BASE = import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "http://127.0.0.1:8787" : "");
 export const STATIC_DEMO_ENABLED = import.meta.env.VITE_STATIC_DEMO === "true";
 const STATIC_STORE_KEY = "suipaylink.static.paylinks.v1";
-const PACKAGE_ID = "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340";
+const PACKAGE_ID = "0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7";
 const MOCK_USDC_COIN_TYPE = `${PACKAGE_ID}::mock_usdc::MOCK_USDC`;
 
 export async function getConfig(): Promise<AppConfig> {
@@ -244,7 +244,7 @@ function staticConfig(): AppConfig {
     sponsorMode: "mock",
     sponsorEnabled: false,
     packageId: PACKAGE_ID,
-    mockUsdcTreasuryCapId: "0xbd9979321bfae7f3becb1114e92ae6208c316dcfd26852adef50fce1c8c17fae",
+    mockUsdcTreasuryCapId: "0xd4a31feca435942ec4d402781ed9102b97e23823b8f23a5c32722851ea740c76",
     mockUsdcMintEnabled: false,
     mockUsdcMintAmountUnits: "100000000",
     feeReceiverAddress: "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef",
@@ -381,7 +381,7 @@ function mutateStaticPaylink(
       updatedAt: timestamp,
     };
   }
-  if (paylink.status !== "funded" && paylink.status !== "delivered") {
+  if (paylink.status !== "funded") {
     throw new Error(`Cannot refund in status ${paylink.status}`);
   }
   return {

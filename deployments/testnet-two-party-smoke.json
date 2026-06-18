@@ -1,32 +1,32 @@
 {
   "network": "testnet",
-  "packageId": "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340",
+  "packageId": "0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7",
   "buyer": "0x0963c210cf5441582505e7f3b12e06d569351dffc51e84efe941525bf3812dc6",
   "seller": "0xc961cfc83bc2d2e86d1a245bbb832d63eec3775b285a7a2f4d57fffb2ef533b8",
   "feeReceiver": "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef",
-  "escrowObjectId": "0x1295580b1f37791843cc0ed9885a13eb8c1a932a273a693e360564d9411d50d3",
+  "escrowObjectId": "0xc1a5d8d3316d4e2290b212d9b18dbb26ed9066efe0d304121fbd43d8ce80c8ef",
   "digests": {
-    "fundBuyerGas": "Et3tMfswng7WSLn1yp3Yfnd6hSyz26jEhUych5Drwc3t",
-    "fundSellerGas": "37ChRAPXEgrZUf84wH7dbYfsUPCVGzNws6hgBnmrjT2f",
-    "splitPaymentCoin": "5KqMzuBKMT6FSNWFN6Zr9JJAawJKNfrhR7tUpaPVct2g",
-    "createFundedEscrow": "3wyqWqwLN4zpUcBtPf1Yk6F5NBVi4qYT4dss5xbpfa5m",
-    "markDelivered": "4mujH1DvrAxV6hJG6RBLr1L8QyUvjX7fiDrAYt7WvkGx",
-    "release": "A4FeNvjhWMhBqRkJfxg6DyNYZhvgArHCn9g9gcuxWJyt"
+    "fundBuyerGas": "CmfXG6DUshh9b3dwv8wTsxhEWfNN1hvJHLatzaYsFBbp",
+    "fundSellerGas": "J7CwHMXf261wz67Ecifpi1MXcTP5gpBXfLS3Se3bsi9a",
+    "splitPaymentCoin": "7wb2saquqjVvfyh9JFyViypQBN9EWvyDgqnSdgaz7fSi",
+    "createFundedEscrow": "HCk7DXFThpM3UeeoQK7GtCR7wdiXmNZsK4sD61aNtaT8",
+    "markDelivered": "8cvrDpuUcaZY9uGzGN1wPbAVUcKgEScq1CLs8y87eCBp",
+    "release": "8nUvpEeFK3sXZX3hdMEjdzctiGpsAN5CH7NhRZ2Yko8Z"
   },
   "rejectedTransactions": {
     "buyerTriedToMarkDelivered": {
       "status": "failure",
-      "error": "Error executing transaction 'CuPvi1ZEM4p4RZ7wtXxWhCBWszDdBioKrPcYd4we6hyC': 1st command aborted within function '0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340::escrow::mark_delivered' at instruction 12 with code 2 "
+      "error": "Error executing transaction 'Eryify3QnkrtXgw3EwLPwdaLNt4tN7iJFT1QJPGMLC33': 1st command aborted within function '0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7::escrow::mark_delivered' at instruction 12 with code 2 "
     },
     "sellerTriedToRelease": {
       "status": "failure",
-      "error": "Error executing transaction '44jePoTjvTKSQQYH9CxP2F4U5geE8HdSDyr5K6xPjJSA': 1st command aborted within function '0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340::escrow::release' at instruction 14 with code 1 "
+      "error": "Error executing transaction 'GZokDXdxciVBenXbaqrhFXMvv9ecw6n7EtUyY2PvZBo3': 1st command aborted within function '0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7::escrow::release' at instruction 14 with code 1 "
     }
   },
   "releaseEvent": {
-    "amount_to_seller": "9900000",
-    "escrow_id": "0x1295580b1f37791843cc0ed9885a13eb8c1a932a273a693e360564d9411d50d3",
-    "fee_amount": "100000",
+    "amount_to_seller": "19800000",
+    "escrow_id": "0xc1a5d8d3316d4e2290b212d9b18dbb26ed9066efe0d304121fbd43d8ce80c8ef",
+    "fee_amount": "200000",
     "seller": "0xc961cfc83bc2d2e86d1a245bbb832d63eec3775b285a7a2f4d57fffb2ef533b8"
   },
   "finalObject": {
@@ -37,7 +37,7 @@
     "released": true,
     "refunded": false,
     "funds": "0",
-    "prevTx": "A4FeNvjhWMhBqRkJfxg6DyNYZhvgArHCn9g9gcuxWJyt"
+    "prevTx": "8nUvpEeFK3sXZX3hdMEjdzctiGpsAN5CH7NhRZ2Yko8Z"
   },
-  "verifiedAt": "2026-06-11T08:56:11Z"
+  "verifiedAt": "2026-06-18T08:00:34Z"
 }

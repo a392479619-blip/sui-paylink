@@ -158,7 +158,7 @@ export function refundPaylink(id: string): Paylink {
   if (paylink.mode !== "escrow") {
     throw new Error("Only escrow paylinks can be refunded");
   }
-  if (paylink.status !== "funded" && paylink.status !== "delivered") {
+  if (paylink.status !== "funded") {
     throw new Error(`Cannot refund in status ${paylink.status}`);
   }
   const transactionDigest = mockDigest("refund");

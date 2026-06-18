@@ -20,7 +20,7 @@ const network = process.env.SUI_NETWORK ?? "testnet";
 const sponsorSecret = process.env.SPONSOR_PRIVATE_KEY ?? "";
 const packageId =
   process.env.SUI_PACKAGE_ID ??
-  "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340";
+  "0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7";
 const mockUsdcCoinType =
   process.env.MOCK_USDC_COIN_TYPE ?? `${packageId}::mock_usdc::MOCK_USDC`;
 const feeReceiverAddress =

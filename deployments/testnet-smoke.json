@@ -1,19 +1,19 @@
 {
   "network": "testnet",
-  "packageId": "0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340",
+  "packageId": "0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7",
   "actor": "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef",
-  "escrowObjectId": "0x7d57991709a3ab42f083c33421b9b33da4edb8266cdcb3bd447129ffa6f5128c",
+  "escrowObjectId": "0xe739f5ff0cf7df9d89259b90de24afd80bcde18c8567c9faaa18bc904dfb3f32",
   "digests": {
-    "splitPaymentCoin": "3W9EpPYYt5XiH6cXT8wqEyRWLM9y76agwVJygH7UcwN6",
-    "createFundedEscrow": "2Hev56WiNtHQQXRDyF9xUPxcfBt24tLPgYQFKGdvMHir",
-    "markDelivered": "CDvHWVZ98tN5YAAXS3F1qtdpFgzPT3zd93fRNRp1yamq",
-    "release": "5SyCRy8Hif79HYRYrkomc32TPSHxd6DiJAorp3p1avPT"
+    "splitPaymentCoin": "ADfs1RN2w1aZAFzVZHUuroiiswvKdAWvKCtys55XUx4C",
+    "createFundedEscrow": "3QtbwueB7Pbmdipf2aEYEDqfh8x3fPDrCXcn7gEqEzuf",
+    "markDelivered": "GMsRTEf2ns9cxDYUMcm9UR9HQtGi4UwsYHbcxVuCKbi5",
+    "release": "3PyZUQ1WXdPpVHyXTG8C8RfMkb4FS8yAdgqinXbeyYgo"
   },
   "releaseEvent": {
-    "amount_to_seller": "9900000",
-    "escrow_id": "0x7d57991709a3ab42f083c33421b9b33da4edb8266cdcb3bd447129ffa6f5128c",
-    "fee_amount": "100000",
+    "amount_to_seller": "99000000",
+    "escrow_id": "0xe739f5ff0cf7df9d89259b90de24afd80bcde18c8567c9faaa18bc904dfb3f32",
+    "fee_amount": "1000000",
     "seller": "0xb1f8e9eb4c040a743fcfa2e53845b1a1b96cb517f92cf2182da09bb60de1e3ef"
   },
-  "verifiedAt": "2026-06-11T08:54:38Z"
+  "verifiedAt": "2026-06-18T07:59:14Z"
 }

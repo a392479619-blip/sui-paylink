@@ -34,25 +34,25 @@ Local-chain or Devnet success is useful engineering evidence, but it does not sa
 
 ## Current Verified Deployment
 
-- Package ID: `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340`
-- Publish digest: `ATkpRVoK2RWs15qSdD6r8JokLQuAHkDeWBrC8Z18fYh3`
-- SUI escrow object: `0x7d57991709a3ab42f083c33421b9b33da4edb8266cdcb3bd447129ffa6f5128c`
-- SUI release digest: `5SyCRy8Hif79HYRYrkomc32TPSHxd6DiJAorp3p1avPT`
+- Package ID: `0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7`
+- Publish digest: `EzCXP2GqsZg9E9y1tBuje7RiTMQx2a8peExXeEc4SAjH`
+- SUI escrow object: `0xe739f5ff0cf7df9d89259b90de24afd80bcde18c8567c9faaa18bc904dfb3f32`
+- SUI release digest: `3PyZUQ1WXdPpVHyXTG8C8RfMkb4FS8yAdgqinXbeyYgo`
 - Verified state: `delivered: true`, `released: true`, and `funds: "0"`
-- Refund escrow object: `0x5c858335a12b11fe44ccd7955e7fa838c84004b900e2839cbe08be5eaeb5215b`
-- Refund digest: `BFjypQRCWAfTJWMrSBhYJpV2FoWiXS26FGmpThFjJZ3m`
+- Refund escrow object: `0x32b160688c2f1bf241dfd671a87e4070fa4bdb2ca3ae15f2d9516dde2f9f8ead`
+- Refund digest: `Ap6CKTuxKSQqKWXFfc676TZfndNsXkkrdwH5pxwt3MJW`
 - Refund verified state: `refunded: true`, `released: false`, and `funds: "0"`
-- Two-party escrow object: `0x1295580b1f37791843cc0ed9885a13eb8c1a932a273a693e360564d9411d50d3`
-- Two-party release digest: `A4FeNvjhWMhBqRkJfxg6DyNYZhvgArHCn9g9gcuxWJyt`
+- Two-party escrow object: `0xc1a5d8d3316d4e2290b212d9b18dbb26ed9066efe0d304121fbd43d8ce80c8ef`
+- Two-party release digest: `8nUvpEeFK3sXZX3hdMEjdzctiGpsAN5CH7NhRZ2Yko8Z`
 - Two-party verified state: separate buyer, seller, fee receiver, `released: true`, and `funds: "0"`
 - Negative permission checks: buyer cannot mark delivered (`E_NOT_SELLER`), seller cannot release (`E_NOT_BUYER`).
-- MockUSDC coin type: `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340::mock_usdc::MOCK_USDC`
-- MockUSDC escrow object: `0xa044130a456a9ca7f4f73bce8890c9a21753edbb10909e19682f403aec121e04`
-- MockUSDC release digest: `A4XgUMXCG5eAnG2qLWqy21H4T4MPnYnnzXvygdmmhzP3`
-- Sponsored MockUSDC escrow object: `0xfa140db34391e6d7af3968c8cca37725028a7d4c97b3346fc6c4fda2a97ca0dc`
-- Sponsored MockUSDC fund digest: `ADJcJgnyaC5K8q7tUyygehMqYKYPJ9V2VYbTRUGqK7Nm`
-- Sponsored MockUSDC delivery digest: `J4AUZw7aV1npeoU7anpLerDScEKCseELzb1BiwukNZNB`
-- Sponsored MockUSDC release digest: `FHpRgU1UBvaHVQBNQMh9ReUKmr2jHWgaGZWxQHCkqAeQ`
+- MockUSDC coin type: `0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7::mock_usdc::MOCK_USDC`
+- MockUSDC escrow object: `0x510ba488084c0ae1e6c10b1ddb4d2e83065e643ea78fc82825ff1723c95d1085`
+- MockUSDC release digest: `JCVgJ7axUWaaNJ35fUTwvVbeVZhM6BAMTV3i9vsVXDuT`
+- Sponsored MockUSDC escrow object: `0x9a1fefe14c9148a246122c9d280075994a698650e09ca6e664d9c42e4304e066`
+- Sponsored MockUSDC fund digest: `6JPrSsia2NDvzR5SgYBn21KXCFREb7QRsnzfQzs8saad`
+- Sponsored MockUSDC delivery digest: `9JRkLm9zqvCEpN1hfwvZRBhz5vDUT5jScNqMTFLrsAk8`
+- Sponsored MockUSDC release digest: `2AUpapsvVJdkXLtt9jVo2X8dgBPP2pvKv8FdGE6nz8QM`
 - Sponsored buyer SUI balance: initial `0`, final `0`
 - Sponsored seller SUI balance: initial `0`, final `0`
 - Sponsored settlement: seller received `99 mUSDC`, fee receiver received `1 mUSDC`

@@ -55,6 +55,13 @@ try {
   });
   assertEqual(delivered.status, "delivered", "delivered status");
 
+  const postDeliveryRefundFailure = await apiPostExpectErrorMessage(
+    `/api/paylinks/${paylink.id}/refund`,
+    {},
+    400,
+    "Cannot refund in status delivered",
+  );
+
   const released = await apiPost(`/api/paylinks/${paylink.id}/release`, {});
   assertEqual(released.status, "released", "released status");
   assertTruthy(released.releaseTransactionDigest, "release digest");
@@ -87,6 +94,7 @@ try {
     paylinkId: paylink.id,
     finalStatus: finalReceipt.paylink.status,
     chainStatusWithoutSponsoredDigest: chainPending.chain.status,
+    postDeliveryRefundFailure,
     sponsorFailure,
   };
   console.log(JSON.stringify(summary, null, 2));
@@ -190,6 +198,26 @@ async function apiPostExpectError(path, body, expectedStatus, expectedCode) {
   return {
     status: response.status,
     code: json.code,
+    error: json.error,
+  };
+}
+
+async function apiPostExpectErrorMessage(path, body, expectedStatus, expectedMessage) {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const json = await response.json();
+  if (response.status !== expectedStatus || !String(json.error ?? "").includes(expectedMessage)) {
+    throw new Error(
+      `Expected API ${expectedStatus} ${expectedMessage}, got ${response.status}: ${JSON.stringify(json)}`,
+    );
+  }
+  return {
+    status: response.status,
     error: json.error,
   };
 }

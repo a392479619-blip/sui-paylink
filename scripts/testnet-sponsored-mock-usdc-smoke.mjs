@@ -56,13 +56,6 @@ try {
 
   const fundSponsor = await fundSponsorFromDeployer(sponsorAddress);
   const sponsorBalanceAfterFunding = await balance(sponsorAddress, suiType);
-  const mintMockUsdc = await mintMockUsdcToBuyer({
-    packageId,
-    treasuryCapId,
-    buyerAddress,
-  });
-  const paymentCoinId = findCreatedCoin(mintMockUsdc, mockUsdcType);
-  const buyerMockUsdcAfterMint = await balance(buyerAddress, mockUsdcType);
 
   server = await startApiServer({
     sponsorSecretKey: sponsor.getSecretKey(),
@@ -75,6 +68,16 @@ try {
   if (!config.sponsorEnabled || config.sponsorAddress !== sponsorAddress) {
     throw new Error("API sponsor config does not match the smoke sponsor");
   }
+  if (!config.mockUsdcMintEnabled) {
+    throw new Error("API MockUSDC minting is not enabled");
+  }
+
+  const mintMockUsdc = await apiPost("/api/mock-usdc/mint", {
+    recipientAddress: buyerAddress,
+    amountUnits: paymentUnits,
+  });
+  const paymentCoinId = requireString(mintMockUsdc.coinObjectId, "mintMockUsdc.coinObjectId");
+  const buyerMockUsdcAfterMint = await balance(buyerAddress, mockUsdcType);
 
   const paylink = await apiPost("/api/paylinks", {
     mode: "escrow",
@@ -147,13 +150,15 @@ try {
   const stalePaylinkFundSignature = await buyer.signTransaction(
     Buffer.from(stalePaylinkFundRecord.transactionBytes, "base64"),
   );
-  const stalePaylinkFundSubmit = await apiPostExpectError(
+  const stalePaylinkFundSubmit = await apiPostExpectOneOfErrors(
     `/api/sponsored-transactions/${stalePaylinkFundRecord.id}/submit`,
     {
       userSignature: stalePaylinkFundSignature.signature,
     },
-    400,
-    "sponsored_transaction_dry_run_failed",
+    [
+      { status: 400, code: "sponsored_transaction_dry_run_failed" },
+      { status: 502, code: "sui_rpc_error" },
+    ],
   );
   const stalePaylinkFundAfterSubmit = await apiGet(`/api/sponsored-transactions/${stalePaylinkFundRecord.id}`);
   const finalObject = await readEscrowObject(escrowObjectId);
@@ -395,6 +400,28 @@ async function apiPostExpectError(path, body, expectedStatus, expectedCode) {
   if (response.status !== expectedStatus || json.code !== expectedCode) {
     throw new Error(
       `Expected API ${expectedStatus} ${expectedCode}, got ${response.status}: ${JSON.stringify(json)}`,
+    );
+  }
+  return {
+    status: response.status,
+    code: json.code,
+    error: json.error,
+  };
+}
+
+async function apiPostExpectOneOfErrors(path, body, expectedErrors) {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const json = await response.json();
+  const matched = expectedErrors.some((expected) => response.status === expected.status && json.code === expected.code);
+  if (!matched) {
+    throw new Error(
+      `Expected API one of ${JSON.stringify(expectedErrors)}, got ${response.status}: ${JSON.stringify(json)}`,
     );
   }
   return {

@@ -15,7 +15,7 @@
 | Repo | `https://github.com/a392479619-blip/sui-paylink` |
 | Demo video | 2 分钟，按 `docs/13-demo-script-cn.md` 录 |
 | Demo URL | 优先填 Render/API 公开 URL；未完成时可填 Cloudflare 静态 mock demo：`https://sui-paylink.pages.dev/pay/demo-ai-workflow`；仓库公开或支持 private Pages 后也可填 GitHub Pages 静态 mock demo |
-| Contract package | `0x994e7ea20d955da3539c9971584bc4d524066b3df5bcbef0c180bfc2e3c5c340` |
+| Contract package | `0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7` |
 | Token boundary | Testnet `mUSDC` 是项目测试币，不是真实 USDC |
 | Registration copy | 使用 `docs/16-registration-pack-cn.md` 的可复制字段 |
 
@@ -68,7 +68,7 @@ npm run evidence:browser-wallet -- --paylink-id <paylink-id>
 npm run submission:readiness -- --with-sponsor
 ```
 
-该命令会读取 `.data/paylinks.json` 和 `.data/sponsored-transactions.json`，校验 `fund-mock-usdc`、`mark-delivered`、`release/refund` 三段 executed digest，并写入 `deployments/browser-wallet-sponsored-e2e.json`。不要手工伪造这个文件。
+该命令会读取 `.data/paylinks.json` 和 `.data/sponsored-transactions.json`，校验 `fund-mock-usdc`、`mark-delivered`、`release` 三段 executed digest，并写入 `deployments/browser-wallet-sponsored-e2e.json`。不要手工伪造这个文件。退款证据只用于交付前取消路径。
 
 ## 必须附上的证据
 

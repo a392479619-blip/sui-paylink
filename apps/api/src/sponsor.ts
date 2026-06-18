@@ -292,6 +292,9 @@ export async function buildSponsoredTransaction(
     });
     assertAddressEquals(escrow.buyer, sender, "Only the escrow buyer can refund funds");
     assertEscrowOpen(escrow);
+    if (escrow.delivered) {
+      throw new SponsorError(409, "escrow_already_delivered", "Escrow is delivered; release funds or open a dispute instead");
+    }
     transaction.moveCall({
       target: contractTarget("refund_to_buyer"),
       typeArguments: [escrow.coinType],
@@ -689,7 +692,7 @@ function assertPaylinkActionAllowed(input: {
   }
 
   if (input.action === "refund") {
-    if (input.paylink.status !== "funded" && input.paylink.status !== "delivered") {
+    if (input.paylink.status !== "funded") {
       throw new SponsorError(409, "paylink_not_refundable", `Cannot refund paylink in status ${input.paylink.status}`);
     }
     assertOptionalPaylinkAddress(input.paylink.buyerAddress, input.sender, "senderAddress does not match the Paylink buyer");

@@ -58,20 +58,19 @@ try {
 
 async function buildEvidence(paylink, executedRecords) {
   const actionRecords = requiredActionRecords(executedRecords);
-  const settlementAction = actionRecords.release ? "release" : "refund";
   const orderedRecords = [
     actionRecords["fund-mock-usdc"],
     actionRecords["mark-delivered"],
-    actionRecords[settlementAction],
+    actionRecords.release,
   ];
   const checks = [];
 
   addCheck(checks, "Paylink is escrow", paylink.mode === "escrow", paylink.mode);
   addCheck(checks, "Paylink token is mUSDC", paylink.token === "mUSDC", paylink.token);
-  addCheck(checks, "Final Paylink status matches settlement", paylink.status === settlementStatus(settlementAction), paylink.status);
+  addCheck(checks, "Final Paylink status is released", paylink.status === "released", paylink.status);
   addCheck(checks, "Buyer signed fund", sameAddress(actionRecords["fund-mock-usdc"].sender, paylink.buyerAddress), actionRecords["fund-mock-usdc"].sender);
   addCheck(checks, "Seller signed delivery", sameAddress(actionRecords["mark-delivered"].sender, paylink.sellerAddress), actionRecords["mark-delivered"].sender);
-  addCheck(checks, "Buyer signed settlement", sameAddress(actionRecords[settlementAction].sender, paylink.buyerAddress), actionRecords[settlementAction].sender);
+  addCheck(checks, "Buyer signed release", sameAddress(actionRecords.release.sender, paylink.buyerAddress), actionRecords.release.sender);
 
   const sponsors = unique(orderedRecords.map((record) => normalizeAddress(record.sponsor)));
   const packageIds = unique(orderedRecords.map((record) => normalizeAddress(record.packageId)));
@@ -99,7 +98,7 @@ async function buildEvidence(paylink, executedRecords) {
   if (finalEscrow) {
     addCheck(checks, "Escrow buyer matches Paylink", sameAddress(finalEscrow.buyer, paylink.buyerAddress), finalEscrow.buyer);
     addCheck(checks, "Escrow seller matches Paylink", sameAddress(finalEscrow.seller, paylink.sellerAddress), finalEscrow.seller);
-    addCheck(checks, "Escrow settlement state matches Paylink", finalEscrow[settlementStatus(settlementAction)] === true, JSON.stringify(finalEscrow));
+    addCheck(checks, "Escrow release state matches Paylink", finalEscrow.released === true && finalEscrow.refunded === false, JSON.stringify(finalEscrow));
   }
 
   const gasCosts = orderedRecords.map((record, index) => ({
@@ -135,7 +134,7 @@ async function buildEvidence(paylink, executedRecords) {
     digests: {
       fundMockUsdc: requireDigest(actionRecords["fund-mock-usdc"]),
       markDelivered: requireDigest(actionRecords["mark-delivered"]),
-      [settlementAction]: requireDigest(actionRecords[settlementAction]),
+      release: requireDigest(actionRecords.release),
     },
     records: Object.fromEntries(
       orderedRecords.map((record) => [
@@ -191,17 +190,14 @@ function selectPaylinkWithRecords(paylinks, records, explicitPaylinkId) {
   }
 
   throw new Error(
-    `No Paylink with executed fund-mock-usdc, mark-delivered, and release/refund sponsored records found. Pass --paylink-id after running the browser wallet flow.`,
+    `No Paylink with executed fund-mock-usdc, mark-delivered, and release sponsored records found. Pass --paylink-id after running the browser wallet flow.`,
   );
 }
 
 function requiredActionRecords(records) {
   const executed = records.filter((record) => record.status === "executed" && record.digest);
   const byAction = Object.fromEntries(executed.map((record) => [record.action, record]));
-  const missing = ["fund-mock-usdc", "mark-delivered"].filter((action) => !byAction[action]);
-  if (!byAction.release && !byAction.refund) {
-    missing.push("release/refund");
-  }
+  const missing = ["fund-mock-usdc", "mark-delivered", "release"].filter((action) => !byAction[action]);
   if (missing.length > 0) {
     throw new Error(`Missing executed sponsored action(s): ${missing.join(", ")}`);
   }
@@ -306,10 +302,6 @@ function addCheck(checks, name, ok, detail) {
   checks.push({ name, ok, detail });
 }
 
-function settlementStatus(action) {
-  return action === "release" ? "released" : "refunded";
-}
-
 function extractCreatedEscrowObjectId(transaction, packageId) {
   const change = transaction.objectChanges?.find(
     (item) =>
@@ -369,7 +361,7 @@ function nextActionFor(message) {
     return "Run the hosted/local browser wallet sponsored flow first, then rerun this command with --paylink-id <id>.";
   }
   if (message.includes("Missing executed sponsored action")) {
-    return "Complete fund, mark delivered, and release/refund in the public Paylink page before exporting evidence.";
+    return "Complete fund, mark delivered, and release in the public Paylink page before exporting evidence.";
   }
   return "Inspect the failed check, rerun the browser wallet flow if needed, then export again.";
 }
