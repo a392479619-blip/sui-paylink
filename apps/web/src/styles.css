@@ -825,6 +825,76 @@ button:disabled {
   grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
 }
 
+.role-main-column {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.role-order-panel {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #d7e2ea;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.role-order-panel.buyer {
+  border-color: #9fcbd6;
+  background: #f3fafc;
+}
+
+.role-order-panel.seller {
+  border-color: #d4dcc4;
+  background: #fbfcf7;
+}
+
+.role-order-copy h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.role-order-copy p:last-child {
+  margin: 8px 0 0;
+  color: #5d6875;
+  line-height: 1.5;
+}
+
+.role-order-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.role-order-facts > div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #dce5ed;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.role-order-facts dt {
+  margin-bottom: 4px;
+  color: #687789;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.role-order-facts dd {
+  overflow: hidden;
+  margin: 0;
+  color: #162130;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .public-summary {
   min-width: 0;
 }
@@ -1467,6 +1537,7 @@ button:disabled {
   .static-demo-banner,
   .role-switch,
   .public-paylink,
+  .role-order-facts,
   .overview-actions,
   .overview-steps,
   .overview-facts,

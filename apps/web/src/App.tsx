@@ -649,7 +649,7 @@ function PublicPaylinkPage({ paylinkId, role }: { paylinkId: string; role: Payli
 
       {paylink && (
         <>
-        <RoleSwitch paylink={paylink} role={role} />
+        {role === "overview" && <RoleSwitch paylink={paylink} role={role} />}
         <section className={`public-paylink ${role}`}>
           {role === "overview" ? (
             <>
@@ -658,15 +658,18 @@ function PublicPaylinkPage({ paylinkId, role }: { paylinkId: string; role: Payli
             </>
           ) : (
             <>
-              <SponsoredPaylinkActions
-                config={config}
-                sponsorReadiness={sponsorReadiness}
-                paylink={paylink}
-                role={role}
-                onError={setError}
-                onRefresh={refresh}
-              />
-              <PaylinkSummary paylink={paylink} compact />
+              <div className="role-main-column">
+                <RoleOrderPanel paylink={paylink} role={role} />
+                <SponsoredPaylinkActions
+                  config={config}
+                  sponsorReadiness={sponsorReadiness}
+                  paylink={paylink}
+                  role={role}
+                  onError={setError}
+                  onRefresh={refresh}
+                />
+              </div>
+              <PaylinkSummary paylink={paylink} compact role={role} />
             </>
           )}
         </section>
@@ -775,16 +778,63 @@ function RoleSwitch({ paylink, role }: { paylink: Paylink; role: PaylinkPageRole
   );
 }
 
-function PaylinkSummary({ paylink, compact = false }: { paylink: Paylink; compact?: boolean }) {
+function RoleOrderPanel({ paylink, role }: { paylink: Paylink; role: Exclude<PaylinkPageRole, "overview"> }) {
+  const instruction = actionInstructionForRole(role, paylink);
+  const currentAction = currentWalletAction(paylink.status);
+  const waitingOn = currentAction ? signerRoleForAction(currentAction) : undefined;
+  const isCurrentRoleTurn = waitingOn === role;
+  const roleAddress = role === "buyer" ? paylink.buyerAddress : paylink.sellerAddress;
+  const counterparty = role === "buyer" ? paylink.sellerName : (paylink.buyerName ?? "Buyer / initiator");
+  const counterpartyAddress = role === "buyer" ? paylink.sellerAddress : paylink.buyerAddress;
+
+  return (
+    <section className={`role-order-panel ${role}`}>
+      <div className="role-order-copy">
+        <p className="eyebrow">{role === "buyer" ? "Buyer order detail" : "Seller order detail"}</p>
+        <h2>{instruction.title}</h2>
+        <p>{instruction.detail}</p>
+      </div>
+      <dl className="role-order-facts">
+        <div>
+          <dt>Status</dt>
+          <dd>{paylink.status}</dd>
+        </div>
+        <div>
+          <dt>{role === "buyer" ? "Buyer wallet" : "Seller wallet"}</dt>
+          <dd>{roleAddress ? shortId(roleAddress) : "not recorded"}</dd>
+        </div>
+        <div>
+          <dt>{isCurrentRoleTurn ? "Your next step" : "Waiting on"}</dt>
+          <dd>{isCurrentRoleTurn ? actionLabel(currentAction) : waitingOn ?? "complete"}</dd>
+        </div>
+        <div>
+          <dt>{role === "buyer" ? "Seller" : "Buyer"}</dt>
+          <dd>{counterpartyAddress ? `${counterparty} / ${shortId(counterpartyAddress)}` : counterparty}</dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
+function PaylinkSummary({
+  paylink,
+  compact = false,
+  role = "overview",
+}: {
+  paylink: Paylink;
+  compact?: boolean;
+  role?: PaylinkPageRole;
+}) {
+  const heading = role === "buyer" ? "Buyer order context" : role === "seller" ? "Seller order context" : "Escrow request";
   return (
     <div className={`public-summary ${compact ? "compact-summary" : ""}`}>
       <div>
-        <p className="eyebrow">Escrow request</p>
+        <p className="eyebrow">{heading}</p>
         <h2>{paylink.amount} {paylink.token}</h2>
       </div>
       <StatusPill status={paylink.status} />
       <p>{paylink.memo}</p>
-      <PaylinkFacts paylink={paylink} compact={compact} />
+      <PaylinkFacts paylink={paylink} compact={compact} role={role} />
     </div>
   );
 }
@@ -1059,6 +1109,7 @@ function SponsoredPaylinkActions({
     { label: "Release", action: "release" },
     { label: "Pre-delivery refund", action: "refund" },
   ];
+  const visibleActionSigners = actionSigners.filter((item) => signerRoleForAction(item.action) === role);
 
   return (
     <div className="sponsored-actions">
@@ -1085,11 +1136,11 @@ function SponsoredPaylinkActions({
           <dd>{account ? shortId(account.address) : "not connected"}</dd>
         </div>
         <div>
-          <dt>Required signers</dt>
+          <dt>Your signing actions</dt>
           <dd className="signer-list">
-            {actionSigners.map((item) => (
+            {visibleActionSigners.map((item) => (
               <span key={item.action}>
-                {item.label}: {signerRoleForAction(item.action)} {signerExpectationLabel(item.action, paylink)}
+                {item.label}: {signerExpectationLabel(item.action, paylink)}
               </span>
             ))}
           </dd>
@@ -1352,33 +1403,49 @@ function SponsoredHistory({
   );
 }
 
-function PaylinkFacts({ paylink, compact = false }: { paylink: Paylink; compact?: boolean }) {
+function PaylinkFacts({
+  paylink,
+  compact = false,
+  role = "overview",
+}: {
+  paylink: Paylink;
+  compact?: boolean;
+  role?: PaylinkPageRole;
+}) {
+  const facts =
+    role === "buyer"
+      ? [
+          { label: "Seller", value: paylink.sellerName },
+          { label: "Seller address", value: paylink.sellerAddress || "required before buyer funding" },
+          { label: "Buyer wallet", value: paylink.buyerAddress || "recorded from funding wallet" },
+          { label: "Fee", value: `${paylink.feeBps / 100}%` },
+          { label: "Created", value: formatDate(paylink.createdAt) },
+        ]
+      : role === "seller"
+      ? [
+          { label: "Buyer", value: paylink.buyerName ?? "not specified" },
+          { label: "Buyer address", value: paylink.buyerAddress || "recorded from funding wallet" },
+          { label: "Seller wallet", value: paylink.sellerAddress || "required before buyer funding" },
+          { label: "Fee", value: `${paylink.feeBps / 100}%` },
+          { label: "Created", value: formatDate(paylink.createdAt) },
+        ]
+      : [
+          { label: "Seller", value: paylink.sellerName },
+          { label: "Seller address", value: paylink.sellerAddress || "required before buyer funding" },
+          { label: "Buyer", value: paylink.buyerName ?? "not specified" },
+          { label: "Buyer address", value: paylink.buyerAddress || "recorded from funding wallet" },
+          { label: "Fee", value: `${paylink.feeBps / 100}%` },
+          { label: "Created", value: formatDate(paylink.createdAt) },
+        ];
+
   return (
     <dl className={`facts ${compact ? "summary-facts" : ""}`}>
-      <div>
-        <dt>Seller</dt>
-        <dd>{paylink.sellerName}</dd>
-      </div>
-      <div>
-        <dt>Seller address</dt>
-        <dd>{paylink.sellerAddress || "required before buyer funding"}</dd>
-      </div>
-      <div>
-        <dt>Buyer</dt>
-        <dd>{paylink.buyerName ?? "not specified"}</dd>
-      </div>
-      <div>
-        <dt>Buyer address</dt>
-        <dd>{paylink.buyerAddress || "recorded from funding wallet"}</dd>
-      </div>
-      <div>
-        <dt>Fee</dt>
-        <dd>{paylink.feeBps / 100}%</dd>
-      </div>
-      <div>
-        <dt>Created</dt>
-        <dd>{formatDate(paylink.createdAt)}</dd>
-      </div>
+      {facts.map((fact) => (
+        <div key={fact.label}>
+          <dt>{fact.label}</dt>
+          <dd>{fact.value}</dd>
+        </div>
+      ))}
     </dl>
   );
 }
@@ -1764,6 +1831,14 @@ function signerExpectationLabel(action: SponsoredTransactionAction, paylink: Pay
   return `open ${signerRoleForAction(action)} wallet`;
 }
 
+function actionLabel(action: SponsoredTransactionAction | undefined): string {
+  if (action === "fund-mock-usdc") return "fund escrow";
+  if (action === "mark-delivered") return "mark delivery";
+  if (action === "release") return "release funds";
+  if (action === "refund") return "refund before delivery";
+  return "complete";
+}
+
 function sameSuiAddress(left: string, right: string): boolean {
   return left.toLowerCase() === right.toLowerCase();
 }
@@ -1851,7 +1926,7 @@ function actionInstructionForRole(
     if (status === "delivered") {
       return {
         title: "Seller delivery is complete.",
-        detail: "Switch to Buyer page so the buyer can release funds.",
+        detail: "Seller waits while the buyer reviews delivery and releases funds from the buyer page.",
       };
     }
     return {
