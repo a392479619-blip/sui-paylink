@@ -706,8 +706,15 @@ function PublicPaylinkPage({
         <DemoSeedPanel paylink={paylink} running={runningMockDemo} onRun={handleRunMockDemo} />
       )}
 
-      {receipt && <ReceiptPanel receipt={receipt} onSyncChain={handleSyncChain} syncingChain={syncingChain} />}
-      {sponsoredRecords.length > 0 && (
+      {receipt && (
+        <ReceiptPanel
+          receipt={receipt}
+          onSyncChain={handleSyncChain}
+          syncingChain={syncingChain}
+          compact={role !== "overview"}
+        />
+      )}
+      {role === "overview" && sponsoredRecords.length > 0 && (
         <SponsoredHistory records={sponsoredRecords} network={config?.network ?? "testnet"} />
       )}
     </main>
@@ -876,7 +883,14 @@ function PaylinkSummary({
       </div>
       <StatusPill status={paylink.status} />
       <p>{paylink.memo}</p>
-      <PaylinkFacts paylink={paylink} compact={compact} role={role} />
+      {compact ? (
+        <details className="order-details-collapse">
+          <summary>Order details</summary>
+          <PaylinkFacts paylink={paylink} compact role={role} />
+        </details>
+      ) : (
+        <PaylinkFacts paylink={paylink} compact={compact} role={role} />
+      )}
     </div>
   );
 }
@@ -1091,10 +1105,13 @@ function SponsoredPaylinkActions({
     }
   }
 
+  const sponsorChecking = Boolean(config?.sponsorEnabled && sponsorReadiness === null);
   const sponsorReady = Boolean(config?.sponsorEnabled && sponsorReadiness?.ready);
   const sponsorTitle = sponsorReady
     ? "Sponsor ready"
-    : config?.sponsorEnabled
+    : sponsorChecking
+      ? "Checking sponsor"
+      : config?.sponsorEnabled
       ? "Sponsor not funded"
       : "Sponsor not configured";
   const connectedAddress = account?.address;
@@ -1146,7 +1163,6 @@ function SponsoredPaylinkActions({
   );
   const showBuyerControls = role !== "seller";
   const showSellerControls = role !== "buyer";
-  const roleInstruction = actionInstructionForRole(role, paylink);
   const actionSigners: Array<{ label: string; action: SponsoredTransactionAction }> = [
     { label: "Fund", action: "fund-mock-usdc" },
     { label: "Deliver", action: "mark-delivered" },
@@ -1154,117 +1170,104 @@ function SponsoredPaylinkActions({
     { label: "Pre-delivery refund", action: "refund" },
   ];
   const visibleActionSigners = actionSigners.filter((item) => signerRoleForAction(item.action) === role);
+  const currentAction = currentWalletAction(paylink.status);
+  const actionTitle = walletChecklistTitle(role, currentAction);
+  const gasSummary = sponsorReady
+    ? "App sponsor pays SUI gas for this wallet-signed action."
+    : sponsorChecking
+      ? "Checking whether the app sponsor can pay SUI gas."
+    : config?.sponsorEnabled
+      ? "Sponsor setup is present but not ready. Check technical verification if signing is blocked."
+      : "Sponsor gas is not configured for this API session.";
+  const showFundAction = showBuyerControls && paylink.status === "created";
+  const showReleaseAction = showBuyerControls && paylink.status === "delivered";
+  const showRefundAction = showBuyerControls && paylink.status === "funded";
+  const showDeliverAction = showSellerControls && paylink.status === "funded";
+  const showActions = showFundAction || showReleaseAction || showRefundAction || showDeliverAction;
 
   return (
     <div className="sponsored-actions">
       <div className="sponsored-actions-heading">
         <div>
-          <p className="eyebrow">Sponsored escrow</p>
-          <h3>{sponsorTitle}</h3>
+          <p className="eyebrow">Wallet action</p>
+          <h3>{actionTitle}</h3>
+          <p className="muted">{gasSummary}</p>
         </div>
         <ConnectButton connectText="Connect wallet" />
       </div>
 
-      <div className={`role-focus-panel ${role}`}>
-        <span>{roleLabel(role)}</span>
-        <strong>{roleInstruction.title}</strong>
-        <p>{roleInstruction.detail}</p>
+      <div className={`gas-note ${sponsorReady ? "ready" : sponsorChecking ? "checking" : "warn"}`}>
+        <strong>{sponsorTitle}</strong>
+        <span>{account ? `Connected wallet ${shortId(account.address)}` : "Connect wallet to continue"}</span>
       </div>
-
-      <WalletE2EChecklist paylink={paylink} accountAddress={account?.address} role={role} />
-      <SponsorReadinessCard readiness={sponsorReadiness} />
-
-      <dl className="facts compact">
-        <div>
-          <dt>Wallet</dt>
-          <dd>{account ? shortId(account.address) : "not connected"}</dd>
-        </div>
-        <div>
-          <dt>Your signing actions</dt>
-          <dd className="signer-list">
-            {visibleActionSigners.map((item) => (
-              <span key={item.action}>
-                {item.label}: {signerExpectationLabel(item.action, paylink)}
-              </span>
-            ))}
-          </dd>
-        </div>
-        <div>
-          <dt>Expected units</dt>
-          <dd>{expectedAmountUnits || "unknown"}</dd>
-        </div>
-        <div>
-          <dt>Escrow object</dt>
-          <dd>{paylink.escrowObjectId ? shortId(paylink.escrowObjectId) : "pending"}</dd>
-        </div>
-      </dl>
 
       {showBuyerControls && paylink.status === "created" && (
         <div className="coin-picker">
           <div>
-            <p className="eyebrow">Buyer test coin</p>
+            <p className="eyebrow">Test payment token</p>
             <p className="muted">
-              Buyer needs one exact {paylink.amount} {paylink.token} coin object before funding escrow.
+              Get {paylink.amount} test {paylink.token}, then fund escrow. The app will auto-select the new test coin
+              when minting succeeds.
             </p>
-            {config?.mockUsdcMintEnabled ? (
-              <p className="muted">
-                Judge Test Mode can mint test mUSDC to the connected Buyer and auto-select the new coin object.
-              </p>
-            ) : (
-              <p className="muted">
-                Web mint is not configured. Use the CLI fallback command below, then paste or find the coin object.
-              </p>
-            )}
-            <code className="mint-command">{mintMockUsdcCommand(config, paylink)}</code>
           </div>
-          <label>
-            Payment coin object
-            <input value={paymentCoinId} onChange={(event) => setPaymentCoinId(event.target.value)} />
-          </label>
           <button onClick={mintTestCoin} disabled={!canMintTestCoin || pending}>
             {pendingAction === "mint-test-coin" ? "Minting..." : `Mint ${paylink.amount} test ${paylink.token}`}
           </button>
           <button onClick={findExactCoin} disabled={!canFindExactCoin || pending}>
             {pendingAction === "find-coin" ? "Finding..." : "Find exact coin"}
           </button>
+          {paymentCoinId && <p className="muted">Selected test coin {shortId(paymentCoinId)}</p>}
           {coinLookup && <p className="muted">{coinLookup}</p>}
+          <details className="manual-coin-details" open={!config?.mockUsdcMintEnabled}>
+            <summary>Manual coin object</summary>
+            <label>
+              Payment coin object
+              <input value={paymentCoinId} onChange={(event) => setPaymentCoinId(event.target.value)} />
+            </label>
+            <p className="muted">
+              Use this only when web mint is unavailable or you need to paste a coin object manually.
+            </p>
+            <code className="mint-command">{mintMockUsdcCommand(config, paylink)}</code>
+          </details>
         </div>
       )}
 
-      <div className="actions">
-        {showBuyerControls && (
-          <>
+      {showActions && (
+        <div className="actions">
+          {showFundAction && (
             <button
               onClick={() => executeSponsoredAction("fund-mock-usdc")}
               disabled={!canFund || pending}
             >
               {pendingAction === "fund-mock-usdc" ? "Funding..." : "Buyer signs fund escrow"}
             </button>
+          )}
+          {showReleaseAction && (
             <button
               onClick={() => executeSponsoredAction("release")}
               disabled={!canRelease || pending}
             >
               {pendingAction === "release" ? "Releasing..." : "Buyer signs release"}
             </button>
-            {paylink.status === "funded" && (
-              <button
-                onClick={() => executeSponsoredAction("refund")}
-                disabled={!canRefund || pending}
-              >
-                {pendingAction === "refund" ? "Refunding..." : "Refund before delivery"}
-              </button>
-            )}
-          </>
-        )}
-        {showSellerControls && (
-          <button
-            onClick={() => executeSponsoredAction("mark-delivered")}
-            disabled={!canDeliver || pending}
-          >
-            {pendingAction === "mark-delivered" ? "Marking..." : "Seller signs delivery"}
-          </button>
-        )}
-      </div>
+          )}
+          {showRefundAction && (
+            <button
+              onClick={() => executeSponsoredAction("refund")}
+              disabled={!canRefund || pending}
+            >
+              {pendingAction === "refund" ? "Refunding..." : "Refund before delivery"}
+            </button>
+          )}
+          {showDeliverAction && (
+            <button
+              onClick={() => executeSponsoredAction("mark-delivered")}
+              disabled={!canDeliver || pending}
+            >
+              {pendingAction === "mark-delivered" ? "Marking..." : "Seller signs delivery"}
+            </button>
+          )}
+        </div>
+      )}
 
       {showBuyerControls && paylink.status === "delivered" && (
         <section className="role-claim-card">
@@ -1290,6 +1293,40 @@ function SponsoredPaylinkActions({
           )}
         </div>
       )}
+
+      <details className="technical-proof">
+        <summary>Technical verification</summary>
+        <WalletE2EChecklist paylink={paylink} accountAddress={account?.address} role={role} />
+        <SponsorReadinessCard readiness={sponsorReadiness} />
+        <dl className="facts compact">
+          <div>
+            <dt>Wallet</dt>
+            <dd>{account ? shortId(account.address) : "not connected"}</dd>
+          </div>
+          <div>
+            <dt>Your signing actions</dt>
+            <dd className="signer-list">
+              {visibleActionSigners.map((item) => (
+                <span key={item.action}>
+                  {item.label}: {signerExpectationLabel(item.action, paylink)}
+                </span>
+              ))}
+            </dd>
+          </div>
+          <div>
+            <dt>Expected units</dt>
+            <dd>{expectedAmountUnits || "unknown"}</dd>
+          </div>
+          <div>
+            <dt>Payment coin</dt>
+            <dd>{paymentCoinId ? shortId(paymentCoinId) : "not selected"}</dd>
+          </div>
+          <div>
+            <dt>Escrow object</dt>
+            <dd>{paylink.escrowObjectId ? shortId(paylink.escrowObjectId) : "pending"}</dd>
+          </div>
+        </dl>
+      </details>
     </div>
   );
 }
@@ -1528,32 +1565,17 @@ function ReceiptPanel({
   receipt,
   onSyncChain,
   syncingChain,
+  compact = false,
 }: {
   receipt: ReceiptSummary;
   onSyncChain?: () => void;
   syncingChain?: boolean;
+  compact?: boolean;
 }) {
   const chain = receipt.chain;
-
-  return (
-    <section className="panel receipt">
-      <div className="receipt-heading">
-        <h2>Receipt</h2>
-        {onSyncChain && (
-          <button onClick={onSyncChain} disabled={syncingChain}>
-            {syncingChain ? "Syncing..." : "Sync chain"}
-          </button>
-        )}
-      </div>
-      <div className="receipt-grid">
-        <div>
-          <p className="muted">Seller receives</p>
-          <strong>{receipt.sellerAmount} {receipt.paylink.token}</strong>
-        </div>
-        <div>
-          <p className="muted">Platform fee</p>
-          <strong>{receipt.platformFee} {receipt.paylink.token}</strong>
-        </div>
+  const technicalReceipt = (
+    <>
+      <div className="receipt-grid technical-receipt-grid">
         <div>
           <p className="muted">Digest</p>
           <strong>{receipt.paylink.transactionDigest ?? "pending"}</strong>
@@ -1642,6 +1664,50 @@ function ReceiptPanel({
             </div>
           )}
         </div>
+      )}
+    </>
+  );
+
+  return (
+    <section className="panel receipt">
+      <div className="receipt-heading">
+        <h2>Receipt</h2>
+        {onSyncChain && !compact && (
+          <button onClick={onSyncChain} disabled={syncingChain}>
+            {syncingChain ? "Syncing..." : "Sync chain"}
+          </button>
+        )}
+      </div>
+      <div className="receipt-grid">
+        <div>
+          <p className="muted">Seller receives</p>
+          <strong>{receipt.sellerAmount} {receipt.paylink.token}</strong>
+        </div>
+        <div>
+          <p className="muted">Platform fee</p>
+          <strong>{receipt.platformFee} {receipt.paylink.token}</strong>
+        </div>
+        <div>
+          <p className="muted">Status</p>
+          <strong>{receipt.paylink.status}</strong>
+        </div>
+        <div>
+          <p className="muted">Created</p>
+          <strong>{formatDate(receipt.paylink.createdAt)}</strong>
+        </div>
+      </div>
+      {compact ? (
+        <details className="technical-proof receipt-proof">
+          <summary>Technical proof</summary>
+          {onSyncChain && (
+            <button onClick={onSyncChain} disabled={syncingChain}>
+              {syncingChain ? "Syncing..." : "Sync chain"}
+            </button>
+          )}
+          {technicalReceipt}
+        </details>
+      ) : (
+        technicalReceipt
       )}
     </section>
   );
@@ -1891,12 +1957,6 @@ function roleEyebrow(role: PaylinkPageRole): string {
   if (role === "buyer") return "Buyer payment page";
   if (role === "seller") return "Seller delivery page";
   return "Escrow overview";
-}
-
-function roleLabel(role: PaylinkPageRole): string {
-  if (role === "buyer") return "Buyer flow";
-  if (role === "seller") return "Seller flow";
-  return "Full flow";
 }
 
 function capitalize(value: string): string {

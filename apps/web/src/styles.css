@@ -959,6 +959,33 @@ button:disabled {
   padding: 10px;
 }
 
+.order-details-collapse,
+.technical-proof,
+.manual-coin-details {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #dce5ed;
+  border-radius: 8px;
+  background: #fbfcff;
+}
+
+.order-details-collapse summary,
+.technical-proof summary,
+.manual-coin-details summary {
+  cursor: pointer;
+  color: #176b87;
+  font-weight: 800;
+}
+
+.order-details-collapse[open] summary,
+.technical-proof[open] summary,
+.manual-coin-details[open] summary {
+  margin-bottom: 10px;
+}
+
 .signer-list {
   display: grid;
   gap: 4px;
@@ -1015,6 +1042,50 @@ button:disabled {
 .sponsored-actions-heading h3 {
   margin: 0;
   font-size: 20px;
+}
+
+.sponsored-actions-heading .muted {
+  margin: 4px 0 0;
+  line-height: 1.45;
+}
+
+.gas-note {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #d7e2ea;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.gas-note.ready {
+  border-color: #b9d8c5;
+  background: #f2fbf5;
+}
+
+.gas-note.warn {
+  border-color: #ead8a8;
+  background: #fffaf0;
+}
+
+.gas-note.checking {
+  border-color: #d7e2ea;
+  background: #f8fbfd;
+}
+
+.gas-note strong,
+.gas-note span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gas-note span {
+  color: #5d6875;
+  font-size: 13px;
 }
 
 .overview-flow-panel {
@@ -1296,6 +1367,10 @@ button:disabled {
 .coin-picker {
   display: grid;
   gap: 8px;
+  padding: 14px;
+  border: 1px solid #d7e2ea;
+  border-radius: 8px;
+  background: #ffffff;
 }
 
 .mint-command {
@@ -1312,6 +1387,11 @@ button:disabled {
 
 .coin-picker label {
   margin-bottom: 0;
+}
+
+.manual-coin-details {
+  margin-top: 4px;
+  background: #f8fbfd;
 }
 
 .sponsored-latest {
@@ -1393,6 +1473,11 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+}
+
+.technical-receipt-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0;
 }
 
 .receipt-grid > div {
@@ -1568,7 +1653,8 @@ button:disabled {
   .orders-heading,
   .order-card-topline,
   .hero-actions,
-  .notice {
+  .notice,
+  .gas-note {
     align-items: stretch;
     flex-direction: column;
   }
