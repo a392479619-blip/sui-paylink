@@ -71,6 +71,17 @@ textarea {
   color: #526070;
 }
 
+.detail-hero-actions {
+  display: grid;
+  gap: 12px;
+  min-width: 210px;
+}
+
+.detail-hero-actions .button-link,
+.detail-hero-actions .network-pill {
+  width: 100%;
+}
+
 .static-demo-banner {
   display: grid;
   grid-template-columns: 230px minmax(0, 1fr);
@@ -1673,7 +1684,8 @@ button:disabled {
 
   .chain-heading,
   .sponsor-heading,
-  .submission-heading {
+  .submission-heading,
+  .detail-hero-actions {
     align-items: stretch;
     flex-direction: column;
   }

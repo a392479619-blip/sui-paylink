@@ -657,9 +657,14 @@ function PublicPaylinkPage({
           <h1>SuiPayLink</h1>
           <p className="hero-copy">{paylink?.memo ?? "Loading paylink..."}</p>
         </div>
-        <div className="network-pill">
-          <span>{config?.network ?? "testnet"}</span>
-          <strong>{paylink?.status ?? "loading"}</strong>
+        <div className="detail-hero-actions">
+          <button className="button-link" onClick={() => onNavigate("")}>
+            Back to platform
+          </button>
+          <div className="network-pill">
+            <span>{config?.network ?? "testnet"}</span>
+            <strong>{paylink?.status ?? "loading"}</strong>
+          </div>
         </div>
       </section>
 
