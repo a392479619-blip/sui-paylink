@@ -1,4 +1,4 @@
-import { ConnectButton, useCurrentAccount, useSignTransaction, useSuiClient } from "@mysten/dapp-kit";
+import { ConnectButton, useCurrentAccount, useCurrentWallet, useSignTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { useEffect, useMemo, useState } from "react";
 import type {
   AppConfig,
@@ -985,6 +985,7 @@ function SponsoredPaylinkActions({
   onRefresh: () => Promise<void>;
 }) {
   const account = useCurrentAccount();
+  const { currentWallet } = useCurrentWallet();
   const client = useSuiClient();
   const { mutateAsync: signTransaction } = useSignTransaction();
   const token = config?.supportedTokens.find((item) => item.symbol === paylink.token) ?? config?.supportedTokens[0];
@@ -1048,6 +1049,11 @@ function SponsoredPaylinkActions({
   async function executeSponsoredAction(action: SponsoredTransactionAction) {
     if (!account) {
       onError("Connect a Sui wallet first");
+      return;
+    }
+    const unsupportedWallet = unsupportedSponsoredWalletReason(currentWallet?.name);
+    if (unsupportedWallet) {
+      onError(unsupportedWallet);
       return;
     }
     if (!config?.sponsorEnabled) {
@@ -1123,6 +1129,8 @@ function SponsoredPaylinkActions({
       ? "Sponsor not funded"
       : "Sponsor not configured";
   const connectedAddress = account?.address;
+  const unsupportedWallet = unsupportedSponsoredWalletReason(currentWallet?.name);
+  const walletReadyForSponsoredSigning = Boolean(account && !unsupportedWallet);
   const buyerConnected = Boolean(
     connectedAddress &&
       (!paylink.buyerAddress || sameSuiAddress(connectedAddress, paylink.buyerAddress)) &&
@@ -1142,6 +1150,7 @@ function SponsoredPaylinkActions({
   const canFindExactCoin = Boolean(buyerConnected && token && pendingAction !== "find-coin");
   const canFund = Boolean(
     sponsorReady &&
+      walletReadyForSponsoredSigning &&
       buyerConnected &&
       paylink.sellerAddress &&
       paymentCoinId.trim() &&
@@ -1150,6 +1159,7 @@ function SponsoredPaylinkActions({
   );
   const canDeliver = Boolean(
     sponsorReady &&
+      walletReadyForSponsoredSigning &&
       sellerConnected &&
       paylink.escrowObjectId &&
       paylink.status === "funded" &&
@@ -1157,6 +1167,7 @@ function SponsoredPaylinkActions({
   );
   const canRelease = Boolean(
     sponsorReady &&
+      walletReadyForSponsoredSigning &&
       buyerConnected &&
       paylink.escrowObjectId &&
       paylink.status === "delivered" &&
@@ -1164,6 +1175,7 @@ function SponsoredPaylinkActions({
   );
   const canRefund = Boolean(
     sponsorReady &&
+      walletReadyForSponsoredSigning &&
       buyerConnected &&
       paylink.escrowObjectId &&
       paylink.status === "funded" &&
@@ -1206,8 +1218,19 @@ function SponsoredPaylinkActions({
 
       <div className={`gas-note ${sponsorReady ? "ready" : sponsorChecking ? "checking" : "warn"}`}>
         <strong>{sponsorTitle}</strong>
-        <span>{account ? `Connected wallet ${shortId(account.address)}` : "Connect wallet to continue"}</span>
+        <span>
+          {account
+            ? `Connected wallet ${shortId(account.address)}${currentWallet?.name ? ` via ${currentWallet.name}` : ""}`
+            : "Connect Slush or Sui Wallet to continue"}
+        </span>
       </div>
+
+      {unsupportedWallet && (
+        <div className="gas-note warn">
+          <strong>Unsupported wallet for this demo</strong>
+          <span>{unsupportedWallet}</span>
+        </div>
+      )}
 
       {showBuyerControls && paylink.status === "created" && (
         <div className="coin-picker">
@@ -2084,6 +2107,13 @@ function paylinkHref(id: string, role: PaylinkPageRole): string {
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function unsupportedSponsoredWalletReason(walletName: string | undefined): string {
+  if (!walletName) return "";
+  const normalized = walletName.toLowerCase();
+  if (normalized.includes("slush") || normalized.includes("sui wallet")) return "";
+  return `${walletName} is connected, but this sponsored transaction demo only supports Slush or Sui Wallet. Disconnect this wallet, then connect Slush or Sui Wallet.`;
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {

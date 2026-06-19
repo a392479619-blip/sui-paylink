@@ -1,4 +1,4 @@
-import { ConnectButton, useCurrentAccount, useSignTransaction } from "@mysten/dapp-kit";
+import { ConnectButton, useCurrentAccount, useCurrentWallet, useSignTransaction } from "@mysten/dapp-kit";
 import { useState } from "react";
 import type { AppConfig, SponsoredTransactionAction, SponsoredTransactionRecord } from "@suipaylink/shared";
 import { buildSponsoredTransaction, submitSponsoredTransaction } from "./api";
@@ -29,6 +29,7 @@ const initialForm: SponsoredForm = {
 
 export function SponsoredDemo({ config }: { config: AppConfig | null }) {
   const account = useCurrentAccount();
+  const { currentWallet } = useCurrentWallet();
   const { mutateAsync: signTransaction } = useSignTransaction();
   const [form, setForm] = useState<SponsoredForm>(initialForm);
   const [record, setRecord] = useState<SponsoredTransactionRecord | null>(null);
@@ -37,6 +38,11 @@ export function SponsoredDemo({ config }: { config: AppConfig | null }) {
 
   async function handleBuildSignSubmit() {
     if (!account) return;
+    const unsupportedWallet = unsupportedSponsoredWalletReason(currentWallet?.name);
+    if (unsupportedWallet) {
+      setError(unsupportedWallet);
+      return;
+    }
     setPending(true);
     setError("");
     setRecord(null);
@@ -90,6 +96,19 @@ export function SponsoredDemo({ config }: { config: AppConfig | null }) {
         </div>
         <ConnectButton connectText="Connect Sui wallet" />
       </div>
+
+      {unsupportedSponsoredWalletReason(currentWallet?.name) && (
+        <div className="sponsor-result">
+          <div>
+            <span>Wallet</span>
+            <strong>unsupported</strong>
+          </div>
+          <div>
+            <span>Action</span>
+            <strong>{unsupportedSponsoredWalletReason(currentWallet?.name)}</strong>
+          </div>
+        </div>
+      )}
 
       <dl className="sponsor-facts">
         <div>
@@ -226,6 +245,13 @@ function shortId(value: string): string {
 
 function explorerUrl(digest: string, network: AppConfig["network"]): string {
   return `https://suiexplorer.com/txblock/${digest}?network=${network}`;
+}
+
+function unsupportedSponsoredWalletReason(walletName: string | undefined): string {
+  if (!walletName) return "";
+  const normalized = walletName.toLowerCase();
+  if (normalized.includes("slush") || normalized.includes("sui wallet")) return "";
+  return `${walletName} is connected, but this sponsored transaction demo only supports Slush or Sui Wallet. Disconnect this wallet, then connect Slush or Sui Wallet.`;
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {

@@ -9,9 +9,9 @@ import "./styles.css";
 
 const queryClient = new QueryClient();
 const defaultNetwork = (import.meta.env.VITE_SUI_NETWORK ?? "testnet") as "devnet" | "testnet";
-const preferredWallets = ["Slush", "Sui Wallet", "OKX Wallet"];
+const preferredWallets = ["Slush", "Sui Wallet"];
 const requiredWalletFeatures = ["sui:signTransaction", "sui:signTransactionBlock"] as const;
-const hiddenWalletNameFragments = ["phantom"];
+const supportedWalletNameFragments = ["slush", "sui wallet"];
 const networks = {
   devnet: {
     network: "devnet" as const,
@@ -30,7 +30,7 @@ type WalletCandidate = {
 
 function walletSupportsSuiPayLink(wallet: WalletCandidate) {
   const walletName = wallet.name.toLowerCase();
-  if (hiddenWalletNameFragments.some((fragment) => walletName.includes(fragment))) {
+  if (!supportedWalletNameFragments.some((fragment) => walletName.includes(fragment))) {
     return false;
   }
 
