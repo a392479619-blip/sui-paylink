@@ -1,8 +1,9 @@
 import { ConnectButton, useCurrentAccount, useSignTransaction } from "@mysten/dapp-kit";
-import { Transaction } from "@mysten/sui/transactions";
 import { useState } from "react";
 import type { AppConfig, SponsoredTransactionAction, SponsoredTransactionRecord } from "@suipaylink/shared";
 import { buildSponsoredTransaction, submitSponsoredTransaction } from "./api";
+
+const walletSignatureTimeoutMs = 60_000;
 
 type SponsoredForm = {
   action: SponsoredTransactionAction;
@@ -53,11 +54,14 @@ export function SponsoredDemo({ config }: { config: AppConfig | null }) {
       });
       setRecord(built);
 
-      const transaction = Transaction.from(built.transactionBytes);
-      const signed = await signTransaction({
-        transaction,
-        chain: `sui:${config?.network ?? "testnet"}`,
-      });
+      const signed = await withTimeout(
+        signTransaction({
+          transaction: built.transactionBytes,
+          chain: `sui:${config?.network ?? "testnet"}`,
+        }),
+        walletSignatureTimeoutMs,
+        "Wallet did not return a signature. Unlock the wallet, keep the confirmation popup open, and retry.",
+      );
 
       if (signed.bytes !== built.transactionBytes) {
         throw new Error("Wallet returned different transaction bytes; refusing to submit");
@@ -222,4 +226,14 @@ function shortId(value: string): string {
 
 function explorerUrl(digest: string, network: AppConfig["network"]): string {
   return `https://suiexplorer.com/txblock/${digest}?network=${network}`;
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeout) clearTimeout(timeout);
+  });
 }
