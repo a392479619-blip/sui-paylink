@@ -36,6 +36,11 @@ type PaylinkRoute = {
   role: PaylinkPageRole;
 };
 
+type AppNotice = {
+  kind: "success";
+  message: string;
+};
+
 const initialForm: CreatePaylinkInput = {
   mode: "escrow",
   sellerName: "Alice AI Automation Studio",
@@ -47,7 +52,7 @@ const initialForm: CreatePaylinkInput = {
   memo: "AI support workflow setup - 48 hour delivery",
   feeBps: 100,
 };
-const createOrderDraftStorageKey = "suipaylink:create-order-draft:v1";
+const createOrderDraftStorageKey = "suipaylink:create-order-draft:v2";
 
 const TESTNET_PACKAGE_ID = "0x0bd14fb2c341415b418a74b74caa1c5f5ec513e69c7a313da533fa56d6e325b7";
 const SPONSORED_ESCROW_OBJECT_ID = "0x9a1fefe14c9148a246122c9d280075994a698650e09ca6e664d9c42e4304e066";
@@ -105,6 +110,7 @@ const submissionBoundaries = [
 
 export function App() {
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
+  const [notice, setNotice] = useState<AppNotice | null>(null);
   const paylinkRoute = parsePaylinkRoute(currentPath);
 
   useEffect(() => {
@@ -115,10 +121,11 @@ export function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  function navigate(path: string) {
+  function navigate(path: string, nextNotice?: AppNotice) {
     const href = appHref(path);
     window.history.pushState({}, "", href);
     setCurrentPath(new URL(href).pathname);
+    setNotice(nextNotice ?? null);
     window.scrollTo({ top: 0 });
   }
 
@@ -132,10 +139,18 @@ export function App() {
     return <InvalidRoutePage path={currentPath} onNavigate={navigate} />;
   }
 
-  return <DashboardPage onNavigate={navigate} />;
+  return <DashboardPage notice={notice} onDismissNotice={() => setNotice(null)} onNavigate={navigate} />;
 }
 
-function DashboardPage({ onNavigate }: { onNavigate: (path: string) => void }) {
+function DashboardPage({
+  notice,
+  onDismissNotice,
+  onNavigate,
+}: {
+  notice: AppNotice | null;
+  onDismissNotice: () => void;
+  onNavigate: (path: string, notice?: AppNotice) => void;
+}) {
   const account = useCurrentAccount();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [paylinks, setPaylinks] = useState<Paylink[]>([]);
@@ -206,6 +221,13 @@ function DashboardPage({ onNavigate }: { onNavigate: (path: string) => void }) {
           </dl>
         </div>
       </section>
+
+      {notice && (
+        <section className={`notice ${notice.kind}`}>
+          <strong>{notice.message}</strong>
+          <button onClick={onDismissNotice}>Dismiss</button>
+        </section>
+      )}
 
       {error && <div className="error">{error}</div>}
 
@@ -280,11 +302,10 @@ function DashboardPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   );
 }
 
-function CreateOrderPage({ onNavigate }: { onNavigate: (path: string) => void }) {
+function CreateOrderPage({ onNavigate }: { onNavigate: (path: string, notice?: AppNotice) => void }) {
   const account = useCurrentAccount();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [form, setForm] = useState<CreatePaylinkInput>(() => loadCreateOrderDraft());
-  const [createdPaylink, setCreatedPaylink] = useState<Paylink | null>(null);
   const [error, setError] = useState<string>("");
   const canCreate = Boolean(account?.address);
 
@@ -309,7 +330,7 @@ function CreateOrderPage({ onNavigate }: { onNavigate: (path: string) => void })
       return;
     }
     try {
-      const paylink = await createPaylink({
+      await createPaylink({
         ...form,
         sellerName: form.sellerName.trim(),
         sellerAddress: form.sellerAddress.trim(),
@@ -317,7 +338,12 @@ function CreateOrderPage({ onNavigate }: { onNavigate: (path: string) => void })
         memo: form.memo.trim(),
         buyerAddress: account.address,
       });
-      setCreatedPaylink(paylink);
+      clearCreateOrderDraft();
+      setForm(initialForm);
+      onNavigate("", {
+        kind: "success",
+        message: "Escrow order created. Seller can now open the order center to review and continue the flow.",
+      });
     } catch (err) {
       setError(errorText(err));
     }
@@ -430,8 +456,10 @@ function CreateOrderPage({ onNavigate }: { onNavigate: (path: string) => void })
           <p className="eyebrow">What happens next</p>
           <h2>Buyer and seller get separate pages</h2>
           <ol>
+            <li>Created orders return to the platform order center.</li>
+            <li>Seller logs in, reviews the related order, and continues from the Seller page.</li>
             <li>Buyer funds escrow from the Buyer page.</li>
-            <li>Seller marks delivery from the Seller page.</li>
+            <li>Seller marks delivery after escrow is funded.</li>
             <li>Buyer releases funds after review.</li>
           </ol>
           <p className="muted">
@@ -439,30 +467,6 @@ function CreateOrderPage({ onNavigate }: { onNavigate: (path: string) => void })
           </p>
         </aside>
       </div>
-
-      {createdPaylink && (
-        <section className="paylink">
-          <div>
-            <p className="eyebrow">Created order</p>
-            <h2>{createdPaylink.amount} {createdPaylink.token}</h2>
-            <p>{createdPaylink.memo}</p>
-            <p className="muted">Buyer wallet: {createdPaylink.buyerAddress || "recorded after funding"}</p>
-            <p className="muted">Seller wallet: {createdPaylink.sellerAddress}</p>
-            <div className="role-links">
-              <a className="button-link" href={paylinkHref(createdPaylink.id, "buyer")} target="_blank" rel="noreferrer">
-                Open Buyer page
-              </a>
-              <a className="button-link" href={paylinkHref(createdPaylink.id, "seller")} target="_blank" rel="noreferrer">
-                Open Seller page
-              </a>
-              <a className="button-link" href={paylinkHref(createdPaylink.id, "overview")} target="_blank" rel="noreferrer">
-                Open overview
-              </a>
-            </div>
-          </div>
-          <StatusPill status={createdPaylink.status} />
-        </section>
-      )}
     </main>
   );
 }
@@ -501,7 +505,7 @@ function UserOrderCard({ paylink, accountAddress }: { paylink: Paylink; accountA
       </dl>
       <div className="role-links">
         <a className="button-link" href={paylinkHref(paylink.id, primaryRole)}>
-          Continue as {role}
+          {primaryOrderActionLabel(role, paylink.status)}
         </a>
         <a className="button-link" href={paylinkHref(paylink.id, "overview")}>
           Overview
@@ -523,6 +527,16 @@ function orderRoleForWallet(paylink: Paylink, address: string): "buyer" | "selle
     return "seller";
   }
   return "buyer";
+}
+
+function primaryOrderActionLabel(role: "buyer" | "seller", status: Paylink["status"]): string {
+  if (role === "seller" && status === "created") {
+    return "Review / lock order";
+  }
+  if (role === "buyer" && status === "created") {
+    return "View created order";
+  }
+  return `Continue as ${role}`;
 }
 
 function InvalidRoutePage({ path, onNavigate }: { path: string; onNavigate: (path: string) => void }) {
@@ -1719,6 +1733,14 @@ function saveCreateOrderDraft(form: CreatePaylinkInput) {
     );
   } catch {
     // Local storage is optional; losing the draft should not block escrow creation.
+  }
+}
+
+function clearCreateOrderDraft() {
+  try {
+    window.localStorage.removeItem(createOrderDraftStorageKey);
+  } catch {
+    // Local storage is optional; clearing the draft is best effort.
   }
 }
 

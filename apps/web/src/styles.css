@@ -198,6 +198,27 @@ textarea {
   line-height: 1.45;
 }
 
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  border: 1px solid #8bc6a3;
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: #214f35;
+  background: #edf8f1;
+}
+
+.notice button {
+  min-height: 34px;
+  border-color: #9bcdb0;
+  color: #214f35;
+  background: #ffffff;
+  font-weight: 800;
+}
+
 .orders-center {
   margin-top: 20px;
 }
@@ -1473,7 +1494,8 @@ button:disabled {
 
   .orders-heading,
   .order-card-topline,
-  .hero-actions {
+  .hero-actions,
+  .notice {
     align-items: stretch;
     flex-direction: column;
   }
