@@ -54,8 +54,10 @@ import { applySponsoredTransactionResult, getPaylink } from "./store.js";
 const records = new Map<string, SponsoredTransactionRecord>();
 loadSponsoredTransactions();
 
+// A built record only means transaction bytes were prepared. If the wallet
+// popup is cancelled or the tab refreshes before submit, the user must be able
+// to build a fresh sponsored transaction.
 const buildBlockingStatuses = new Set<SponsoredTransactionRecord["status"]>([
-  "built",
   "submitted",
   "executed",
 ]);

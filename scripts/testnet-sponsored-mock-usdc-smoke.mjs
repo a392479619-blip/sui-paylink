@@ -102,25 +102,11 @@ try {
     paylinkId: paylink.id,
   };
   const stalePaylinkFundRecord = await apiPost("/api/sponsored-transactions/build", paylinkFundBuild);
-  const duplicatePaylinkFund = await apiPostExpectError(
-    "/api/sponsored-transactions/build",
-    paylinkFundBuild,
-    409,
-    "duplicate_sponsored_action",
-  );
+  const retryPaylinkFundRecord = await apiPost("/api/sponsored-transactions/build", paylinkFundBuild);
 
   const fundRecord = await buildSignSubmit({
     signer: buyer,
-    build: {
-      action: "fund-mock-usdc",
-      senderAddress: buyerAddress,
-      sellerAddress,
-      paymentCoinId,
-      expectedAmountUnits: paymentUnits,
-      feeBps,
-      feeReceiverAddress: feeReceiver,
-      gasBudgetMist: sponsorCreateGasBudgetMist,
-    },
+    build: paylinkFundBuild,
   });
   const fundTx = await waitTx(fundRecord.digest);
   const escrowObjectId = findCreatedEscrow(fundTx);
@@ -156,6 +142,7 @@ try {
       userSignature: stalePaylinkFundSignature.signature,
     },
     [
+      { status: 409, code: "conflicting_sponsored_action_in_flight" },
       { status: 400, code: "sponsored_transaction_dry_run_failed" },
       { status: 502, code: "sui_rpc_error" },
     ],
@@ -222,7 +209,7 @@ try {
     paylinkIdempotency: {
       paylinkId: paylink.id,
       staleBuild: pickRecord(stalePaylinkFundRecord),
-      duplicateBuild: duplicatePaylinkFund,
+      retryBuild: pickRecord(retryPaylinkFundRecord),
       staleSubmit: stalePaylinkFundSubmit,
       staleBuildAfterRejectedSubmit: pickRecord(stalePaylinkFundAfterSubmit),
     },
@@ -386,27 +373,6 @@ async function apiPost(path, body) {
     body: JSON.stringify(body),
   });
   return readApiResponse(response);
-}
-
-async function apiPostExpectError(path, body, expectedStatus, expectedCode) {
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const json = await response.json();
-  if (response.status !== expectedStatus || json.code !== expectedCode) {
-    throw new Error(
-      `Expected API ${expectedStatus} ${expectedCode}, got ${response.status}: ${JSON.stringify(json)}`,
-    );
-  }
-  return {
-    status: response.status,
-    code: json.code,
-    error: json.error,
-  };
 }
 
 async function apiPostExpectOneOfErrors(path, body, expectedErrors) {
