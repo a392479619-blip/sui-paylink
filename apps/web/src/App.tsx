@@ -1221,7 +1221,7 @@ function SponsoredPaylinkActions({
         <span>
           {account
             ? `Connected wallet ${shortId(account.address)}${currentWallet?.name ? ` via ${currentWallet.name}` : ""}`
-            : "Connect Slush or Sui Wallet to continue"}
+            : "Connect OKX Wallet or Sui Wallet to continue"}
         </span>
       </div>
 
@@ -2112,8 +2112,8 @@ function errorText(error: unknown): string {
 function unsupportedSponsoredWalletReason(walletName: string | undefined): string {
   if (!walletName) return "";
   const normalized = walletName.toLowerCase();
-  if (normalized.includes("slush") || normalized.includes("sui wallet")) return "";
-  return `${walletName} is connected, but this sponsored transaction demo only supports Slush or Sui Wallet. Disconnect this wallet, then connect Slush or Sui Wallet.`;
+  if (normalized.includes("okx") || normalized.includes("slush") || normalized.includes("sui wallet")) return "";
+  return `${walletName} is connected, but this sponsored transaction demo only supports OKX Wallet or Sui Wallet. Disconnect this wallet, then connect OKX Wallet or Sui Wallet.`;
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {

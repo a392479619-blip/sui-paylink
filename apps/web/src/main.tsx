@@ -9,9 +9,9 @@ import "./styles.css";
 
 const queryClient = new QueryClient();
 const defaultNetwork = (import.meta.env.VITE_SUI_NETWORK ?? "testnet") as "devnet" | "testnet";
-const preferredWallets = ["Slush", "Sui Wallet"];
+const preferredWallets = ["OKX Wallet", "Sui Wallet", "Slush"];
 const requiredWalletFeatures = ["sui:signTransaction", "sui:signTransactionBlock"] as const;
-const supportedWalletNameFragments = ["slush", "sui wallet"];
+const supportedWalletNameFragments = ["okx", "sui wallet", "slush"];
 const networks = {
   devnet: {
     network: "devnet" as const,
