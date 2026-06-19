@@ -130,7 +130,7 @@ export function App() {
   }
 
   if (paylinkRoute) {
-    return <PublicPaylinkPage paylinkId={paylinkRoute.id} role={paylinkRoute.role} />;
+    return <PublicPaylinkPage paylinkId={paylinkRoute.id} role={paylinkRoute.role} onNavigate={navigate} />;
   }
   if (isCreatePath(currentPath)) {
     return <CreateOrderPage onNavigate={navigate} />;
@@ -283,7 +283,12 @@ function DashboardPage({
         {connectedAddress && userOrders.length > 0 && (
           <div className="order-list">
             {userOrders.map((paylink) => (
-              <UserOrderCard key={paylink.id} paylink={paylink} accountAddress={connectedAddress} />
+              <UserOrderCard
+                key={paylink.id}
+                paylink={paylink}
+                accountAddress={connectedAddress}
+                onNavigate={onNavigate}
+              />
             ))}
           </div>
         )}
@@ -471,7 +476,15 @@ function CreateOrderPage({ onNavigate }: { onNavigate: (path: string, notice?: A
   );
 }
 
-function UserOrderCard({ paylink, accountAddress }: { paylink: Paylink; accountAddress: string }) {
+function UserOrderCard({
+  paylink,
+  accountAddress,
+  onNavigate,
+}: {
+  paylink: Paylink;
+  accountAddress: string;
+  onNavigate: (path: string, notice?: AppNotice) => void;
+}) {
   const role = orderRoleForWallet(paylink, accountAddress);
   const primaryRole: PaylinkPageRole = role === "seller" ? "seller" : "buyer";
 
@@ -504,12 +517,12 @@ function UserOrderCard({ paylink, accountAddress }: { paylink: Paylink; accountA
         </div>
       </dl>
       <div className="role-links">
-        <a className="button-link" href={paylinkHref(paylink.id, primaryRole)}>
+        <button className="button-link" onClick={() => onNavigate(paylinkPath(paylink.id, primaryRole))}>
           {primaryOrderActionLabel(role, paylink.status)}
-        </a>
-        <a className="button-link" href={paylinkHref(paylink.id, "overview")}>
+        </button>
+        <button className="button-link" onClick={() => onNavigate(paylinkPath(paylink.id, "overview"))}>
           Overview
-        </a>
+        </button>
       </div>
     </article>
   );
@@ -566,7 +579,15 @@ function InvalidRoutePage({ path, onNavigate }: { path: string; onNavigate: (pat
   );
 }
 
-function PublicPaylinkPage({ paylinkId, role }: { paylinkId: string; role: PaylinkPageRole }) {
+function PublicPaylinkPage({
+  paylinkId,
+  role,
+  onNavigate,
+}: {
+  paylinkId: string;
+  role: PaylinkPageRole;
+  onNavigate: (path: string, notice?: AppNotice) => void;
+}) {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [paylink, setPaylink] = useState<Paylink | null>(null);
   const [receipt, setReceipt] = useState<ReceiptSummary | null>(null);
@@ -642,19 +663,24 @@ function PublicPaylinkPage({ paylinkId, role }: { paylinkId: string; role: Payli
         </div>
       </section>
 
-      {error && !paylink && <MissingPaylinkPanel paylinkId={paylinkId} error={error} />}
+      {error && !paylink && <MissingPaylinkPanel paylinkId={paylinkId} error={error} onNavigate={onNavigate} />}
       {error && paylink && <div className="error">{error}</div>}
 
       {!paylink && !error && <section className="panel">Loading paylink...</section>}
 
       {paylink && (
         <>
-        {role === "overview" && <RoleSwitch paylink={paylink} role={role} />}
+        {role === "overview" && <RoleSwitch paylink={paylink} role={role} onNavigate={onNavigate} />}
         <section className={`public-paylink ${role}`}>
           {role === "overview" ? (
             <>
               <PaylinkSummary paylink={paylink} />
-              <OverviewFlowPanel paylink={paylink} sponsorReadiness={sponsorReadiness} records={sponsoredRecords} />
+              <OverviewFlowPanel
+                paylink={paylink}
+                sponsorReadiness={sponsorReadiness}
+                records={sponsoredRecords}
+                onNavigate={onNavigate}
+              />
             </>
           ) : (
             <>
@@ -723,7 +749,15 @@ function SubmissionEvidencePanel() {
   );
 }
 
-function MissingPaylinkPanel({ paylinkId, error }: { paylinkId: string; error: string }) {
+function MissingPaylinkPanel({
+  paylinkId,
+  error,
+  onNavigate,
+}: {
+  paylinkId: string;
+  error: string;
+  onNavigate: (path: string, notice?: AppNotice) => void;
+}) {
   return (
     <section className="panel missing-paylink">
       <p className="eyebrow">Paylink not available</p>
@@ -733,9 +767,9 @@ function MissingPaylinkPanel({ paylinkId, error }: { paylinkId: string; error: s
         Start from the home page and create a new buyer-started escrow order.
       </p>
       <p className="muted">Raw error: {error}</p>
-      <a className="button-link" href={appHref("")}>
+      <button className="button-link" onClick={() => onNavigate("")}>
         Back to platform
-      </a>
+      </button>
     </section>
   );
 }
@@ -755,7 +789,15 @@ function StaticDemoBanner() {
   );
 }
 
-function RoleSwitch({ paylink, role }: { paylink: Paylink; role: PaylinkPageRole }) {
+function RoleSwitch({
+  paylink,
+  role,
+  onNavigate,
+}: {
+  paylink: Paylink;
+  role: PaylinkPageRole;
+  onNavigate: (path: string, notice?: AppNotice) => void;
+}) {
   const links: Array<{ label: string; role: PaylinkPageRole; detail: string }> = [
     { label: "Buyer page", role: "buyer", detail: "mint test mUSDC, fund escrow, release after delivery" },
     { label: "Seller page", role: "seller", detail: "mark delivered after buyer funds escrow" },
@@ -765,14 +807,14 @@ function RoleSwitch({ paylink, role }: { paylink: Paylink; role: PaylinkPageRole
   return (
     <section className="role-switch">
       {links.map((item) => (
-        <a
+        <button
           key={item.role}
           className={item.role === role ? "active" : ""}
-          href={paylinkHref(paylink.id, item.role)}
+          onClick={() => onNavigate(paylinkPath(paylink.id, item.role))}
         >
           <strong>{item.label}</strong>
           <span>{item.detail}</span>
-        </a>
+        </button>
       ))}
     </section>
   );
@@ -843,10 +885,12 @@ function OverviewFlowPanel({
   paylink,
   sponsorReadiness,
   records,
+  onNavigate,
 }: {
   paylink: Paylink;
   sponsorReadiness: SponsorReadiness | null;
   records: SponsoredTransactionRecord[];
+  onNavigate: (path: string, notice?: AppNotice) => void;
 }) {
   const currentAction = currentWalletAction(paylink.status);
   const nextRole = currentAction ? signerRoleForAction(currentAction) : undefined;
@@ -862,12 +906,12 @@ function OverviewFlowPanel({
       </div>
 
       <div className="overview-actions">
-        <a className="button-link" href={paylinkHref(paylink.id, "buyer")}>
+        <button className="button-link" onClick={() => onNavigate(paylinkPath(paylink.id, "buyer"))}>
           Open Buyer page
-        </a>
-        <a className="button-link" href={paylinkHref(paylink.id, "seller")}>
+        </button>
+        <button className="button-link" onClick={() => onNavigate(paylinkPath(paylink.id, "seller"))}>
           Open Seller page
-        </a>
+        </button>
       </div>
 
       <div className="overview-steps">
@@ -1961,9 +2005,13 @@ function demoPaylinkHref(): string {
   return new URL("pay/demo-ai-workflow", new URL(import.meta.env.BASE_URL, window.location.origin)).toString();
 }
 
-function paylinkHref(id: string, role: PaylinkPageRole): string {
+function paylinkPath(id: string, role: PaylinkPageRole): string {
   const segment = role === "buyer" ? "buyer" : role === "seller" ? "seller" : "pay";
-  return new URL(`${segment}/${encodeURIComponent(id)}`, new URL(import.meta.env.BASE_URL, window.location.origin)).toString();
+  return `${segment}/${encodeURIComponent(id)}`;
+}
+
+function paylinkHref(id: string, role: PaylinkPageRole): string {
+  return new URL(paylinkPath(id, role), new URL(import.meta.env.BASE_URL, window.location.origin)).toString();
 }
 
 function errorText(error: unknown): string {

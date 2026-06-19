@@ -786,7 +786,7 @@ button:disabled {
   margin-bottom: 16px;
 }
 
-.role-switch a {
+.role-switch button {
   display: grid;
   gap: 5px;
   min-width: 0;
@@ -795,10 +795,12 @@ button:disabled {
   border-radius: 8px;
   color: #17202a;
   background: #fff;
+  font: inherit;
   text-decoration: none;
+  text-align: left;
 }
 
-.role-switch a.active {
+.role-switch button.active {
   border-color: #176b87;
   box-shadow: inset 0 0 0 1px #176b87;
   background: #eef8fb;
