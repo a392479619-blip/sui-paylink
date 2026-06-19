@@ -1221,7 +1221,7 @@ function SponsoredPaylinkActions({
         <span>
           {account
             ? `Connected wallet ${shortId(account.address)}${currentWallet?.name ? ` via ${currentWallet.name}` : ""}`
-            : "Connect OKX Wallet or Sui Wallet to continue"}
+            : "Connect OKX Wallet for order view, or Sui Wallet for escrow signing"}
         </span>
       </div>
 
@@ -2112,8 +2112,11 @@ function errorText(error: unknown): string {
 function unsupportedSponsoredWalletReason(walletName: string | undefined): string {
   if (!walletName) return "";
   const normalized = walletName.toLowerCase();
-  if (normalized.includes("okx") || normalized.includes("slush") || normalized.includes("sui wallet")) return "";
-  return `${walletName} is connected, but this sponsored transaction demo only supports OKX Wallet or Sui Wallet. Disconnect this wallet, then connect OKX Wallet or Sui Wallet.`;
+  if (normalized.includes("slush") || normalized.includes("sui wallet")) return "";
+  if (normalized.includes("okx")) {
+    return "OKX Wallet can connect for login and order viewing, but it cannot sign this gasless sponsored escrow transaction. Connect Sui Wallet / Slush for fund, delivery, release, or refund.";
+  }
+  return `${walletName} is connected, but this sponsored transaction demo only supports Sui Wallet / Slush for escrow signing. Disconnect this wallet, then connect Sui Wallet / Slush.`;
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
