@@ -9,9 +9,15 @@ import "./styles.css";
 
 const queryClient = new QueryClient();
 const defaultNetwork = (import.meta.env.VITE_SUI_NETWORK ?? "testnet") as "devnet" | "testnet";
-const preferredWallets = ["OKX Wallet", "Sui Wallet", "Slush"];
+const localTestWalletEnabled =
+  typeof window !== "undefined" && ["127.0.0.1", "localhost", "::1"].includes(window.location.hostname);
+const preferredWallets = localTestWalletEnabled
+  ? ["Unsafe Burner Wallet", "Sui Wallet", "Slush", "OKX Wallet"]
+  : ["OKX Wallet", "Sui Wallet", "Slush"];
 const requiredWalletFeatures = ["sui:signTransaction", "sui:signTransactionBlock"] as const;
-const supportedWalletNameFragments = ["okx", "sui wallet", "slush"];
+const supportedWalletNameFragments = localTestWalletEnabled
+  ? ["unsafe burner", "okx", "sui wallet", "slush"]
+  : ["okx", "sui wallet", "slush"];
 const networks = {
   devnet: {
     network: "devnet" as const,
@@ -43,6 +49,7 @@ createRoot(document.getElementById("root")!).render(
       <SuiClientProvider networks={networks} defaultNetwork={defaultNetwork}>
         <WalletProvider
           autoConnect
+          enableUnsafeBurner={localTestWalletEnabled}
           preferredWallets={preferredWallets}
           walletFilter={walletSupportsSuiPayLink}
           slushWallet={{ name: "Slush" }}

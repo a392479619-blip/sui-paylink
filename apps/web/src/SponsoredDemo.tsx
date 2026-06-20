@@ -252,11 +252,11 @@ function explorerUrl(digest: string, network: AppConfig["network"]): string {
 function unsupportedSponsoredWalletReason(walletName: string | undefined): string {
   if (!walletName) return "";
   const normalized = walletName.toLowerCase();
-  if (normalized.includes("slush") || normalized.includes("sui wallet")) return "";
+  if (normalized.includes("unsafe burner") || normalized.includes("slush") || normalized.includes("sui wallet")) return "";
   if (normalized.includes("okx")) {
-    return "OKX Wallet can connect for login and order viewing, but it cannot sign this gasless sponsored escrow transaction. Connect Sui Wallet / Slush for fund, delivery, release, or refund.";
+    return "OKX Wallet can connect for login and order viewing, but it cannot sign this gasless sponsored escrow transaction. Connect Sui Wallet / Slush, or use the local test wallet on localhost, for fund, delivery, release, or refund.";
   }
-  return `${walletName} is connected, but this sponsored transaction demo only supports Sui Wallet / Slush for escrow signing. Disconnect this wallet, then connect Sui Wallet / Slush.`;
+  return `${walletName} is connected, but this sponsored transaction demo only supports Sui Wallet / Slush or the local test wallet for escrow signing. Disconnect this wallet, then connect a supported signing wallet.`;
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
