@@ -1,4 +1,5 @@
 import { ConnectButton, useCurrentAccount, useCurrentWallet, useSignTransaction } from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
 import { useState } from "react";
 import type { AppConfig, SponsoredTransactionAction, SponsoredTransactionRecord } from "@suipaylink/shared";
 import { buildSponsoredTransaction, submitSponsoredTransaction } from "./api";
@@ -60,9 +61,10 @@ export function SponsoredDemo({ config }: { config: AppConfig | null }) {
       });
       setRecord(built);
 
+      const transaction = Transaction.from(built.transactionBytes);
       const signed = await withTimeout(
         signTransaction({
-          transaction: built.transactionBytes,
+          transaction,
           chain: `sui:${config?.network ?? "testnet"}`,
         }),
         walletSignatureTimeoutMs,

@@ -1,4 +1,5 @@
 import { ConnectButton, useCurrentAccount, useCurrentWallet, useSignTransaction, useSuiClient } from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
 import { useEffect, useMemo, useState } from "react";
 import type {
   AppConfig,
@@ -1096,9 +1097,10 @@ function SponsoredPaylinkActions({
       });
       setLastRecord(built);
 
+      const transaction = Transaction.from(built.transactionBytes);
       const signed = await withTimeout(
         signTransaction({
-          transaction: built.transactionBytes,
+          transaction,
           chain: `sui:${config.network}`,
         }),
         walletSignatureTimeoutMs,
