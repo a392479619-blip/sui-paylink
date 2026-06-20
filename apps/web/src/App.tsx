@@ -2,8 +2,6 @@ import {
   ConnectButton,
   useCurrentAccount,
   useCurrentWallet,
-  useSignAndExecuteTransaction,
-  useSignTransaction,
   useSuiClient,
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
@@ -46,6 +44,11 @@ type WalletSignedTransaction = {
   bytes: string;
   signature: string;
   method: "signTransaction" | "signTransactionBlock";
+};
+
+type WalletExecutedTransaction = {
+  digest: string;
+  method: "signAndExecuteTransaction" | "signAndExecuteTransactionBlock" | "signTransaction+execute";
 };
 
 type PaylinkRoute = {
@@ -1135,10 +1138,8 @@ function SponsoredPaylinkActions({
   onRefresh: () => Promise<void>;
 }) {
   const account = useCurrentAccount();
-  const { currentWallet } = useCurrentWallet();
+  const { currentWallet, supportedIntents } = useCurrentWallet();
   const client = useSuiClient();
-  const { mutateAsync: signTransaction } = useSignTransaction();
-  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   const token = config?.supportedTokens.find((item) => item.symbol === paylink.token) ?? config?.supportedTokens[0];
   const expectedAmountUnits = token ? amountToBaseUnits(paylink.amount, token.decimals) : "";
   const [paymentCoinId, setPaymentCoinId] = useState("");
@@ -1302,11 +1303,19 @@ function SponsoredPaylinkActions({
     }
     const chain = `sui:${config?.network ?? "testnet"}` as `${string}:${string}`;
     const transaction = Transaction.from(built.transactionBytes);
-    const modernFeature = currentWallet?.features["sui:signTransaction"] as unknown;
+    const modernFeature = currentWallet?.features["sui:signTransaction"] as
+      | {
+          signTransaction?: (input: {
+            transaction: { toJSON: () => Promise<string> };
+            account: typeof account;
+            chain: string;
+          }) => Promise<{ bytes: string; signature: string }>;
+        }
+      | undefined;
 
-    if (modernFeature) {
-      const signed = await signTransaction({
-        transaction,
+    if (modernFeature?.signTransaction) {
+      const signed = await modernFeature.signTransaction({
+        transaction: walletTransactionInput(transaction),
         account,
         chain,
       });
@@ -1334,6 +1343,132 @@ function SponsoredPaylinkActions({
       bytes: signed.transactionBlockBytes,
       signature: signed.signature,
       method: "signTransactionBlock",
+    };
+  }
+
+  async function executeWalletTransaction(transaction: Transaction): Promise<WalletExecutedTransaction> {
+    if (!account) {
+      throw new Error("Connect a Sui wallet first");
+    }
+    if (!currentWallet) {
+      throw new Error("No wallet is connected");
+    }
+    const chain = `sui:${config?.network ?? "testnet"}` as `${string}:${string}`;
+    transaction.setSenderIfNotSet(account.address);
+
+    const executeFeature = currentWallet.features["sui:signAndExecuteTransaction"] as
+      | {
+          signAndExecuteTransaction?: (input: {
+            transaction: { toJSON: () => Promise<string> };
+            account: typeof account;
+            chain: string;
+          }) => Promise<{ digest: string }>;
+        }
+      | undefined;
+    if (executeFeature?.signAndExecuteTransaction) {
+      const result = await executeFeature.signAndExecuteTransaction({
+        transaction: walletTransactionInput(transaction),
+        account,
+        chain,
+      });
+      return { digest: result.digest, method: "signAndExecuteTransaction" };
+    }
+
+    const executeBlockFeature = currentWallet.features["sui:signAndExecuteTransactionBlock"] as
+      | {
+          signAndExecuteTransactionBlock?: (input: {
+            transactionBlock: Transaction;
+            account: typeof account;
+            chain: string;
+            options?: { showRawEffects?: boolean; showRawInput?: boolean };
+          }) => Promise<{ digest: string }>;
+        }
+      | undefined;
+    if (executeBlockFeature?.signAndExecuteTransactionBlock) {
+      const result = await executeBlockFeature.signAndExecuteTransactionBlock({
+        transactionBlock: transaction,
+        account,
+        chain,
+        options: {
+          showRawEffects: true,
+          showRawInput: true,
+        },
+      });
+      return { digest: result.digest, method: "signAndExecuteTransactionBlock" };
+    }
+
+    const signed = await signWalletTransaction(transaction, chain);
+    const executed = await client.executeTransactionBlock({
+      transactionBlock: signed.bytes,
+      signature: signed.signature,
+      options: {
+        showRawEffects: true,
+      },
+    });
+    return { digest: executed.digest, method: "signTransaction+execute" };
+  }
+
+  async function signWalletTransaction(
+    transaction: Transaction,
+    chain: `${string}:${string}`,
+  ): Promise<WalletSignedTransaction> {
+    if (!account) {
+      throw new Error("Connect a Sui wallet first");
+    }
+    const modernFeature = currentWallet?.features["sui:signTransaction"] as
+      | {
+          signTransaction?: (input: {
+            transaction: { toJSON: () => Promise<string> };
+            account: typeof account;
+            chain: string;
+          }) => Promise<{ bytes: string; signature: string }>;
+        }
+      | undefined;
+    if (modernFeature?.signTransaction) {
+      const signed = await modernFeature.signTransaction({
+        transaction: walletTransactionInput(transaction),
+        account,
+        chain,
+      });
+      return {
+        bytes: signed.bytes,
+        signature: signed.signature,
+        method: "signTransaction",
+      };
+    }
+
+    const legacyFeature = currentWallet?.features["sui:signTransactionBlock"] as
+      | {
+          signTransactionBlock?: (input: {
+            transactionBlock: Transaction;
+            account: typeof account;
+            chain: string;
+          }) => Promise<{ transactionBlockBytes: string; signature: string }>;
+        }
+      | undefined;
+    if (!legacyFeature?.signTransactionBlock) {
+      throw new Error("Connected wallet cannot sign Sui transactions");
+    }
+    const signed = await legacyFeature.signTransactionBlock({
+      transactionBlock: transaction,
+      account,
+      chain,
+    });
+    return {
+      bytes: signed.transactionBlockBytes,
+      signature: signed.signature,
+      method: "signTransactionBlock",
+    };
+  }
+
+  function walletTransactionInput(transaction: Transaction) {
+    return {
+      async toJSON() {
+        return transaction.toJSON({
+          supportedIntents: [...supportedIntents],
+          client,
+        });
+      },
     };
   }
 
@@ -1374,17 +1509,16 @@ function SponsoredPaylinkActions({
         paylink,
         paymentCoinId,
       });
-      setWalletStage("Waiting for wallet-paid transaction. This fallback requires the connected wallet to hold Testnet SUI for gas.");
+      setWalletStage(
+        "Waiting for wallet direct execution. The connected wallet must hold Testnet SUI for gas.",
+      );
       const result = await withTimeout(
-        signAndExecuteTransaction({
-          transaction,
-          chain: `sui:${config.network}`,
-        }),
+        executeWalletTransaction(transaction),
         walletSignatureTimeoutMs,
         "Wallet did not submit the wallet-paid transaction. Unlock the wallet, keep the confirmation popup open, and retry.",
       );
 
-      setWalletStage(`Wallet submitted ${shortId(result.digest)}; waiting for Sui finality...`);
+      setWalletStage(`Wallet submitted ${shortId(result.digest)} via ${result.method}; waiting for Sui finality...`);
       const details = await client.waitForTransaction({
         digest: result.digest,
         options: {
@@ -1448,6 +1582,43 @@ function SponsoredPaylinkActions({
   const sellerConnected = Boolean(
     connectedAddress && paylink.sellerAddress && sameSuiAddress(connectedAddress, paylink.sellerAddress),
   );
+
+  useEffect(() => {
+    let active = true;
+    if (
+      !account ||
+      !buyerConnected ||
+      !token ||
+      !expectedAmountUnits ||
+      paymentCoinId ||
+      paylink.status !== "created"
+    ) {
+      return () => {
+        active = false;
+      };
+    }
+    client
+      .getCoins({
+        owner: account.address,
+        coinType: token.coinType,
+        limit: 50,
+      })
+      .then((coins) => {
+        if (!active) return;
+        const exactCoin = coins.data.find((coin) => coin.balance === expectedAmountUnits);
+        if (exactCoin) {
+          setPaymentCoinId(exactCoin.coinObjectId);
+          setCoinLookup(`Auto-selected ${shortId(exactCoin.coinObjectId)}`);
+        }
+      })
+      .catch(() => {
+        if (active) setCoinLookup("Could not auto-select a coin; click Find exact coin.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [account, buyerConnected, client, expectedAmountUnits, paymentCoinId, paylink.status, token]);
+
   const pending = Boolean(pendingAction);
   const canMintTestCoin = Boolean(
     config?.mockUsdcMintEnabled &&
@@ -1530,13 +1701,8 @@ function SponsoredPaylinkActions({
   const visibleActionSigners = actionSigners.filter((item) => signerRoleForAction(item.action) === role);
   const currentAction = currentWalletAction(paylink.status);
   const actionTitle = walletChecklistTitle(role, currentAction);
-  const gasSummary = sponsorReady
-    ? "App sponsor pays SUI gas for this wallet-signed action."
-    : sponsorChecking
-      ? "Checking whether the app sponsor can pay SUI gas."
-    : config?.sponsorEnabled
-      ? "Sponsor setup is present but not ready. Check technical verification if signing is blocked."
-      : "Sponsor gas is not configured for this API session.";
+  const gasSummary =
+    "Primary demo path submits a real Sui Testnet transaction from the connected wallet. Gasless sponsor proof remains available in advanced verification.";
   const showFundAction = showBuyerControls && paylink.status === "created";
   const showReleaseAction = showBuyerControls && paylink.status === "delivered";
   const showRefundAction = showBuyerControls && paylink.status === "funded";
@@ -1607,81 +1773,83 @@ function SponsoredPaylinkActions({
         <div className="actions">
           {showFundAction && (
             <button
-              onClick={() => executeSponsoredAction("fund-mock-usdc")}
-              disabled={!canFund || pending}
+              onClick={() => executeWalletPaidAction("fund-mock-usdc")}
+              disabled={!canWalletPaidFund || pending}
             >
-              {pendingAction === "fund-mock-usdc" ? "Funding..." : "Buyer signs fund escrow"}
+              {pendingAction === "fund-mock-usdc" ? "Funding..." : "Buyer funds escrow on Sui"}
             </button>
           )}
           {showReleaseAction && (
             <button
-              onClick={() => executeSponsoredAction("release")}
-              disabled={!canRelease || pending}
+              onClick={() => executeWalletPaidAction("release")}
+              disabled={!canWalletPaidRelease || pending}
             >
-              {pendingAction === "release" ? "Releasing..." : "Buyer signs release"}
+              {pendingAction === "release" ? "Releasing..." : "Buyer releases funds on Sui"}
             </button>
           )}
           {showRefundAction && (
             <button
-              onClick={() => executeSponsoredAction("refund")}
-              disabled={!canRefund || pending}
+              onClick={() => executeWalletPaidAction("refund")}
+              disabled={!canWalletPaidRefund || pending}
             >
-              {pendingAction === "refund" ? "Refunding..." : "Refund before delivery"}
+              {pendingAction === "refund" ? "Refunding..." : "Refund before delivery on Sui"}
             </button>
           )}
           {showDeliverAction && (
             <button
-              onClick={() => executeSponsoredAction("mark-delivered")}
-              disabled={!canDeliver || pending}
+              onClick={() => executeWalletPaidAction("mark-delivered")}
+              disabled={!canWalletPaidDeliver || pending}
             >
-              {pendingAction === "mark-delivered" ? "Marking..." : "Seller signs delivery"}
+              {pendingAction === "mark-delivered" ? "Marking..." : "Seller marks delivered on Sui"}
             </button>
           )}
         </div>
       )}
 
       {showActions && (
-        <div className="gas-note checking">
-          <strong>Wallet-paid fallback</strong>
+        <details className="gas-note checking">
+          <summary>
+            <strong>Advanced gasless sponsor verification</strong>
+          </summary>
           <span>
-            Use this only if the sponsored wallet popup does not return. The connected wallet signs and pays
-            Testnet SUI gas directly. Current wallet SUI: {formatMistBalance(walletSuiBalanceMist)}.
+            Use this only to test the gasless sponsor path. If a wallet closes after unlock, use the primary
+            Sui transaction button above. Current wallet SUI: {formatMistBalance(walletSuiBalanceMist)}.
           </span>
           <div className="actions inline-actions">
             {showFundAction && (
               <button
-                onClick={() => executeWalletPaidAction("fund-mock-usdc")}
-                disabled={!canWalletPaidFund || pending}
+                onClick={() => executeSponsoredAction("fund-mock-usdc")}
+                disabled={!canFund || pending}
               >
-                {pendingAction === "fund-mock-usdc" ? "Submitting..." : "Fallback: buyer pays gas to fund"}
+                {pendingAction === "fund-mock-usdc" ? "Funding..." : "Advanced: sponsor pays gas to fund"}
               </button>
             )}
             {showDeliverAction && (
               <button
-                onClick={() => executeWalletPaidAction("mark-delivered")}
-                disabled={!canWalletPaidDeliver || pending}
+                onClick={() => executeSponsoredAction("mark-delivered")}
+                disabled={!canDeliver || pending}
               >
-                {pendingAction === "mark-delivered" ? "Submitting..." : "Fallback: seller pays gas to deliver"}
+                {pendingAction === "mark-delivered" ? "Marking..." : "Advanced: sponsor pays gas to deliver"}
               </button>
             )}
             {showReleaseAction && (
               <button
-                onClick={() => executeWalletPaidAction("release")}
-                disabled={!canWalletPaidRelease || pending}
+                onClick={() => executeSponsoredAction("release")}
+                disabled={!canRelease || pending}
               >
-                {pendingAction === "release" ? "Submitting..." : "Fallback: buyer pays gas to release"}
+                {pendingAction === "release" ? "Releasing..." : "Advanced: sponsor pays gas to release"}
               </button>
             )}
             {showRefundAction && (
               <button
-                onClick={() => executeWalletPaidAction("refund")}
-                disabled={!canWalletPaidRefund || pending}
+                onClick={() => executeSponsoredAction("refund")}
+                disabled={!canRefund || pending}
               >
-                {pendingAction === "refund" ? "Submitting..." : "Fallback: buyer pays gas to refund"}
+                {pendingAction === "refund" ? "Refunding..." : "Advanced: sponsor pays gas to refund"}
               </button>
             )}
           </div>
-        </div>
+        </details>
       )}
 
       {walletStage && <p className="wallet-stage">{walletStage}</p>}
