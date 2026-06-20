@@ -6,6 +6,7 @@ import {
   buildSponsoredTransactionSchema,
   createPaylinkSchema,
   mintTestMockUsdcSchema,
+  localJudgeRunSchema,
   mutatePaylinkSchema,
   submitSponsoredTransactionSchema,
 } from "@suipaylink/shared";
@@ -32,6 +33,7 @@ import {
   refundPaylink,
   releasePaylink,
 } from "./store.js";
+import { createLocalJudgePaylink, runLocalJudgePaylinkAction } from "./localJudge.js";
 
 const app = Fastify({ logger: true });
 
@@ -165,6 +167,26 @@ app.post("/api/mock-usdc/mint", async (request, reply) => {
   }
   try {
     return await mintTestMockUsdc(parsed.data);
+  } catch (error) {
+    return sendSponsorError(reply, error);
+  }
+});
+
+app.post("/api/local-judge/paylinks", async (_request, reply) => {
+  try {
+    return createLocalJudgePaylink();
+  } catch (error) {
+    return sendSponsorError(reply, error);
+  }
+});
+
+app.post<{ Params: { id: string } }>("/api/local-judge/paylinks/:id/run", async (request, reply) => {
+  const parsed = localJudgeRunSchema.safeParse(request.body ?? {});
+  if (!parsed.success) {
+    return reply.code(400).send({ error: parsed.error.flatten() });
+  }
+  try {
+    return await runLocalJudgePaylinkAction(request.params.id, parsed.data.action);
   } catch (error) {
     return sendSponsorError(reply, error);
   }

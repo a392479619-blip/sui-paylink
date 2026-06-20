@@ -12,6 +12,7 @@ import type {
 } from "@suipaylink/shared";
 import {
   buildSponsoredTransaction,
+  createLocalJudgePaylink,
   createPaylink,
   getConfig,
   getPaylink,
@@ -21,6 +22,7 @@ import {
   listSponsoredTransactions,
   mintTestMockUsdc,
   mutatePaylink,
+  runLocalJudgePaylinkStep,
   syncPaylinkChain,
   submitSponsoredTransaction,
   STATIC_DEMO_ENABLED,
@@ -156,6 +158,7 @@ function DashboardPage({
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [paylinks, setPaylinks] = useState<Paylink[]>([]);
   const [error, setError] = useState<string>("");
+  const [startingLocalJudge, setStartingLocalJudge] = useState(false);
   const connectedAddress = account?.address ?? "";
   const userOrders = useMemo(
     () => (connectedAddress ? paylinks.filter((paylink) => paylinkBelongsToWallet(paylink, connectedAddress)) : []),
@@ -179,6 +182,22 @@ function DashboardPage({
   function openCreatePage() {
     if (!canCreate) return;
     onNavigate("create");
+  }
+
+  async function startLocalJudgeDemo() {
+    setError("");
+    setStartingLocalJudge(true);
+    try {
+      const result = await createLocalJudgePaylink();
+      onNavigate(paylinkPath(result.paylink.id, "buyer"), {
+        kind: "success",
+        message: "Local Judge order created. Start from the Buyer page and run the funded escrow step.",
+      });
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setStartingLocalJudge(false);
+    }
   }
 
   return (
@@ -249,6 +268,22 @@ function DashboardPage({
           <p>Buyer and seller sign the business actions while the sponsor pays Sui network gas.</p>
         </div>
       </section>
+
+      {config?.localJudgeModeEnabled && (
+        <section className="local-judge-entry">
+          <div>
+            <p className="eyebrow">Local Judge Mode</p>
+            <h2>Run the full Testnet escrow flow without wallet popups</h2>
+            <p>
+              Creates temporary local buyer and seller wallets, mints test mUSDC, submits sponsored Sui Testnet
+              transactions, and records real digests for the receipt.
+            </p>
+          </div>
+          <button className="primary" onClick={startLocalJudgeDemo} disabled={startingLocalJudge}>
+            {startingLocalJudge ? "Creating test order..." : "Start local judge demo"}
+          </button>
+        </section>
+      )}
 
       <section className="panel orders-center">
         <div className="orders-heading">
@@ -692,14 +727,24 @@ function PublicPaylinkPage({
             <>
               <div className="role-main-column">
                 <RoleOrderPanel paylink={paylink} role={role} />
-                <SponsoredPaylinkActions
-                  config={config}
-                  sponsorReadiness={sponsorReadiness}
-                  paylink={paylink}
-                  role={role}
-                  onError={setError}
-                  onRefresh={refresh}
-                />
+                {paylink.localJudgeDemo ? (
+                  <LocalJudgeActions
+                    config={config}
+                    paylink={paylink}
+                    role={role}
+                    onError={setError}
+                    onRefresh={refresh}
+                  />
+                ) : (
+                  <SponsoredPaylinkActions
+                    config={config}
+                    sponsorReadiness={sponsorReadiness}
+                    paylink={paylink}
+                    role={role}
+                    onError={setError}
+                    onRefresh={refresh}
+                  />
+                )}
               </div>
               <PaylinkSummary paylink={paylink} compact role={role} />
             </>
@@ -966,6 +1011,96 @@ function OverviewFlowPanel({
           <dd>{nextRole ?? "none"}</dd>
         </div>
       </dl>
+    </section>
+  );
+}
+
+function LocalJudgeActions({
+  config,
+  paylink,
+  role,
+  onError,
+  onRefresh,
+}: {
+  config: AppConfig | null;
+  paylink: Paylink;
+  role: PaylinkPageRole;
+  onError: (message: string) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const [pendingAction, setPendingAction] = useState<SponsoredTransactionAction | null>(null);
+  const [lastRecord, setLastRecord] = useState<SponsoredTransactionRecord | null>(null);
+  const currentAction = currentWalletAction(paylink.status);
+  const currentRole = currentAction ? signerRoleForAction(currentAction) : undefined;
+  const roleCanRun =
+    (role === "buyer" && (currentAction === "fund-mock-usdc" || currentAction === "release")) ||
+    (role === "seller" && currentAction === "mark-delivered");
+  const complete = !currentAction && paylink.status === "released";
+  const disabled = Boolean(!roleCanRun || pendingAction || !config?.localJudgeModeEnabled);
+
+  async function run(action: SponsoredTransactionAction) {
+    onError("");
+    setLastRecord(null);
+    setPendingAction(action);
+    try {
+      const result = await runLocalJudgePaylinkStep(paylink.id, action);
+      setLastRecord(result.record);
+      await onRefresh();
+    } catch (err) {
+      onError(errorText(err));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  return (
+    <section className="local-judge-panel">
+      <div className="local-judge-heading">
+        <div>
+          <p className="eyebrow">Local Judge Mode</p>
+          <h3>{complete ? "On-chain escrow flow complete" : roleCanRun ? "Run this role's Testnet step" : `Waiting for ${currentRole ?? "completion"}`}</h3>
+          <p>
+            The local API uses temporary buyer/seller test wallets to sign the business action. The app sponsor
+            still pays SUI gas, and the receipt records real Sui Testnet digests.
+          </p>
+        </div>
+        <StatusPill status={paylink.status} />
+      </div>
+
+      <div className="local-judge-steps">
+        {walletE2ESteps.map((step) => (
+          <div key={step.action} className={`local-judge-step ${walletE2EStepState(paylink.status, step.action)}`}>
+            <span>{step.role}</span>
+            <strong>{step.title}</strong>
+            <p>{localJudgeStepDetail(step.action)}</p>
+          </div>
+        ))}
+      </div>
+
+      {roleCanRun && currentAction && (
+        <button className="primary" onClick={() => run(currentAction)} disabled={disabled}>
+          {pendingAction === currentAction ? localJudgeRunningLabel(currentAction) : localJudgeActionLabel(currentAction)}
+        </button>
+      )}
+
+      {!roleCanRun && !complete && (
+        <div className="gas-note checking">
+          <strong>No action on this page</strong>
+          <span>Open the {currentRole === "seller" ? "Seller" : "Buyer"} page for the current step.</span>
+        </div>
+      )}
+
+      {lastRecord && (
+        <div className="sponsored-latest">
+          <span>{lastRecord.action}</span>
+          <strong>{lastRecord.status}</strong>
+          {lastRecord.digest && (
+            <a href={explorerUrl(lastRecord.digest, config?.network ?? "testnet")} target="_blank" rel="noreferrer">
+              {shortId(lastRecord.digest)}
+            </a>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -1827,6 +1962,35 @@ function demoActionLabel(action?: PaylinkAction): string {
   if (action === "deliver") return "Seller marks delivered";
   if (action === "release") return "Buyer releases funds";
   return "No demo action";
+}
+
+function localJudgeActionLabel(action: SponsoredTransactionAction): string {
+  if (action === "fund-mock-usdc") return "Run buyer funding on Testnet";
+  if (action === "mark-delivered") return "Run seller delivery on Testnet";
+  if (action === "release") return "Run buyer release on Testnet";
+  if (action === "refund") return "Run buyer refund on Testnet";
+  return "Run Testnet step";
+}
+
+function localJudgeRunningLabel(action: SponsoredTransactionAction): string {
+  if (action === "fund-mock-usdc") return "Minting and funding...";
+  if (action === "mark-delivered") return "Marking delivered...";
+  if (action === "release") return "Releasing funds...";
+  if (action === "refund") return "Refunding...";
+  return "Running...";
+}
+
+function localJudgeStepDetail(action: SponsoredTransactionAction): string {
+  if (action === "fund-mock-usdc") {
+    return "Backend buyer test wallet receives mUSDC and signs the sponsored escrow funding transaction.";
+  }
+  if (action === "mark-delivered") {
+    return "Backend seller test wallet signs delivery proof after the escrow is funded.";
+  }
+  if (action === "release") {
+    return "Backend buyer test wallet confirms delivery and releases escrow funds.";
+  }
+  return "Backend buyer test wallet refunds before seller delivery.";
 }
 
 function demoStepState(status: Paylink["status"], action: PaylinkAction): "complete" | "current" | "pending" {

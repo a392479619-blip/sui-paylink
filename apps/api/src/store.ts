@@ -220,7 +220,7 @@ export function applySponsoredTransactionResult(record: SponsoredTransactionReco
   return undefined;
 }
 
-function updatePaylink(id: string, patch: Partial<Paylink>, timestamp = now()): Paylink {
+export function updatePaylink(id: string, patch: Partial<Paylink>, timestamp = now()): Paylink {
   const current = requirePaylink(id);
   const updated = {
     ...current,

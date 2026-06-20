@@ -40,6 +40,12 @@ export const paylinkStorePath = process.env.PAYLINK_STORE_PATH
 export const sponsoredTransactionStorePath = process.env.SPONSORED_TRANSACTION_STORE_PATH
   ? resolveProjectPath(process.env.SPONSORED_TRANSACTION_STORE_PATH)
   : resolve(projectRoot, ".data", "sponsored-transactions.json");
+export const localJudgeWalletStorePath = process.env.LOCAL_JUDGE_WALLET_STORE_PATH
+  ? resolveProjectPath(process.env.LOCAL_JUDGE_WALLET_STORE_PATH)
+  : resolve(projectRoot, ".data", "local-judge-wallets.json");
+export const localJudgeModeEnabled = process.env.LOCAL_JUDGE_MODE_ENABLED
+  ? process.env.LOCAL_JUDGE_MODE_ENABLED === "true"
+  : isLocalUrl(process.env.PUBLIC_BASE_URL ?? "http://127.0.0.1:5174");
 
 export const appConfig: AppConfig = {
   network,
@@ -51,6 +57,7 @@ export const appConfig: AppConfig = {
   mockUsdcMintAmountUnits,
   feeReceiverAddress,
   sponsorEnabled: Boolean(sponsorPrivateKey),
+  localJudgeModeEnabled,
   sponsoredActions: ["fund-mock-usdc", "mark-delivered", "release", "refund"],
   supportedTokens: [
     {
@@ -94,5 +101,14 @@ function resolveProjectPath(path: string): string {
 function loadIfExists(path: string) {
   if (existsSync(path)) {
     loadEnv({ path, override: false, quiet: true });
+  }
+}
+
+function isLocalUrl(rawUrl: string): boolean {
+  try {
+    const url = new URL(rawUrl);
+    return ["127.0.0.1", "localhost", "::1"].includes(url.hostname);
+  } catch {
+    return false;
   }
 }

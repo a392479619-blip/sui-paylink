@@ -84,6 +84,12 @@ export const mintTestMockUsdcSchema = z.object({
 
 export type MintTestMockUsdcInput = z.infer<typeof mintTestMockUsdcSchema>;
 
+export const localJudgeRunSchema = z.object({
+  action: z.enum(sponsoredTransactionActions).optional(),
+});
+
+export type LocalJudgeRunInput = z.infer<typeof localJudgeRunSchema>;
+
 export type MintTestMockUsdcResult = {
   recipientAddress: string;
   amountUnits: string;
@@ -169,6 +175,7 @@ export type Paylink = CreatePaylinkInput & {
   status: PaylinkStatus;
   publicUrl: string;
   demoSeed?: boolean;
+  localJudgeDemo?: boolean;
   deliveryProofUri?: string;
   transactionDigest?: string;
   fundTransactionDigest?: string;
@@ -231,5 +238,20 @@ export type AppConfig = {
   feeReceiverAddress?: string;
   sponsorAddress?: string;
   sponsorEnabled?: boolean;
+  localJudgeModeEnabled?: boolean;
   sponsoredActions?: SponsoredTransactionAction[];
+};
+
+export type LocalJudgePaylinkResult = {
+  paylink: Paylink;
+  buyerAddress: string;
+  sellerAddress: string;
+};
+
+export type LocalJudgeActionResult = {
+  paylink: Paylink;
+  record: SponsoredTransactionRecord;
+  mint?: MintTestMockUsdcResult;
+  buyerAddress: string;
+  sellerAddress: string;
 };

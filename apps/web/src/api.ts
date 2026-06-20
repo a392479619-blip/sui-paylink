@@ -2,6 +2,8 @@ import type {
   AppConfig,
   BuildSponsoredTransactionInput,
   CreatePaylinkInput,
+  LocalJudgeActionResult,
+  LocalJudgePaylinkResult,
   MintTestMockUsdcInput,
   MintTestMockUsdcResult,
   Paylink,
@@ -81,6 +83,16 @@ export async function createPaylink(input: CreatePaylinkInput): Promise<Paylink>
   return request("/api/paylinks", {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+export async function createLocalJudgePaylink(): Promise<LocalJudgePaylinkResult> {
+  if (STATIC_DEMO_ENABLED) {
+    throw new Error("Static demo mode cannot create a Local Judge Paylink.");
+  }
+  return request("/api/local-judge/paylinks", {
+    method: "POST",
+    body: JSON.stringify({}),
   });
 }
 
@@ -164,6 +176,19 @@ export async function submitSponsoredTransaction(
   return request(`/api/sponsored-transactions/${id}/submit`, {
     method: "POST",
     body: JSON.stringify({ userSignature }),
+  });
+}
+
+export async function runLocalJudgePaylinkStep(
+  id: string,
+  action?: BuildSponsoredTransactionInput["action"],
+): Promise<LocalJudgeActionResult> {
+  if (STATIC_DEMO_ENABLED) {
+    throw new Error("Static demo mode cannot run Local Judge transactions.");
+  }
+  return request(`/api/local-judge/paylinks/${id}/run`, {
+    method: "POST",
+    body: JSON.stringify({ action }),
   });
 }
 
