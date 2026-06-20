@@ -13,6 +13,10 @@ services:
         value: 0.0.0.0
       - key: SERVE_WEB_APP
         value: "true"
+      - key: SUI_NETWORK
+        value: testnet
+      - key: LOCAL_JUDGE_MODE_ENABLED
+        value: "false"
       - key: DEMO_SEED_ENABLED
         value: "true"
       - key: DEMO_SEED_PAYLINK_ID
@@ -22,4 +26,8 @@ services:
       - key: SPONSORED_TRANSACTION_STORE_PATH
         value: /tmp/suipaylink-sponsored-transactions.json
       - key: PUBLIC_BASE_URL
+        sync: false
+      - key: SPONSOR_PRIVATE_KEY
+        sync: false
+      - key: MOCK_USDC_MINTER_PRIVATE_KEY
         sync: false
