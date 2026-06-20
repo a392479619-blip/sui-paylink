@@ -1268,31 +1268,39 @@ function SponsoredPaylinkActions({
       throw new Error("Connect a Sui wallet first");
     }
     const chain = `sui:${config?.network ?? "testnet"}` as `${string}:${string}`;
-    const legacyFeature = currentWallet?.features["sui:signTransactionBlock"] as
-      | { signTransactionBlock?: (input: { transactionBlock: Transaction; account: typeof account; chain: string }) => Promise<{ transactionBlockBytes: string; signature: string }> }
-      | undefined;
+    const transaction = Transaction.from(built.transactionBytes);
+    const modernFeature = currentWallet?.features["sui:signTransaction"] as unknown;
 
-    if (legacyFeature?.signTransactionBlock) {
-      const signed = await legacyFeature.signTransactionBlock({
-        transactionBlock: Transaction.from(built.transactionBytes),
+    if (modernFeature) {
+      const signed = await signTransaction({
+        transaction,
         account,
         chain,
       });
       return {
-        bytes: signed.transactionBlockBytes,
+        bytes: signed.bytes,
         signature: signed.signature,
-        method: "signTransactionBlock",
+        method: "signTransaction",
       };
     }
 
-    const signed = await signTransaction({
-      transaction: built.transactionBytes,
+    const legacyFeature = currentWallet?.features["sui:signTransactionBlock"] as
+      | { signTransactionBlock?: (input: { transactionBlock: Transaction; account: typeof account; chain: string }) => Promise<{ transactionBlockBytes: string; signature: string }> }
+      | undefined;
+
+    if (!legacyFeature?.signTransactionBlock) {
+      throw new Error("Connected wallet cannot sign Sui transactions");
+    }
+
+    const signed = await legacyFeature.signTransactionBlock({
+      transactionBlock: transaction,
+      account,
       chain,
     });
     return {
-      bytes: signed.bytes,
+      bytes: signed.transactionBlockBytes,
       signature: signed.signature,
-      method: "signTransaction",
+      method: "signTransactionBlock",
     };
   }
 
@@ -1398,7 +1406,9 @@ function SponsoredPaylinkActions({
         <span>
           {account
             ? `Connected wallet ${shortId(account.address)}${currentWallet?.name ? ` via ${currentWallet.name}` : ""}`
-            : "Connect OKX Wallet for order view, or Sui Wallet / local test wallet for escrow signing"}
+            : role === "seller"
+              ? "Connect the seller wallet. OKX is allowed if it exposes Sui signing for this transaction."
+              : "Connect the buyer wallet with Slush or Sui Wallet for escrow signing."}
         </span>
       </div>
 
@@ -2320,11 +2330,15 @@ function errorText(error: unknown): string {
 function unsupportedSponsoredWalletReason(walletName: string | undefined): string {
   if (!walletName) return "";
   const normalized = walletName.toLowerCase();
-  if (normalized.includes("unsafe burner") || normalized.includes("slush") || normalized.includes("sui wallet")) return "";
-  if (normalized.includes("okx")) {
-    return "OKX Wallet can connect for login and order viewing, but it cannot sign this gasless sponsored escrow transaction. Connect Sui Wallet / Slush, or use the local test wallet on localhost, for fund, delivery, release, or refund.";
+  if (
+    normalized.includes("unsafe burner") ||
+    normalized.includes("slush") ||
+    normalized.includes("sui wallet") ||
+    normalized.includes("okx")
+  ) {
+    return "";
   }
-  return `${walletName} is connected, but this sponsored transaction demo only supports Sui Wallet / Slush or the local test wallet for escrow signing. Disconnect this wallet, then connect a supported signing wallet.`;
+  return `${walletName} is connected, but this sponsored transaction demo only supports Slush, OKX Wallet, Sui Wallet, or the local test wallet for escrow signing. Disconnect this wallet, then connect a supported signing wallet.`;
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {

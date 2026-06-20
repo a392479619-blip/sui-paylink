@@ -13,7 +13,7 @@ const localTestWalletEnabled =
   typeof window !== "undefined" && ["127.0.0.1", "localhost", "::1"].includes(window.location.hostname);
 const preferredWallets = localTestWalletEnabled
   ? ["Unsafe Burner Wallet", "Sui Wallet", "Slush", "OKX Wallet"]
-  : ["OKX Wallet", "Sui Wallet", "Slush"];
+  : ["Slush", "OKX Wallet", "Sui Wallet"];
 const requiredWalletFeatures = ["sui:signTransaction", "sui:signTransactionBlock"] as const;
 const supportedWalletNameFragments = localTestWalletEnabled
   ? ["unsafe burner", "okx", "sui wallet", "slush"]
