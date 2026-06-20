@@ -1241,7 +1241,7 @@ function SponsoredPaylinkActions({
       });
       setLastRecord(built);
 
-      setWalletStage("Waiting for wallet signature...");
+      setWalletStage(`Waiting for ${currentWallet?.name ?? "wallet"} signature via ${walletSigning.methodLabel}...`);
       const signed = await withTimeout(
         signBuiltSponsoredTransaction(built),
         walletSignatureTimeoutMs,
@@ -1254,8 +1254,9 @@ function SponsoredPaylinkActions({
       await onRefresh();
       setWalletStage("Submitted and verified on Sui Testnet.");
     } catch (err) {
-      onError(errorText(err));
-      setWalletStage("");
+      const message = errorText(err);
+      onError(message);
+      setWalletStage(walletFailureStage(message));
     } finally {
       setPendingAction(null);
     }
@@ -1315,6 +1316,7 @@ function SponsoredPaylinkActions({
       : "Sponsor not configured";
   const connectedAddress = account?.address;
   const unsupportedWallet = unsupportedSponsoredWalletReason(currentWallet?.name);
+  const walletSigning = walletSigningSupport(currentWallet);
   const walletReadyForSponsoredSigning = Boolean(account && !unsupportedWallet);
   const buyerConnected = Boolean(
     connectedAddress &&
@@ -1522,6 +1524,22 @@ function SponsoredPaylinkActions({
           <div>
             <dt>Wallet</dt>
             <dd>{account ? shortId(account.address) : "not connected"}</dd>
+          </div>
+          <div>
+            <dt>Wallet app</dt>
+            <dd>{currentWallet?.name ?? "not connected"}</dd>
+          </div>
+          <div>
+            <dt>Signing path</dt>
+            <dd>{walletSigning.methodLabel}</dd>
+          </div>
+          <div>
+            <dt>Sui signing features</dt>
+            <dd className="signer-list">
+              {walletSigning.features.length > 0
+                ? walletSigning.features.map((feature) => <span key={feature}>{feature}</span>)
+                : "none detected"}
+            </dd>
           </div>
           <div>
             <dt>Your signing actions</dt>
@@ -2339,6 +2357,35 @@ function unsupportedSponsoredWalletReason(walletName: string | undefined): strin
     return "";
   }
   return `${walletName} is connected, but this sponsored transaction demo only supports Slush, OKX Wallet, Sui Wallet, or the local test wallet for escrow signing. Disconnect this wallet, then connect a supported signing wallet.`;
+}
+
+function walletSigningSupport(wallet: { features?: Record<string, unknown> } | null | undefined): {
+  features: string[];
+  methodLabel: string;
+} {
+  const features = Object.keys(wallet?.features ?? {})
+    .filter((feature) => feature.startsWith("sui:sign"))
+    .sort();
+  if (wallet?.features?.["sui:signTransaction"]) {
+    return { features, methodLabel: "sui:signTransaction" };
+  }
+  if (wallet?.features?.["sui:signTransactionBlock"]) {
+    return { features, methodLabel: "sui:signTransactionBlock" };
+  }
+  return { features, methodLabel: "no Sui transaction signing feature detected" };
+}
+
+function walletFailureStage(message: string): string {
+  if (message.includes("Wallet did not return a signature")) {
+    return "Wallet signature did not return to the page. Sponsor submit was not sent.";
+  }
+  if (message.includes("User rejected") || message.toLowerCase().includes("reject")) {
+    return "Wallet rejected or cancelled the signature. Sponsor submit was not sent.";
+  }
+  if (message.includes("submitted_transaction_mismatch")) {
+    return "Wallet returned changed transaction bytes. Sponsor refused to submit them.";
+  }
+  return `Stopped before completion: ${message}`;
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
