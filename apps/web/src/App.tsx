@@ -743,6 +743,7 @@ function PublicPaylinkPage({
                     role={role}
                     onError={setError}
                     onRefresh={refresh}
+                    onNavigate={onNavigate}
                   />
                 )}
               </div>
@@ -1112,6 +1113,7 @@ function SponsoredPaylinkActions({
   role,
   onError,
   onRefresh,
+  onNavigate,
 }: {
   config: AppConfig | null;
   sponsorReadiness: SponsorReadiness | null;
@@ -1119,6 +1121,7 @@ function SponsoredPaylinkActions({
   role: PaylinkPageRole;
   onError: (message: string) => void;
   onRefresh: () => Promise<void>;
+  onNavigate: (path: string, notice?: AppNotice) => void;
 }) {
   const account = useCurrentAccount();
   const { currentWallet } = useCurrentWallet();
@@ -1132,6 +1135,23 @@ function SponsoredPaylinkActions({
     SponsoredTransactionAction | "find-coin" | "mint-test-coin" | null
   >(null);
   const [lastRecord, setLastRecord] = useState<SponsoredTransactionRecord | null>(null);
+  const [startingLocalJudge, setStartingLocalJudge] = useState(false);
+
+  async function startLocalJudgeDemo() {
+    onError("");
+    setStartingLocalJudge(true);
+    try {
+      const result = await createLocalJudgePaylink();
+      onNavigate(paylinkPath(result.paylink.id, "buyer"), {
+        kind: "success",
+        message: "Local Judge order created. Use the page buttons instead of wallet popups.",
+      });
+    } catch (err) {
+      onError(errorText(err));
+    } finally {
+      setStartingLocalJudge(false);
+    }
+  }
 
   async function mintTestCoin() {
     if (!account || !expectedAmountUnits) return;
@@ -1341,6 +1361,30 @@ function SponsoredPaylinkActions({
   const showRefundAction = showBuyerControls && paylink.status === "funded";
   const showDeliverAction = showSellerControls && paylink.status === "funded";
   const showActions = showFundAction || showReleaseAction || showRefundAction || showDeliverAction;
+
+  if (config?.localJudgeModeEnabled) {
+    return (
+      <section className="wallet-fallback-panel">
+        <div>
+          <p className="eyebrow">Browser wallet path disabled locally</p>
+          <h3>Use Local Judge Mode for this demo</h3>
+          <p>
+            Slush/Sui Wallet is building the sponsored transaction, but after password unlock it is not reliably
+            returning the signature to this localhost page. The stable demo path uses temporary local buyer/seller
+            test wallets, still submits real Sui Testnet transactions, and records real digests.
+          </p>
+        </div>
+        <button className="primary" onClick={startLocalJudgeDemo} disabled={startingLocalJudge}>
+          {startingLocalJudge ? "Creating Local Judge order..." : "Start Local Judge demo"}
+        </button>
+        <details className="technical-proof">
+          <summary>What this disables</summary>
+          <WalletE2EChecklist paylink={paylink} accountAddress={account?.address} role={role} />
+          <SponsorReadinessCard readiness={sponsorReadiness} />
+        </details>
+      </section>
+    );
+  }
 
   return (
     <div className="sponsored-actions">

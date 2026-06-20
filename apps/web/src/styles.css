@@ -1244,6 +1244,26 @@ button:disabled {
   background: #f6fcf8;
 }
 
+.wallet-fallback-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #e3d4ad;
+  border-radius: 8px;
+  background: #fffaf0;
+}
+
+.wallet-fallback-panel h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.wallet-fallback-panel p {
+  margin: 6px 0 0;
+  color: #5d6875;
+  line-height: 1.45;
+}
+
 .local-judge-heading {
   display: flex;
   gap: 14px;
