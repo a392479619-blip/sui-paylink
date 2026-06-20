@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import type {
   CreatePaylinkInput,
   Paylink,
+  RecordWalletTransactionInput,
   ReceiptSummary,
   SponsoredTransactionRecord,
 } from "@suipaylink/shared";
@@ -220,6 +221,82 @@ export function applySponsoredTransactionResult(record: SponsoredTransactionReco
   return undefined;
 }
 
+export function recordWalletTransaction(
+  id: string,
+  input: RecordWalletTransactionInput,
+): Paylink {
+  const paylink = requirePaylink(id);
+  const timestamp = now();
+
+  if (input.action === "fund-mock-usdc") {
+    if (paylink.status !== "created") {
+      throw new Error(`Cannot record funding in status ${paylink.status}`);
+    }
+    if (!input.escrowObjectId) {
+      throw new Error("escrowObjectId is required after wallet funding");
+    }
+    if (paylink.buyerAddress && !sameAddress(paylink.buyerAddress, input.actorAddress)) {
+      throw new Error("actorAddress does not match the Paylink buyer");
+    }
+    return updatePaylink(id, {
+      status: "funded",
+      buyerAddress: paylink.buyerAddress || input.actorAddress,
+      transactionDigest: input.digest,
+      fundTransactionDigest: input.digest,
+      escrowObjectId: input.escrowObjectId,
+      fundedAt: timestamp,
+    }, timestamp);
+  }
+
+  if (input.action === "mark-delivered") {
+    if (paylink.status !== "funded") {
+      throw new Error(`Cannot record delivery in status ${paylink.status}`);
+    }
+    if (!paylink.sellerAddress || !sameAddress(paylink.sellerAddress, input.actorAddress)) {
+      throw new Error("actorAddress does not match the Paylink seller");
+    }
+    return updatePaylink(id, {
+      status: "delivered",
+      transactionDigest: input.digest,
+      deliverTransactionDigest: input.digest,
+      deliveryProofUri: input.deliveryProofUri ?? paylink.deliveryProofUri,
+      deliveredAt: timestamp,
+    }, timestamp);
+  }
+
+  if (input.action === "release") {
+    if (paylink.status !== "delivered") {
+      throw new Error(`Cannot record release in status ${paylink.status}`);
+    }
+    if (!paylink.buyerAddress || !sameAddress(paylink.buyerAddress, input.actorAddress)) {
+      throw new Error("actorAddress does not match the Paylink buyer");
+    }
+    return updatePaylink(id, {
+      status: "released",
+      transactionDigest: input.digest,
+      releaseTransactionDigest: input.digest,
+      releasedAt: timestamp,
+    }, timestamp);
+  }
+
+  if (input.action === "refund") {
+    if (paylink.status !== "funded") {
+      throw new Error(`Cannot record refund in status ${paylink.status}`);
+    }
+    if (!paylink.buyerAddress || !sameAddress(paylink.buyerAddress, input.actorAddress)) {
+      throw new Error("actorAddress does not match the Paylink buyer");
+    }
+    return updatePaylink(id, {
+      status: "refunded",
+      transactionDigest: input.digest,
+      refundTransactionDigest: input.digest,
+      refundedAt: timestamp,
+    }, timestamp);
+  }
+
+  throw new Error(`Unsupported wallet transaction action ${input.action}`);
+}
+
 export function updatePaylink(id: string, patch: Partial<Paylink>, timestamp = now()): Paylink {
   const current = requirePaylink(id);
   const updated = {
@@ -238,6 +315,10 @@ function normalizePaylinkAddress(value: string): string {
     throw new Error("Invalid Sui address");
   }
   return normalized;
+}
+
+function sameAddress(left: string, right: string): boolean {
+  return normalizeSuiAddress(left) === normalizeSuiAddress(right);
 }
 
 function requirePaylink(id: string): Paylink {

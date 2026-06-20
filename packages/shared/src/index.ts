@@ -77,6 +77,16 @@ export const submitSponsoredTransactionSchema = z.object({
 
 export type SubmitSponsoredTransactionInput = z.infer<typeof submitSponsoredTransactionSchema>;
 
+export const recordWalletTransactionSchema = z.object({
+  action: z.enum(sponsoredTransactionActions),
+  digest: z.string().min(1),
+  actorAddress: z.string().min(1),
+  escrowObjectId: z.string().min(1).optional(),
+  deliveryProofUri: z.string().url().optional(),
+});
+
+export type RecordWalletTransactionInput = z.infer<typeof recordWalletTransactionSchema>;
+
 export const mintTestMockUsdcSchema = z.object({
   recipientAddress: z.string().min(1),
   amountUnits: z.string().regex(/^\d+$/).optional(),

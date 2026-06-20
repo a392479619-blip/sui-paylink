@@ -7,6 +7,7 @@ import type {
   MintTestMockUsdcInput,
   MintTestMockUsdcResult,
   Paylink,
+  RecordWalletTransactionInput,
   ReceiptSummary,
   SponsorReadiness,
   SponsoredTransactionRecord,
@@ -178,6 +179,19 @@ export async function submitSponsoredTransaction(
   return request(`/api/sponsored-transactions/${id}/submit`, {
     method: "POST",
     body: JSON.stringify({ userSignature, transactionBytes }),
+  });
+}
+
+export async function recordWalletTransaction(
+  id: string,
+  input: RecordWalletTransactionInput,
+): Promise<Paylink> {
+  if (STATIC_DEMO_ENABLED) {
+    throw new Error("Static demo mode cannot record wallet transactions.");
+  }
+  return request(`/api/paylinks/${id}/wallet-transaction`, {
+    method: "POST",
+    body: JSON.stringify(input),
   });
 }
 

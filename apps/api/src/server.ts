@@ -8,6 +8,7 @@ import {
   mintTestMockUsdcSchema,
   localJudgeRunSchema,
   mutatePaylinkSchema,
+  recordWalletTransactionSchema,
   submitSponsoredTransactionSchema,
 } from "@suipaylink/shared";
 import { appConfig, host, port, serveWebApp, webDistDir } from "./config.js";
@@ -30,6 +31,7 @@ import {
   getPaylink,
   listPaylinks,
   markDelivered,
+  recordWalletTransaction,
   refundPaylink,
   releasePaylink,
 } from "./store.js";
@@ -143,6 +145,18 @@ app.post<{ Params: { id: string } }>("/api/paylinks/:id/refund", async (request,
   }
   try {
     return refundPaylink(request.params.id);
+  } catch (error) {
+    return reply.code(400).send({ error: errorMessage(error) });
+  }
+});
+
+app.post<{ Params: { id: string } }>("/api/paylinks/:id/wallet-transaction", async (request, reply) => {
+  const parsed = recordWalletTransactionSchema.safeParse(request.body ?? {});
+  if (!parsed.success) {
+    return reply.code(400).send({ error: parsed.error.flatten() });
+  }
+  try {
+    return recordWalletTransaction(request.params.id, parsed.data);
   } catch (error) {
     return reply.code(400).send({ error: errorMessage(error) });
   }

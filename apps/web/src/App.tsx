@@ -1,4 +1,11 @@
-import { ConnectButton, useCurrentAccount, useCurrentWallet, useSignTransaction, useSuiClient } from "@mysten/dapp-kit";
+import {
+  ConnectButton,
+  useCurrentAccount,
+  useCurrentWallet,
+  useSignAndExecuteTransaction,
+  useSignTransaction,
+  useSuiClient,
+} from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { useEffect, useMemo, useState } from "react";
 import type {
@@ -22,6 +29,7 @@ import {
   listSponsoredTransactions,
   mintTestMockUsdc,
   mutatePaylink,
+  recordWalletTransaction,
   runLocalJudgePaylinkStep,
   syncPaylinkChain,
   submitSponsoredTransaction,
@@ -1130,6 +1138,7 @@ function SponsoredPaylinkActions({
   const { currentWallet } = useCurrentWallet();
   const client = useSuiClient();
   const { mutateAsync: signTransaction } = useSignTransaction();
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   const token = config?.supportedTokens.find((item) => item.symbol === paylink.token) ?? config?.supportedTokens[0];
   const expectedAmountUnits = token ? amountToBaseUnits(paylink.amount, token.decimals) : "";
   const [paymentCoinId, setPaymentCoinId] = useState("");
@@ -1139,6 +1148,7 @@ function SponsoredPaylinkActions({
   >(null);
   const [lastRecord, setLastRecord] = useState<SponsoredTransactionRecord | null>(null);
   const [walletStage, setWalletStage] = useState("");
+  const [walletPaidDigest, setWalletPaidDigest] = useState("");
 
   async function mintTestCoin() {
     if (!account || !expectedAmountUnits) return;
@@ -1305,6 +1315,96 @@ function SponsoredPaylinkActions({
     };
   }
 
+  async function executeWalletPaidAction(action: SponsoredTransactionAction) {
+    if (!account) {
+      onError("Connect a Sui wallet first");
+      return;
+    }
+    if (!config?.packageId || !token) {
+      onError("Package or token config is missing");
+      return;
+    }
+    if (action === "fund-mock-usdc" && !paymentCoinId) {
+      onError("Select or paste a payment coin object before funding");
+      return;
+    }
+    if (action === "fund-mock-usdc" && !paylink.sellerAddress) {
+      onError("Create the paylink with a seller receiving address before buyer funding");
+      return;
+    }
+    if (action !== "fund-mock-usdc" && !paylink.escrowObjectId) {
+      onError("This Paylink has no escrow object yet");
+      return;
+    }
+    const expectedSigner = signerAddressForAction(action, paylink);
+    if (expectedSigner && !sameSuiAddress(account.address, expectedSigner)) {
+      onError(`Connect the ${signerRoleForAction(action)} wallet for ${action}`);
+      return;
+    }
+
+    onError("");
+    setWalletPaidDigest("");
+    setPendingAction(action);
+    try {
+      const transaction = buildWalletPaidTransaction(action, {
+        config,
+        token,
+        paylink,
+        paymentCoinId,
+      });
+      setWalletStage("Waiting for wallet-paid transaction. This fallback requires the connected wallet to hold Testnet SUI for gas.");
+      const result = await withTimeout(
+        signAndExecuteTransaction({
+          transaction,
+          chain: `sui:${config.network}`,
+        }),
+        walletSignatureTimeoutMs,
+        "Wallet did not submit the wallet-paid transaction. Unlock the wallet, keep the confirmation popup open, and retry.",
+      );
+
+      setWalletStage(`Wallet submitted ${shortId(result.digest)}; waiting for Sui finality...`);
+      const details = await client.waitForTransaction({
+        digest: result.digest,
+        options: {
+          showEffects: true,
+          showEvents: true,
+          showObjectChanges: true,
+        },
+      });
+      if (details.effects?.status.status !== "success") {
+        throw new Error(details.effects?.status.error ?? "Sui transaction failed");
+      }
+
+      const escrowObjectId =
+        action === "fund-mock-usdc"
+          ? extractCreatedEscrowObjectId(details.objectChanges)
+          : paylink.escrowObjectId;
+      if (action === "fund-mock-usdc" && !escrowObjectId) {
+        throw new Error("Wallet funding succeeded but no Escrow object was found");
+      }
+
+      await recordWalletTransaction(paylink.id, {
+        action,
+        digest: result.digest,
+        actorAddress: account.address,
+        escrowObjectId,
+        deliveryProofUri:
+          action === "mark-delivered"
+            ? "https://example.com/proofs/wallet-paid-delivery.pdf"
+            : undefined,
+      });
+      setWalletPaidDigest(result.digest);
+      await onRefresh();
+      setWalletStage("Wallet-paid transaction verified on Sui Testnet.");
+    } catch (err) {
+      const message = errorText(err);
+      onError(message);
+      setWalletStage(walletFailureStage(message));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   const sponsorChecking = Boolean(config?.sponsorEnabled && sponsorReadiness === null);
   const sponsorReady = Boolean(config?.sponsorEnabled && sponsorReadiness?.ready);
   const sponsorTitle = sponsorReady
@@ -1363,6 +1463,35 @@ function SponsoredPaylinkActions({
   const canRefund = Boolean(
     sponsorReady &&
       walletReadyForSponsoredSigning &&
+      buyerConnected &&
+      paylink.escrowObjectId &&
+      paylink.status === "funded" &&
+      pendingAction !== "refund",
+  );
+  const canWalletPaidFund = Boolean(
+    walletReadyForSponsoredSigning &&
+      buyerConnected &&
+      paylink.sellerAddress &&
+      paymentCoinId.trim() &&
+      paylink.status === "created" &&
+      pendingAction !== "fund-mock-usdc",
+  );
+  const canWalletPaidDeliver = Boolean(
+    walletReadyForSponsoredSigning &&
+      sellerConnected &&
+      paylink.escrowObjectId &&
+      paylink.status === "funded" &&
+      pendingAction !== "mark-delivered",
+  );
+  const canWalletPaidRelease = Boolean(
+    walletReadyForSponsoredSigning &&
+      buyerConnected &&
+      paylink.escrowObjectId &&
+      paylink.status === "delivered" &&
+      pendingAction !== "release",
+  );
+  const canWalletPaidRefund = Boolean(
+    walletReadyForSponsoredSigning &&
       buyerConnected &&
       paylink.escrowObjectId &&
       paylink.status === "funded" &&
@@ -1489,7 +1618,59 @@ function SponsoredPaylinkActions({
         </div>
       )}
 
+      {showActions && (
+        <div className="gas-note checking">
+          <strong>Wallet-paid fallback</strong>
+          <span>
+            Use this only if the sponsored wallet popup does not return. The connected wallet signs and pays
+            Testnet SUI gas directly.
+          </span>
+          <div className="actions inline-actions">
+            {showFundAction && (
+              <button
+                onClick={() => executeWalletPaidAction("fund-mock-usdc")}
+                disabled={!canWalletPaidFund || pending}
+              >
+                {pendingAction === "fund-mock-usdc" ? "Submitting..." : "Fallback: buyer pays gas to fund"}
+              </button>
+            )}
+            {showDeliverAction && (
+              <button
+                onClick={() => executeWalletPaidAction("mark-delivered")}
+                disabled={!canWalletPaidDeliver || pending}
+              >
+                {pendingAction === "mark-delivered" ? "Submitting..." : "Fallback: seller pays gas to deliver"}
+              </button>
+            )}
+            {showReleaseAction && (
+              <button
+                onClick={() => executeWalletPaidAction("release")}
+                disabled={!canWalletPaidRelease || pending}
+              >
+                {pendingAction === "release" ? "Submitting..." : "Fallback: buyer pays gas to release"}
+              </button>
+            )}
+            {showRefundAction && (
+              <button
+                onClick={() => executeWalletPaidAction("refund")}
+                disabled={!canWalletPaidRefund || pending}
+              >
+                {pendingAction === "refund" ? "Submitting..." : "Fallback: buyer pays gas to refund"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {walletStage && <p className="wallet-stage">{walletStage}</p>}
+      {walletPaidDigest && (
+        <p className="wallet-stage">
+          Wallet-paid digest:{" "}
+          <a href={explorerUrl(walletPaidDigest, config?.network ?? "testnet")} target="_blank" rel="noreferrer">
+            {shortId(walletPaidDigest)}
+          </a>
+        </p>
+      )}
 
       {showBuyerControls && paylink.status === "delivered" && (
         <section className="role-claim-card">
@@ -2318,6 +2499,99 @@ function mintMockUsdcCommand(config: AppConfig | null, paylink: Paylink): string
   const treasuryCap = config?.mockUsdcTreasuryCapId ?? "<mock-usdc-treasury-cap-id>";
   const buyer = paylink.buyerAddress ?? "<buyer-address>";
   return `sui client call --package ${packageValue} --module mock_usdc --function mint --args ${treasuryCap} ${units} ${buyer} --gas-budget 10000000 --json`;
+}
+
+function buildWalletPaidTransaction(
+  action: SponsoredTransactionAction,
+  context: {
+    config: AppConfig;
+    token: { coinType: string };
+    paylink: Paylink;
+    paymentCoinId: string;
+  },
+): Transaction {
+  const { config, token, paylink, paymentCoinId } = context;
+  const transaction = new Transaction();
+  const packageId = config.packageId;
+  if (!packageId) {
+    throw new Error("Package ID is missing");
+  }
+
+  if (action === "fund-mock-usdc") {
+    if (!paylink.sellerAddress) {
+      throw new Error("Seller address is required");
+    }
+    transaction.moveCall({
+      target: contractTarget(packageId, "create_funded_escrow"),
+      typeArguments: [token.coinType],
+      arguments: [
+        transaction.pure.address(paylink.sellerAddress),
+        transaction.pure.string(paylink.memo),
+        transaction.object(paymentCoinId),
+        transaction.pure.u64(paylink.feeBps),
+        transaction.pure.address(config.feeReceiverAddress ?? paylink.sellerAddress),
+      ],
+    });
+    return transaction;
+  }
+
+  if (!paylink.escrowObjectId) {
+    throw new Error("Escrow object is required");
+  }
+
+  if (action === "mark-delivered") {
+    transaction.moveCall({
+      target: contractTarget(packageId, "mark_delivered"),
+      typeArguments: [token.coinType],
+      arguments: [
+        transaction.object(paylink.escrowObjectId),
+        transaction.pure.string("https://example.com/proofs/wallet-paid-delivery.pdf"),
+      ],
+    });
+    return transaction;
+  }
+
+  if (action === "release") {
+    transaction.moveCall({
+      target: contractTarget(packageId, "release"),
+      typeArguments: [token.coinType],
+      arguments: [transaction.object(paylink.escrowObjectId)],
+    });
+    return transaction;
+  }
+
+  if (action === "refund") {
+    transaction.moveCall({
+      target: contractTarget(packageId, "refund_to_buyer"),
+      typeArguments: [token.coinType],
+      arguments: [transaction.object(paylink.escrowObjectId)],
+    });
+    return transaction;
+  }
+
+  throw new Error(`Unsupported wallet-paid action ${action}`);
+}
+
+function contractTarget(packageId: string, functionName: string): `${string}::${string}::${string}` {
+  return `${packageId}::escrow::${functionName}`;
+}
+
+function extractCreatedEscrowObjectId(objectChanges: unknown): string | undefined {
+  if (!Array.isArray(objectChanges)) {
+    return undefined;
+  }
+  const created = objectChanges.find((change) => {
+    if (!change || typeof change !== "object") {
+      return false;
+    }
+    const candidate = change as { type?: unknown; objectType?: unknown };
+    return (
+      candidate.type === "created" &&
+      typeof candidate.objectType === "string" &&
+      candidate.objectType.includes("::escrow::Escrow")
+    );
+  }) as { objectId?: unknown } | undefined;
+  return typeof created?.objectId === "string" ? created.objectId : undefined;
 }
 
 function explorerUrl(digest: string, network: AppConfig["network"]): string {

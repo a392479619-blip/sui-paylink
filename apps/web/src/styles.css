@@ -1062,6 +1062,11 @@ button:disabled {
   align-content: start;
 }
 
+.inline-actions {
+  width: 100%;
+  min-width: 0;
+}
+
 .sponsored-actions {
   display: grid;
   align-content: start;
@@ -1086,6 +1091,7 @@ button:disabled {
 
 .gas-note {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
   justify-content: space-between;
