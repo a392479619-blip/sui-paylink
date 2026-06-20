@@ -168,14 +168,16 @@ export async function listSponsoredTransactions(paylinkId?: string): Promise<Spo
 export async function submitSponsoredTransaction(
   id: string,
   userSignature: string,
+  transactionBytes?: string,
 ): Promise<SponsoredTransactionRecord> {
   if (STATIC_DEMO_ENABLED) {
     void userSignature;
+    void transactionBytes;
     throw new Error(`Static demo mode cannot submit sponsored transaction ${id}`);
   }
   return request(`/api/sponsored-transactions/${id}/submit`, {
     method: "POST",
-    body: JSON.stringify({ userSignature }),
+    body: JSON.stringify({ userSignature, transactionBytes }),
   });
 }
 

@@ -522,12 +522,14 @@ export async function submitSponsoredTransaction(
     throw cause;
   }
 
+  const transactionBytes = await verifiedSubmittedTransactionBytes(record, input.transactionBytes);
   const sponsorSignature = await getSponsorSigner().signTransaction(
-    Buffer.from(record.transactionBytes, "base64"),
+    Buffer.from(transactionBytes, "base64"),
   );
 
   const submitted: SponsoredTransactionRecord = {
     ...record,
+    transactionBytes,
     status: "submitted",
     submittedAt: new Date().toISOString(),
   };
@@ -535,7 +537,7 @@ export async function submitSponsoredTransaction(
 
   try {
     const response = await client.executeTransactionBlock({
-      transactionBlock: record.transactionBytes,
+      transactionBlock: transactionBytes,
       signature: [input.userSignature, sponsorSignature.signature],
       options: {
         showBalanceChanges: true,
@@ -773,6 +775,40 @@ function findBlockingSponsoredAction(
     }
   }
   return undefined;
+}
+
+async function verifiedSubmittedTransactionBytes(
+  record: SponsoredTransactionRecord,
+  submittedTransactionBytes?: string,
+): Promise<string> {
+  if (!submittedTransactionBytes || submittedTransactionBytes === record.transactionBytes) {
+    return record.transactionBytes;
+  }
+
+  const [recordJson, submittedJson] = await Promise.all([
+    transactionJson(record.transactionBytes),
+    transactionJson(submittedTransactionBytes),
+  ]);
+  if (recordJson !== submittedJson) {
+    throw new SponsorError(
+      400,
+      "submitted_transaction_mismatch",
+      "Wallet returned transaction bytes that do not match the sponsored transaction build",
+    );
+  }
+  await assertDryRunSuccess(submittedTransactionBytes);
+  return submittedTransactionBytes;
+}
+
+async function transactionJson(transactionBytes: string): Promise<string> {
+  try {
+    return await Transaction.from(transactionBytes).toJSON({
+      client,
+      supportedIntents: [],
+    });
+  } catch (error) {
+    throw new SponsorError(400, "invalid_transaction_bytes", errorMessage(error));
+  }
 }
 
 function refreshedRecordStatus(record: SponsoredTransactionRecord): SponsoredTransactionRecord["status"] {

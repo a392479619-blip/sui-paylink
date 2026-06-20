@@ -34,6 +34,12 @@ type PaylinkAction = "fund" | "deliver" | "release" | "refund";
 type PaylinkPageRole = "overview" | "buyer" | "seller";
 const walletSignatureTimeoutMs = 60_000;
 
+type WalletSignedTransaction = {
+  bytes: string;
+  signature: string;
+  method: "signTransaction" | "signTransactionBlock";
+};
+
 type PaylinkRoute = {
   id: string;
   role: PaylinkPageRole;
@@ -743,7 +749,6 @@ function PublicPaylinkPage({
                     role={role}
                     onError={setError}
                     onRefresh={refresh}
-                    onNavigate={onNavigate}
                   />
                 )}
               </div>
@@ -1113,7 +1118,6 @@ function SponsoredPaylinkActions({
   role,
   onError,
   onRefresh,
-  onNavigate,
 }: {
   config: AppConfig | null;
   sponsorReadiness: SponsorReadiness | null;
@@ -1121,7 +1125,6 @@ function SponsoredPaylinkActions({
   role: PaylinkPageRole;
   onError: (message: string) => void;
   onRefresh: () => Promise<void>;
-  onNavigate: (path: string, notice?: AppNotice) => void;
 }) {
   const account = useCurrentAccount();
   const { currentWallet } = useCurrentWallet();
@@ -1135,23 +1138,7 @@ function SponsoredPaylinkActions({
     SponsoredTransactionAction | "find-coin" | "mint-test-coin" | null
   >(null);
   const [lastRecord, setLastRecord] = useState<SponsoredTransactionRecord | null>(null);
-  const [startingLocalJudge, setStartingLocalJudge] = useState(false);
-
-  async function startLocalJudgeDemo() {
-    onError("");
-    setStartingLocalJudge(true);
-    try {
-      const result = await createLocalJudgePaylink();
-      onNavigate(paylinkPath(result.paylink.id, "buyer"), {
-        kind: "success",
-        message: "Local Judge order created. Use the page buttons instead of wallet popups.",
-      });
-    } catch (err) {
-      onError(errorText(err));
-    } finally {
-      setStartingLocalJudge(false);
-    }
-  }
+  const [walletStage, setWalletStage] = useState("");
 
   async function mintTestCoin() {
     if (!account || !expectedAmountUnits) return;
@@ -1235,9 +1222,11 @@ function SponsoredPaylinkActions({
     }
 
     onError("");
+    setWalletStage("");
     setLastRecord(null);
     setPendingAction(action);
     try {
+      setWalletStage("Building sponsored transaction...");
       const built = await buildSponsoredTransaction({
         action,
         senderAddress: account.address,
@@ -1252,28 +1241,59 @@ function SponsoredPaylinkActions({
       });
       setLastRecord(built);
 
-      const transaction = Transaction.from(built.transactionBytes);
+      setWalletStage("Waiting for wallet signature...");
       const signed = await withTimeout(
-        signTransaction({
-          transaction,
-          chain: `sui:${config.network}`,
-        }),
+        signBuiltSponsoredTransaction(built),
         walletSignatureTimeoutMs,
         "Wallet did not return a signature. Unlock the wallet, keep the confirmation popup open, and retry.",
       );
 
-      if (signed.bytes !== built.transactionBytes) {
-        throw new Error("Wallet returned different transaction bytes; refusing to submit");
-      }
-
-      const submitted = await submitSponsoredTransaction(built.id, signed.signature);
+      setWalletStage(`Wallet signed via ${signed.method}; submitting to sponsor...`);
+      const submitted = await submitSponsoredTransaction(built.id, signed.signature, signed.bytes);
       setLastRecord(submitted);
       await onRefresh();
+      setWalletStage("Submitted and verified on Sui Testnet.");
     } catch (err) {
       onError(errorText(err));
+      setWalletStage("");
     } finally {
       setPendingAction(null);
     }
+  }
+
+  async function signBuiltSponsoredTransaction(
+    built: SponsoredTransactionRecord,
+  ): Promise<WalletSignedTransaction> {
+    if (!account) {
+      throw new Error("Connect a Sui wallet first");
+    }
+    const chain = `sui:${config?.network ?? "testnet"}` as `${string}:${string}`;
+    const legacyFeature = currentWallet?.features["sui:signTransactionBlock"] as
+      | { signTransactionBlock?: (input: { transactionBlock: Transaction; account: typeof account; chain: string }) => Promise<{ transactionBlockBytes: string; signature: string }> }
+      | undefined;
+
+    if (legacyFeature?.signTransactionBlock) {
+      const signed = await legacyFeature.signTransactionBlock({
+        transactionBlock: Transaction.from(built.transactionBytes),
+        account,
+        chain,
+      });
+      return {
+        bytes: signed.transactionBlockBytes,
+        signature: signed.signature,
+        method: "signTransactionBlock",
+      };
+    }
+
+    const signed = await signTransaction({
+      transaction: built.transactionBytes,
+      chain,
+    });
+    return {
+      bytes: signed.bytes,
+      signature: signed.signature,
+      method: "signTransaction",
+    };
   }
 
   const sponsorChecking = Boolean(config?.sponsorEnabled && sponsorReadiness === null);
@@ -1361,30 +1381,6 @@ function SponsoredPaylinkActions({
   const showRefundAction = showBuyerControls && paylink.status === "funded";
   const showDeliverAction = showSellerControls && paylink.status === "funded";
   const showActions = showFundAction || showReleaseAction || showRefundAction || showDeliverAction;
-
-  if (config?.localJudgeModeEnabled) {
-    return (
-      <section className="wallet-fallback-panel">
-        <div>
-          <p className="eyebrow">Browser wallet path disabled locally</p>
-          <h3>Use Local Judge Mode for this demo</h3>
-          <p>
-            Slush/Sui Wallet is building the sponsored transaction, but after password unlock it is not reliably
-            returning the signature to this localhost page. The stable demo path uses temporary local buyer/seller
-            test wallets, still submits real Sui Testnet transactions, and records real digests.
-          </p>
-        </div>
-        <button className="primary" onClick={startLocalJudgeDemo} disabled={startingLocalJudge}>
-          {startingLocalJudge ? "Creating Local Judge order..." : "Start Local Judge demo"}
-        </button>
-        <details className="technical-proof">
-          <summary>What this disables</summary>
-          <WalletE2EChecklist paylink={paylink} accountAddress={account?.address} role={role} />
-          <SponsorReadinessCard readiness={sponsorReadiness} />
-        </details>
-      </section>
-    );
-  }
 
   return (
     <div className="sponsored-actions">
@@ -1480,6 +1476,8 @@ function SponsoredPaylinkActions({
           )}
         </div>
       )}
+
+      {walletStage && <p className="wallet-stage">{walletStage}</p>}
 
       {showBuyerControls && paylink.status === "delivered" && (
         <section className="role-claim-card">

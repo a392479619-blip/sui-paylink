@@ -72,6 +72,7 @@ export type BuildSponsoredTransactionInput = z.infer<typeof buildSponsoredTransa
 
 export const submitSponsoredTransactionSchema = z.object({
   userSignature: z.string().min(1),
+  transactionBytes: z.string().min(1).optional(),
 });
 
 export type SubmitSponsoredTransactionInput = z.infer<typeof submitSponsoredTransactionSchema>;
