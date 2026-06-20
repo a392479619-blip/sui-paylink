@@ -1149,6 +1149,28 @@ function SponsoredPaylinkActions({
   const [lastRecord, setLastRecord] = useState<SponsoredTransactionRecord | null>(null);
   const [walletStage, setWalletStage] = useState("");
   const [walletPaidDigest, setWalletPaidDigest] = useState("");
+  const [walletSuiBalanceMist, setWalletSuiBalanceMist] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setWalletSuiBalanceMist(null);
+    if (!account) {
+      return () => {
+        active = false;
+      };
+    }
+    client
+      .getBalance({ owner: account.address, coinType: "0x2::sui::SUI" })
+      .then((balance) => {
+        if (active) setWalletSuiBalanceMist(balance.totalBalance);
+      })
+      .catch(() => {
+        if (active) setWalletSuiBalanceMist("unknown");
+      });
+    return () => {
+      active = false;
+    };
+  }, [account, client]);
 
   async function mintTestCoin() {
     if (!account || !expectedAmountUnits) return;
@@ -1623,7 +1645,7 @@ function SponsoredPaylinkActions({
           <strong>Wallet-paid fallback</strong>
           <span>
             Use this only if the sponsored wallet popup does not return. The connected wallet signs and pays
-            Testnet SUI gas directly.
+            Testnet SUI gas directly. Current wallet SUI: {formatMistBalance(walletSuiBalanceMist)}.
           </span>
           <div className="actions inline-actions">
             {showFundAction && (
@@ -1713,6 +1735,10 @@ function SponsoredPaylinkActions({
           <div>
             <dt>Signing path</dt>
             <dd>{walletSigning.methodLabel}</dd>
+          </div>
+          <div>
+            <dt>Testnet SUI balance</dt>
+            <dd>{formatMistBalance(walletSuiBalanceMist)}</dd>
           </div>
           <div>
             <dt>Sui signing features</dt>
@@ -2660,6 +2686,20 @@ function walletFailureStage(message: string): string {
     return "Wallet returned changed transaction bytes. Sponsor refused to submit them.";
   }
   return `Stopped before completion: ${message}`;
+}
+
+function formatMistBalance(balanceMist: string | null): string {
+  if (balanceMist === null) return "checking";
+  if (balanceMist === "unknown") return "unknown";
+  try {
+    const mist = BigInt(balanceMist);
+    const whole = mist / 1_000_000_000n;
+    const fraction = mist % 1_000_000_000n;
+    const fractionText = fraction.toString().padStart(9, "0").replace(/0+$/, "");
+    return `${fractionText ? `${whole}.${fractionText}` : whole.toString()} SUI`;
+  } catch {
+    return balanceMist;
+  }
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
